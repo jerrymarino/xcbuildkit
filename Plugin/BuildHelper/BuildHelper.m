@@ -96,7 +96,7 @@ static BuildHelper *sharedPlugin;
     dispatch_async(dispatch_get_main_queue(), ^{
         // Emulate monitoring for progress.
         // In the actual implementation, this method will
-        [NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer * _Nonnull timer) {
+        [NSTimer scheduledTimerWithTimeInterval:0.25 repeats:YES block:^(NSTimer * _Nonnull timer) {
             // Finally, invalidate the current op.
             // Sending updates after the task is don wil cause an issue.
             if (helper.currentOp == nil) {
@@ -106,7 +106,7 @@ static BuildHelper *sharedPlugin;
 
             // Hardcode some dummy progress
             // TBD - consider an API to integrate this into Bazel, Buck, Pants, Shell scripts.
-            helper.systemProgress += 1;
+            helper.systemProgress += 3;
             NSLog(@"Inject ad-hoc progress notifaction %@ %@", operation, bOperation);
             NSString *msg = [NSString stringWithFormat:@"Ran ad-hoc progress aware task %d.. ", (int)helper.systemProgress];
             [operation buildOperation:bOperation

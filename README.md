@@ -8,32 +8,43 @@ _It's currently an unstable prototype to explore how it will all fit together._
 ## What is this used for?
 
 Xcode can't render updates ( progress, errors, and warnings ) for external
-build systems, e.g. SPM, Bazel, because it isn't intrinsically aware of these
-systems.  During long running tasks, like downloading a dependency or compiling
-an iOS application, Xcode's UI feels stuck. This is problematic as it can make
-the ad-hoc tasks "feel slow" due to the perception of no progress.
+build systems, e.g. Bazel, because it isn't intrinsically aware of these
+systems. There is no supported way for run script build phases to communicate
+their state to Xcode. As a result, during long running tasks, like downloading
+a dependency or compiling an iOS application, Xcode's UI feels stuck. This is
+problematic as it can make the ad-hoc tasks "feel slow" due to the perception
+of no progress.
 
 ## Goals and Outcomes
 
-The goal of IDEXCBProgress is to provide a thin subsystem to notify Xcode of
-updates like progress, errors, and warnings which can then be populated by
-external build systems like Bazel or Buck.
+The goal of IDEXCBProgress is to find ways to notify Xcode of updates like
+progress, errors, and warnings which can then be populated by external build
+systems like Bazel or Buck.
 
-**This project is an unoffical, non Apple project. Getting official Xcode
-support of this ability is non-goal. However, if the work results in a good
-API, perhaps the Xcode team may see it and want to add it ;).**
+**This project is an unofficial, non Apple, experiment that uses private Xcode
+APIs.**
 
 ## Notes and current state
 
-The project is currently a prototype/demo of how an Xcode plugin could work.
+As, Xcode <-> build service, aka the build system daemon, have a clear protocol
+and interface between each other, it seems possible to hook in progress at this
+level. Ideally, IDEXCBProgress is achievable without hacking Xcode's runtime
+via a plugin: the plugin currently exists as a fallback/alternate approach to
+utilizing the build protocol.
 
-As, Xcode <-> `XCBBuildService`, aka the build system daemon, have a clear
-protocol and interface between each other, it seems possible to hook in
-progress at this level. It wasn't immediately clear if there is a way to send
-additional messages to Xcode via this interface, or if this is the correct
-solution.
+**Build protocol integration**
 
-_It would be nice if this was achievable without adding an Xcode plugin. At the
-end of the day, the build protocol is as undocumented and subject to change as
-Xcode, so it isn't a dealbreaker if it ends up being a plugin._
+One approach is to replace the build service and interact with Xcode over the
+build protocol via the corresponding file descriptors. This would give total
+control of the build process to the user. A possible implementation simply
+dupes ad-hoc progress ( in the form of build protocol messages ) to the
+original output file descriptor.
+
+**Plugin integration**
+
+The project contains a prototype/demo of how an Xcode plugin could work. It
+wasn't immediately clear if there is a way to send additional messages to Xcode
+via the build protocol, or if that would be a working/correct solution. The
+notifies Xcode about updates by invoking delegate callbacks resulted from build
+protocol messages, as if the protocol had actually sent these messages.
 
