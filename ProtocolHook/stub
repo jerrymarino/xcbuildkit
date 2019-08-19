@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# The service is adjacent to this program
+# The layer of indirection is useful for debugging and not
+# a production component
+SERVICE="$(dirname $XCBBUILDSERVICE_PATH)/service.py"
+
+function redirect() {
+    #tee  >($SERVICE) /tmp/xcbuild.out
+    /usr/bin/env - TERM="${TERM}" SHELL="${SHELL}" PATH="${PATH}" HOME="${HOME}" \
+    tee  /tmp/xcbuild.in | \
+    $XCODE/Contents/SharedFrameworks/XCBuild.framework/PlugIns/XCBBuildService.bundle/Contents/MacOS/XCBBuildService | \
+    tee  /tmp/xcbuild.out
+}
+
+function replace() {
+    /usr/bin/env - TERM="${TERM}" SHELL="${SHELL}" PATH="${PATH}" HOME="${HOME}" \
+    tee  /tmp/xcbuild.in | $SERVICE | tee /tmp/xcbuild.out
+}
+
+#redirect
+replace
