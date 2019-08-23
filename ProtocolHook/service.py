@@ -16,12 +16,6 @@ import fcntl
 global log_file
 log_file = open("/tmp/xcbuild.diags","w", 512) 
 
-global session_id
-session_id = 0
-
-global session_guid
-session_guid = 0
-
 def log(*args, **kwargs):
     log_file.write("INFO: "+" ".join(map(str,args))+"\n", **kwargs)
 
@@ -59,11 +53,7 @@ class MessageContext:
         print(self.buff.getvalue())
 
 def handle_obj(obj, unpacker):
-    global session_id
-    global session_guid
     ctx = MessageContext()
-    close_id = None
-    terminate = False
     log("OBJ", obj)
     if obj == 1:
         return True
@@ -183,11 +173,9 @@ def loop():
     log("Start")
     unpacker = get_unpacker()
     buff = None
-    last_byte = None
     byte = None
     i = 0
     while True:
-        last_byte = byte
         byte = sys.stdin.buffer.read(1)
         log_file.flush()
         if not byte:
