@@ -94,8 +94,6 @@ def handle_obj(obj, unpacker):
         ctx.writeb(b"\x00\x00\x00\x00\x07\x00\x00\x00\xa4BOOL\x91\xc3\x06")
         ctx.dump()
     elif obj == "CREATE_BUILD":
-    # This may fail
-    #elif type(obj) is list and len(obj) > 2 and type(obj[2]) is list and 'build' in obj[2][0]:
         info = unpacker.unpack()
         # It seems to take the session ID from here
         # as all messages for the build are proceeded with this ID

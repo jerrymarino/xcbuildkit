@@ -21,8 +21,13 @@ XCBBUILDSERVICE_PATH=$(PWD)/xcbrunner
 
 test: xcbr
 	rm -rf /tmp/xcbuild.*
-	export XCBBUILDSERVICE_PATH=$(XCBBUILDSERVICE_PATH); \
-	export XCODE=$(XCODE); \
+	/usr/bin/env - TERM="$(TERM)"; \
+		export SHELL="$(SHELL)"; \
+		export PATH="$(PATH)"; \
+		export HOME="$(HOME)"; \
+		export XCODE="$(XCODE)"; \
+		export XCBBUILDSERVICE_PATH=$(XCBBUILDSERVICE_PATH); \
+		export XCODE=$(XCODE); \
 		cd iOSApp;  \
 		$(DTRUSS) sleep 3 && $(XCB) build -jobs 1 -target iOSApp \
 		-sdk iphonesimulator
@@ -30,6 +35,7 @@ test: xcbr
 # Known issues with Xcode
 # - indexing requests aren't done yet
 # - it will only work after the first build
+# - if you have a nasty environment, this will not work!
 open_xcode:
 	defaults write com.apple.dt.XCode IDEIndexDisable 1
 	/usr/bin/env - TERM="$(TERM)"; \
@@ -76,11 +82,15 @@ test_debug: xcbr
 	#cd iOSApp;  \
 		sudo xcodebuild clean -jobs 1 -target iOSApp  \
 		-sdk iphonesimulator
-	export DEBUG=YES; \
-	export XCBUILD_TRACING_URL=/tmp/xcbuild.trace; \
-        export XCODE=$(XCODE); \
-	export XCBBUILDSERVICE_PATH=$(XCBBUILDSERVICE_PATH); \
+	/usr/bin/env - TERM="$(TERM)"; \
+		export SHELL="$(SHELL)"; \
+		export PATH="$(PATH)"; \
+		export HOME="$(HOME)"; \
+		export XCODE="$(XCODE)"; \
+		export XCBUILD_TRACING_URL=/tmp/xcbuild.trace; \
+		export XCODE=$(XCODE); \
+		export XCBBUILDSERVICE_PATH=$(XCBBUILDSERVICE_PATH); \
 		cd iOSApp;  \
-		$(DTRUSS) sleep 3 && $(XCB) build -jobs 1   -target iOSApp  \
-		-sdk iphonesimulator 2>&1 | tee  /tmp/xcodebuild.log
+		$(DTRUSS) sleep 4 && $(XCB) build -jobs 1   -target CLI  \
+		 2>&1 | tee  /tmp/xcodebuild.log
 
