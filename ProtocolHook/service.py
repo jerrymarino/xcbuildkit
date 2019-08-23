@@ -114,6 +114,7 @@ def handle_obj(obj, unpacker):
         ctx.writeb(b'\x00\x00\x00\x00\x00\x00\x002\x00\x00\x00\xb6BUILD_PROGRESS_UPDATED\x94\xc0\xaeInspiration...\xcb\xbf\xf0\x00\x00\x00\x00\x00\x00\xc3\xc2')
         ctx.dump()
 
+        time.sleep(2)
         ctx = MessageContext()
         ctx.writeb(b'\x00\x00\x00\x00\x00\x00\x00F\x00\x00\x00\xbbPLANNING_OPERATION_FINISHED\x92\xa2S0\xd9$FC5F5C50-8B9C-43D6-8F5A-031E967F5CC0\x05')
         ctx.dump()
@@ -121,6 +122,7 @@ def handle_obj(obj, unpacker):
         ctx = MessageContext()
         ctx.writeb(b'\x00\x00\x00\x00\x00\x00\x00F\x00\x00\x00\xb6BUILD_PROGRESS_UPDATED\x94\xc0\xd9!to create a life you love ;)     \xcb\xbf\xf0\x00\x00\x00\x00\x00\x00\xc3\x05')
         ctx.dump()
+        time.sleep(2)
     
         ctx = MessageContext()
         ctx.writeb(b'\x00\x00\x00\x00\x00\x00\x00\x1d\x00\x00\x00\xbbBUILD_PREPARATION_COMPLETED\xc0\x05\x00\x00\x00\x00\x00\x00\x00"')
