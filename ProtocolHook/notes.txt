@@ -209,3 +209,21 @@ br s -r XCBProtocol.BoolResponse*
     frame #0: 0x000000011d4e9040 XCBProtocol`protocol witness for XCBUtil.Serializable.init(from: XCBUtil.Deserializer) throws -> A in conformance XCBProtocol.BuildCreated : XCBUtil.Serializable in XCBProtocol
 XCBProtocol`protocol witness for XCBUtil.Serializable.init(from: XCBUtil.Deserializer) throws -> A in conformance XCBProtocol.BuildCreated : XCBUtil.Serializable in XCBProtocol:
 
+
+
+### msgpack unpacking
+
+data = b"\x00\x00\x00\x00\x00\x00\x18\x00\x00\x00\xadBUILD_CREATED\x91\xd3\x00\x00\x00\x00\x00\x00\x00\x00\x07"
+
+# At position 9 in the array, we have \x18 ( the number 24 )
+
+# This means that msgpack should
+# - increase the offset by 1
+# - unpack until 24
+
+msgpack.unpackb(data[9+1:9+24])
+b'BUILD_CREATED'
+
+
+
+

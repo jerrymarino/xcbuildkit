@@ -101,8 +101,26 @@ def handle_obj(obj, unpacker):
         # entire process
         ctx = MessageContext()
         ctx.writeb(b'\x00\x00\x00\x00\x00\x00\x00H\x00\x00\x00\xbdPLANNING_OPERATION_WILL_START\x92\xa2S0\xd9$FC5F5C50-8B9C-43D6-8F5A-031E967F5CC0\x05')
-        ctx.writeb(b'\x00\x00\x00\x00\x00\x00\x002\x00\x00\x00\xb6BUILD_PROGRESS_UPDATED\x94\xc0\xaeInspiration...\xcb\xbf\xf0\x00\x00\x00\x00\x00\x00\xc3\xc2')
         ctx.dump()
+
+        # Example of using msgpack to write BUILD_PROGRESS_UPDATED messages.
+        ctx = MessageContext()
+        # Start with padding
+        ctx.writeb(b'\x00\x00\x00\x00\x00\x00\x00')
+        msg = ctx.packer.pack("BUILD_PROGRESS_UPDATED")
+        msg += ctx.packer.pack([None, "Getting that inspiration'", -1.0, True])
+
+        # This the len of the message is written prior to the data type
+        ctx.write(len(msg))
+        ctx.writeb(b'\x00\x00\x00')
+        ctx.writeb(msg)
+        ctx.write(False)
+        ctx.dump()
+
+        # The above code produces the same output
+        #ctx = MessageContext()
+        #ctx.writeb(b'\x00\x00\x00\x00\x00\x00\x002\x00\x00\x00\xb6BUILD_PROGRESS_UPDATED\x94\xc0\xaeInspiration...\xcb\xbf\xf0\x00\x00\x00\x00\x00\x00\xc3\xc2')
+        #ctx.dump()
 
         time.sleep(2)
         ctx = MessageContext()
