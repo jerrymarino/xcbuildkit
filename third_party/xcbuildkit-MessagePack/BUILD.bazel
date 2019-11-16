@@ -1,0 +1,13 @@
+
+package(default_visibility = ["//visibility:public"])
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_c_module",
+"swift_library")
+
+swift_library(
+    name = "MessagePack",
+    srcs = glob(["Sources/**/*.swift"]),
+    module_name = "MessagePack",
+    deps = [],
+    defines = [],
+    copts = ["-DSWIFT_PACKAGE", ],
+)

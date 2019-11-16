@@ -50,9 +50,3 @@ http_file(
     executable = 1,
     urls = ["https://github.com/google/xctestrunner/releases/download/0.2.6/ios_test_runner.par"],
 )
-
-## SPM Dependencies
-
-load("//third_party:repositories.bzl", "dependencies")
-
-dependencies()

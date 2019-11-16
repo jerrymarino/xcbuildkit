@@ -89,14 +89,16 @@ def dependencies():
     dependencies of  are downloaded and that they are isolated from
     changes to those dependencies.
     """
-    namespaced_new_git_repository(
-        name = "MessagePack",
-        remote = "https://github.com/a2/MessagePack.swift.git",
-        build_file_content = namespaced_build_file([
-            namespaced_swift_library(
-                name = "MessagePack",
-                srcs = ["Sources/**/*.swift"],
-            ),
-        ]),
-        commit = "69ccf98d50fc253f1d31d033b4fc67b47e5e6230",
-    )
+    pass
+    # Fork this internally
+    #namespaced_new_git_repository(
+    #    name = "MessagePack",
+    #    remote = "https://github.com/a2/MessagePack.swift.git",
+    #    build_file_content = namespaced_build_file([
+    #        namespaced_swift_library(
+    #            name = "MessagePack",
+    #            srcs = ["Sources/**/*.swift"],
+    #        ),
+    #    ]),
+    #    commit = "69ccf98d50fc253f1d31d033b4fc67b47e5e6230",
+    #)

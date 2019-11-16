@@ -16,6 +16,9 @@ clean:
 	rm -rf /tmp/xcbuild.*
 
 
+symlink_external:
+	ln -sf $(shell tools/bazelwrapper info execution_root)/external external
+
 # Hardcode all the paths to Xcode build for debugging reasons
 XCB=$(XCODE)/Contents/Developer/usr/bin/xcodebuild
 XCBBUILDSERVICE_PATH=$(PWD)/xcbrunner

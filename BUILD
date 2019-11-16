@@ -26,9 +26,7 @@ load(
 swift_library(
     name = "BSBuildServiceLib",
     srcs = glob(["Sources/BSBuildService/*.swift"]),
-    deps = ["@" + namespaced_name(x) for x in [
-        "MessagePack//:MessagePack",
-    ]],
+    deps = ["//third_party/xcbuildkit-MessagePack:MessagePack"],
 )
 
 apple_bundle_version(
