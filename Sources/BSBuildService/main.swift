@@ -1,9 +1,35 @@
 import Foundation
 import MessagePack
 
+
+/// Current build number. None of this is expected to be thread safe and Xcode
+/// is forced to use J=1 ( IDEBuildOperationMaxNumberOfConcurrentCompileTasks )
+/// for debugging and development purposes
+/// -1 means we haven't built yet
+var gBuildNumber: Int64 = -1
+
+/// This is state of protocol messages, and perhaps it would be encapsulated in a
+/// better way. Xcode uses this internally
+var gMsgId: UInt64 = 0
+
 // This is a test example of writing responses with raw types
 // consider moving these to structs or something for an API
 enum BasicResponseHandler {
+    static func log(_ str: String) {
+        let url = URL(fileURLWithPath: "/tmp/xcbuild.log")
+        let entry = str + "\n"
+        do {
+           let fileUpdater = try FileHandle(forWritingTo: url) 
+           fileUpdater.seekToEndOfFile()
+           fileUpdater.write(entry.data(using: .utf8)!)
+           fileUpdater.closeFile()
+        } catch {
+            try! entry.write(to: url, atomically: false, encoding: .utf8)
+            // fatalError(error.localizedDescription)
+        }
+    }
+
+
     /// Responses take an input from the segement of an input stream
     /// containing the input message
     static func createSessionResponse(_ input: XCBInputStream) -> XCBResponse {
@@ -76,15 +102,9 @@ enum BasicResponseHandler {
         XCBRawValue.uint(0),
         XCBRawValue.string("PING"),
         XCBRawValue.nil,
-        XCBRawValue.uint(6),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(24),
+        //XCBRawValue.uint(6),
+        XCBRawValue.uint(gMsgId + 1),
+
         ]
     }
 
@@ -100,29 +120,33 @@ enum BasicResponseHandler {
     // array([int(12)]) 1058 bytes
     // uint(61) 1057 bytes
     static func createBuildResponse(_ input: XCBInputStream) -> XCBResponse {
+        var minput = input
+        log("CREATE_BUILD.input " + String(describing: input))
+        guard case var .array(msg) = minput.next() else {
+            fatalError("unexpected message")
+        } 
+        // This contains all info about the build see above
+        log("CREATE_BUILD.input[0] " + String(describing: msg[0]))
+        log("CREATE_BUILD.input[1] " + String(describing: msg[1]))
+
+        /// Increment the build number
+        gBuildNumber += 1
+
         return [
         XCBRawValue.uint(0),
         XCBRawValue.uint(0),
         XCBRawValue.uint(0),
+        XCBRawValue.uint(0),
+        XCBRawValue.uint(0),
+        XCBRawValue.uint(0),
+        XCBRawValue.uint(0),
+        XCBRawValue.uint(24),
+
+        XCBRawValue.uint(0),
+        XCBRawValue.uint(0),
+        XCBRawValue.uint(0),
         XCBRawValue.string("BUILD_CREATED"),
-        [Int64(0)],
-        XCBRawValue.int(7),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-
-        XCBRawValue.uint(0),
-        XCBRawValue.int(7),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("BOOL"),
-        XCBRawValue.array([XCBRawValue.bool(true)]),
-        XCBRawValue.uint(5)
+        [Int64(gBuildNumber)],
         ]
     }
 
@@ -149,12 +173,36 @@ enum BasicResponseHandler {
 
     static func buildStartResponse(_ input: XCBInputStream) -> XCBResponse {
         return [
+
+        // Begin prefix
+        XCBRawValue.uint(gMsgId),
         XCBRawValue.uint(0),
         XCBRawValue.uint(0),
         XCBRawValue.uint(0),
+
         XCBRawValue.uint(0),
         XCBRawValue.uint(0),
         XCBRawValue.uint(0),
+
+        XCBRawValue.uint(0),
+        XCBRawValue.int(7),
+        XCBRawValue.uint(0),
+        XCBRawValue.uint(0),
+        XCBRawValue.uint(0),
+        XCBRawValue.string("BOOL"),
+        XCBRawValue.array([XCBRawValue.bool(true)]),
+        XCBRawValue.uint(gMsgId),
+        // END
+
+
+        XCBRawValue.uint(0),
+        XCBRawValue.uint(0),
+        XCBRawValue.uint(0),
+
+        XCBRawValue.uint(0),
+        XCBRawValue.uint(0),
+        XCBRawValue.uint(0),
+
         XCBRawValue.uint(0),
         XCBRawValue.uint(7),
         XCBRawValue.uint(0),
@@ -162,10 +210,12 @@ enum BasicResponseHandler {
         XCBRawValue.uint(0),
         XCBRawValue.string("BOOL"),
         XCBRawValue.array([XCBRawValue.bool(true)]),
-        XCBRawValue.uint(5)]
+        XCBRawValue.uint(gMsgId - 3),
+        // END
+        ]
     }
 
-    static func completeResponse(_ input: XCBInputStream) -> XCBResponse {
+    static func planningOperationWillStartResponse(_ input: XCBInputStream) -> XCBResponse {
         return [
         XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0),
         XCBRawValue.uint(72),
@@ -174,10 +224,11 @@ enum BasicResponseHandler {
         XCBRawValue.uint(0),
         XCBRawValue.string("PLANNING_OPERATION_WILL_START"),
         XCBRawValue.array([XCBRawValue.string("S0"), XCBRawValue.string("FC5F5C50-8B9C-43D6-8F5A-031E967F5CC0")]),
-        XCBRawValue.uint(5)]
+        XCBRawValue.uint(gMsgId - 3),
+        ]
     }
 
-    static func completeResponse1(_ input: XCBInputStream) -> XCBResponse {
+    static func buildProgressUpdatedResponse(_ input: XCBInputStream) -> XCBResponse {
         return [ XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0),
         XCBRawValue.uint(61),
         XCBRawValue.uint(0),
@@ -188,7 +239,7 @@ enum BasicResponseHandler {
         XCBRawValue.bool(false)]
     }
 
-    static func completeResponse2(_ input: XCBInputStream) -> XCBResponse {
+    static func planningOperationWillEndResponse(_ input: XCBInputStream) -> XCBResponse {
         return [
         XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0),
         XCBRawValue.uint(70),
@@ -197,11 +248,12 @@ enum BasicResponseHandler {
         XCBRawValue.uint(0),
         XCBRawValue.string("PLANNING_OPERATION_FINISHED"),
         XCBRawValue.array([XCBRawValue.string("S0"), XCBRawValue.string("FC5F5C50-8B9C-43D6-8F5A-031E967F5CC0")]),
-        XCBRawValue.uint(5)]
+        XCBRawValue.uint(gMsgId - 3),
+        ]
     }
     
     // This currently fails ( couldn't decode a bool )
-    static func completeResponse3n(_ input: XCBInputStream) -> XCBResponse {
+    static func planningOperationWillStartResponse3n(_ input: XCBInputStream) -> XCBResponse {
         return [ XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0),
         XCBRawValue.uint(70),
         XCBRawValue.uint(0),
@@ -209,11 +261,11 @@ enum BasicResponseHandler {
         XCBRawValue.uint(0),
         XCBRawValue.string("BUILD_PROGRESS_UPDATED"),
         XCBRawValue.array([XCBRawValue.string(""), XCBRawValue.string("!to create a life you love ;)     "), XCBRawValue.double(-1.0), XCBRawValue.bool(true)]),
-        XCBRawValue.uint(5)]
+        XCBRawValue.bool(false)]
     }
 
     // This currently fails ( could not decode a string )
-    static func completeResponse3(_ input: XCBInputStream) -> XCBResponse {
+    static func planningOperationWillStartResponse3(_ input: XCBInputStream) -> XCBResponse {
         return [
         XCBRawValue.uint(0),
         XCBRawValue.uint(0),
@@ -239,7 +291,7 @@ enum BasicResponseHandler {
         XCBRawValue.uint(34)]
     }
     
-    static func completeResponse4(_ input: XCBInputStream) -> XCBResponse {
+    static func buildOperationEndedResponse(_ input: XCBInputStream) -> XCBResponse {
         return [
         XCBRawValue.uint(0),
         XCBRawValue.uint(0),
@@ -254,11 +306,18 @@ enum BasicResponseHandler {
         XCBRawValue.uint(0),
         XCBRawValue.uint(0),
         XCBRawValue.string("BUILD_OPERATION_ENDED"),
-        [Int64(0), Int64(0), XCBRawValue.nil]]
+        [Int64(gBuildNumber), Int64(0), XCBRawValue.nil],
+        XCBRawValue.uint(gMsgId + 1),
+    ]
     }
 
     static func respond(input: XCBInputStream, context: Any?) {
        var v = input
+       guard case let .uint(id)  = v.next() else {
+           fatalError("missing id")
+       }
+       gMsgId = id + 1
+       log("respond.gMsgID " + String(describing: gMsgId))
        while var value = v.next() {
            /// Write handler
            let write: ((XCBResponse) -> Void) = {
@@ -285,10 +344,11 @@ enum BasicResponseHandler {
                     write(BasicResponseHandler.createBuildResponse(v))
                 } else if str == "BUILD_START" {
                     write(BasicResponseHandler.buildStartResponse(v))
-                    write(BasicResponseHandler.completeResponse(v))
-                    write(BasicResponseHandler.completeResponse1(v))
-                    write(BasicResponseHandler.completeResponse2(v))
-                    write(BasicResponseHandler.completeResponse4(v))
+                    // Planning is optional
+                    write(BasicResponseHandler.planningOperationWillStartResponse(v))
+                    write(BasicResponseHandler.buildProgressUpdatedResponse(v))
+                    write(BasicResponseHandler.planningOperationWillEndResponse(v))
+                    write(BasicResponseHandler.buildOperationEndedResponse(v))
                 }
             default:
                 continue
