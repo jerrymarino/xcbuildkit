@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# The service is adjacent to this program
+# The layer of indirection is useful for debugging and not
+# a production component
+SERVICE="$(dirname $XCBBUILDSERVICE_PATH)/bazel-bin/BSBuildService-intermediates/BSBuildService"
+
+function redirect() {
+    #tee  >($SERVICE) /tmp/xcbuild.out
+    /usr/bin/env - XCBUILD_TRACING_URL=/tmp/xcbuild.trace TERM="${TERM}" SHELL="${SHELL}" PATH="${PATH}" HOME="${HOME}" \
+    tee  /tmp/xcbuild.in | \
+    $XCODE/Contents/SharedFrameworks/XCBuild.framework/PlugIns/XCBBuildService.bundle/Contents/MacOS/XCBBuildService | \
+    tee  /tmp/xcbuild.out
+}
+
+function replace() {
+    # SERVICE="/Users/jerrymarino/Projects/IDEXCBProgress/utils/service.py"
+    /usr/bin/env - TERM="${TERM}" SHELL="${SHELL}" PATH="${PATH}" HOME="${HOME}" \
+    tee  /tmp/xcbuild.in | $SERVICE | tee /tmp/xcbuild.out
+}
+
+# FIXME: during development and testing this needs to be commented out
+# it should be a different program.
+# redirect
+replace

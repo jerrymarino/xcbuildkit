@@ -1,0 +1,288 @@
+# Use make debug_input and output
+
+
+# Easily convert byte strings to ints
+https://stackoverflow.com/questions/444591/how-to-convert-a-string-of-bytes-into-an-int-in-python
+
+Debugging:
+
+On Mojave dtruss isn't working so well.
+
+- With lldb, Startup xcodebuild with a path to the actual xcodebuild binary
+
+- Break on all the IDEXCB* methods
+
+br s -r IDEXCB*
+
+br s -r .*SentPIFResponse
+
+- Run dtruss with that process
+
+sudo dtruss -a -p 37068 2>&1 | cat > /tmp/x
+
+- Step through the methods in xcodebuild
+
+
+Sends several session createss
+IDEXCBuildSupport.IDEXCBuildServiceSession.sessionCreationTimeout() -> Swift.Double:
+
+And then the PIF Request
+
+
+37158/0x3ed59:     16211      98     26 workq_kernreturn(0x40, 0x70000DB5BB80, 0x1)              = 0 Err#-2
+37158/0x3ed59:     16223       6      4 write(0x4, "\002\0", 0xC)                = 12 0
+37158/0x3ed59:     16224       2      0 write(0x4, "\275TRANSFER_SESSION_PIF_RESPONSE\221\220\0", 0x20) = 32 0
+
+# Not it immediately reads this
+37158/0x3ecc9:    275127     381      5 read(0x3, "\003\0", 0x1000)              = 82 0
+37158/0x3ecc9:    275217      44      4 kevent_id(0x101A02050, 0x70000D94F2B0, 0x1)              = 0 0
+37158/0x3ed59:     16234     491      7 workq_kernreturn(0x100, 0x70000DB5BB80, 0x1)             = 0 Err#-2
+37158/0x3ed59:     16240       4      2 write(0x4, "\003\0", 0xC)                = 12 0
+37158/0x3ed59:     16241       1      0 write(0x4, "\244BOOL\221\303\0", 0x7)            = 7 0
+37158/0x3ecc9:    275228  136726      7 read(0x3, "\004\0", 0x1000)              = 4096 0
+37158/0x3ecc9:    275239       5      1 read(0x3, "N_DISABLE_POST_CHECKOUT\2411\247SDKROOT\331j/Applications/Xcode-10.2.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk\303\0", 0x1000)              = 142 0
+37158/0x3ecc9:    275408       5      3 kevent_id(0x101A02050, 0x70000D94F2B0, 0x1)              = 0 0
+37158/0x3ed59:     16252  136988      9 workq_kernreturn(0x100, 0x70000DB5BB80, 0x1)             = 0 Err#-2
+37158/0x3ed59:     16263       6      4 write(0x4, "\004\0", 0xC)                = 12 0
+37158/0x3ed59:     16277      15     13 write(0x4, "\244BOOL\221\303s\0", 0x7)           = 7 0
+kkkkkkkk37158/0x3ed5f:        45 5333363     13 workq_kernreturn(0x100, 0x70000DE6DB80, 0x1)           = 0 Err#-2
+37158/0x3ed5f:        53      84      0 __disable_threadsignal(0x1, 0x0, 0x0)            = 0 0
+$ Xcode gets a lot of things
+
+* thread #3, queue = 'com.apple.libdispatch-io.opq', stop reason = breakpoint 1.238
+    frame #0: 0x000000011ab2ca40 XCBuildSupport`partial apply forwarder for closure #1 (XCBuild.XCBResult<XCBuild.XCBBuildOperation, __C.NSError>) -> () in closure #1 (IDEXCBuildSupport.IDEXCBuildServiceSession.(SentPIFResponse in _0FFD3FCE3EB10682721517F90C709577)) -> () in IDEXCBuildSupport.IDEXCBuildServiceSession.startBuildOperation(configuration: __C.IDEBuildOperationConfiguration, overridingBuildParameters: Swift.Dictionary<Swift.String, __C.IDEBuildParameters>, delegate: XCBuild.XCBBuildOperationDelegate, completion: (Swift.Optional<XCBuild.XCBBuildOperation>, Swift.Optional<__C.NSError>) -> ()) -> ()
+XCBuildSupport`partial apply forwarder for closure #1 (XCBuild.XCBResult<XCBuild.XCBBuildOperation, __C.NSError>) -> () in closure #1 (IDEXCBuildSupport.IDEXCBuildServiceSession.(SentPIFResponse in _0FFD3FCE3EB10682721517F90C709577)) -> () in IDEXCBuildSupport.IDEXCBuildServiceSession.startBuildOperation(configuration: __C.IDEBuildOperationConfiguration, overridingBuildParameters: Swift.Dictionary<Swift.String, __C.IDEBuildParameters>, delegate: XCBuild.XCBBuildOperationDelegate, completion: (Swift.Optional<XCBuild.XCBBuildOperation>, Swift.Optional<__C.NSError>) -> ()) -> ():
+
+
+#
+
+37158/0x3ecc9:    275425 63460360      5 read(0x3, "\006\0", 0x1000)             = 245 0
+37158/0x3ecc9:    276635      51      7 kevent_id(0x101A02050, 0x70000D94F2B0, 0x1)              = 0 0
+37158/0x3ee4a:       142 3595226     27 workq_kernreturn(0x100, 0x70000DA55B80, 0x1)             = 0 Err#-2
+37158/0x3ee4a:       155      48      5 write(0x4, "\006\0", 0xC)                = 12 0
+
+
+Then it creates a build
+
+
+
+BOOL
+'\x01\x00\x00\x00\x00\x00\x00\x00\x0b\x00\x00\x00\xa6STRING\x91\xa2S0\x02\x00\x00\x00\x00\x00\x00\x00\x9b\x00\x00\x00\xbdTRANSFER_SESSION_PIF_RESPONSE\x91\x91\x92\xa9workspace\xd9nWORKSPACE@v11_mod=1566239258_hash=b0a9948cd55a526ac9a523f755c20044_subobjects=31B66E87B1A0ED7B9BD3FB3E4FF0EBD6\x03\x00\x00\x00\x00\x00\x00\x00k\x00\x00\x00\xbdTRANSFER_SESSION_PIF_RESPONSE\x91\x91\x92\xa7project\xd9@PROJECT@v11_mod=1566347013_hash=86b383703cee5911294a732c1f582133\x04\x00\x00\x00\x00\x00\x00\x00Z\x00\x00\x00\xbdTRANSFER_SESSION_PIF_RESPONSE\x91\x91\x92\xa6target\xd90TARGET@v11_hash=FAD0D49821F8F8E67D675DF28C8ECB18\x05\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\xbdTRANSFER_SESSION_PIF_RESPONSE\x91\x90\x06\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\xa4BOOL\x91\xc3'
+
+
+
+
+* thread #23, queue = 'com.apple.libdispatch-io.opq', stop reason = breakpoint 7.1
+    frame #0: 0x000000011cee0b00 XCBuild`partial apply forwarder for closure #1 (Swift.Optional<XCBProtocol.Message>) -> () in XCBuild.XCBBuildServiceSession.setSystemInfo(operatingSystemVersion: __C.NSOperatingSystemVersion, productBuildVersion: Swift.String, nativeArchitecture: Swift.String, completion: (Swift.Bool) -> ()) -> ()
+XCBuild`partial apply forwarder for closure #1 (Swift.Optional<XCBProtocol.Message>) -> () in XCBuild.XCBBuildServiceSession.setSystemInfo(operatingSystemVersion: __C.NSOperatingSystemVersion, productBuildVersion: Swift.String, nativeArchitecture: Swift.String, completion: (Swift.Bool) -> ()) -> ():
+
+
+
+br s -r XCBuild.XCBBuildServiceSession.setSystemInfo*
+
+# MsgPackDecoder
+br s -r  XCBUtil.MsgPackDecoder.readNil()
+br s -r  XCBUtil.MsgPackDecoder.*
+
+
+
+(lldb) c
+Process 74704 resuming
+Process 74704 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 16.8 17.8
+    frame #0: 0x000000011d780250 XCBUtil`merged type metadata accessor for XCBUtil.MsgPackDecoder
+XCBUtil`merged type metadata accessor for XCBUtil.MsgPackDecoder:
+->  0x11d780250 <+0>: movq   (%rsi), %rax
+    0x11d780253 <+3>: testq  %rax, %rax
+    0x11d780256 <+6>: je     0x11d78025b               ; <+11>
+    0x11d780258 <+8>: xorl   %edx, %edx
+Target 0: (xcodebuild) stopped.
+(lldb)
+Process 74704 resuming
+Process 74704 stopped
+* thread #6, queue = 'com.apple.libdispatch-io.opq', stop reason = breakpoint 16.24 17.24
+    frame #0: 0x000000011d77a2d0 XCBUtil`type metadata accessor for XCBUtil.MsgPackDecoder
+XCBUtil`type metadata accessor for XCBUtil.MsgPackDecoder:
+->  0x11d77a2d0 <+0>:  pushq  %rbp
+    0x11d77a2d1 <+1>:  movq   %rsp, %rbp
+    0x11d77a2d4 <+4>:  leaq   0x3a57d(%rip), %rsi       ; lazy cache variable for type metadata for XCBUtil.MsgPackDecoder
+    0x11d77a2db <+11>: leaq   0x3a58e(%rip), %rdx       ; type metadata for XCBUtil.MsgPackDecoder
+Target 0: (xcodebuild) stopped.
+(lldb)
+Process 74704 resuming
+Process 74704 stopped
+* thread #6, queue = 'com.apple.libdispatch-io.opq', stop reason = breakpoint 16.8 17.8
+    frame #0: 0x000000011d780250 XCBUtil`merged type metadata accessor for XCBUtil.MsgPackDecoder
+XCBUtil`merged type metadata accessor for XCBUtil.MsgPackDecoder:
+->  0x11d780250 <+0>: movq   (%rsi), %rax
+    0x11d780253 <+3>: testq  %rax, %rax
+    0x11d780256 <+6>: je     0x11d78025b               ; <+11>
+    0x11d780258 <+8>: xorl   %edx, %edx
+Target 0: (xcodebuild) stopped.
+(lldb)
+Process 74704 resuming
+Process 74704 stopped
+* thread #6, queue = 'com.apple.libdispatch-io.opq', stop reason = breakpoint 16.20 17.20
+    frame #0: 0x000000011d77d850 XCBUtil`XCBUtil.MsgPackDecoder.readNil() -> Swift.Bool
+XCBUtil`XCBUtil.MsgPackDecoder.readNil() -> Swift.Bool:
+->  0x11d77d850 <+0>: pushq  %rbp
+    0x11d77d851 <+1>: movq   %rsp, %rbp
+    0x11d77d854 <+4>: pushq  %r15
+    0x11d77d856 <+6>: pushq  %r14
+Target 0: (xcodebuild) stopped.
+(lldb)
+Process 74704 resuming
+Process 74704 stopped
+* thread #6, queue = 'com.apple.libdispatch-io.opq', stop reason = breakpoint 16.2 17.2
+    frame #0: 0x000000011d77e280 XCBUtil`closure #1 () throws -> Swift.String in XCBUtil.MsgPackDecoder.readString() -> Swift.Optional<Swift.String>
+XCBUtil`closure #1 () throws -> Swift.String in XCBUtil.MsgPackDecoder.readString() -> Swift.Optional<Swift.String>:
+->  0x11d77e280 <+0>: pushq  %rbp
+    0x11d77e281 <+1>: movq   %rsp, %rbp
+    0x11d77e284 <+4>: pushq  %r15
+    0x11d77e286 <+6>: pushq  %r14
+Target 0: (xcodebuild) stopped.
+(lldb)
+Process 74704 resuming
+Process 74704 stopped
+* thread #6, queue = 'com.apple.libdispatch-io.opq', stop reason = breakpoint 16.1 17.1
+    frame #0: 0x000000011d77e080 XCBUtil`XCBUtil.MsgPackDecoder._consumeBytes(Swift.Int) throws -> Swift.Array<Swift.UInt8>
+XCBUtil`XCBUtil.MsgPackDecoder._consumeBytes(Swift.Int) throws -> Swift.Array<Swift.UInt8>:
+->  0x11d77e080 <+0>: pushq  %rbp
+    0x11d77e081 <+1>: movq   %rsp, %rbp
+    0x11d77e084 <+4>: pushq  %r15
+    0x11d77e086 <+6>: pushq  %r14
+Target 0: (xcodebuild) stopped.
+(lldb)
+Process 74704 resuming
+Process 74704 stopped
+* thread #6, queue = 'com.apple.libdispatch-io.opq', stop reason = breakpoint 16.4 17.4
+    frame #0: 0x000000011d77e940 XCBUtil`closure #1 () throws -> Swift.Int in XCBUtil.MsgPackDecoder.readBeginArray() -> Swift.Optional<Swift.Int>
+XCBUtil`closure #1 () throws -> Swift.Int in XCBUtil.MsgPackDecoder.readBeginArray() -> Swift.Optional<Swift.Int>:
+->  0x11d77e940 <+0>: pushq  %rbp
+    0x11d77e941 <+1>: movq   %rsp, %rbp
+    0x11d77e944 <+4>: pushq  %r14
+    0x11d77e946 <+6>: pushq  %rbx
+Target 0: (xcodebuild) stopped.
+(lldb)
+Process 74704 resuming
+Process 74704 stopped
+* thread #6, queue = 'com.apple.libdispatch-io.opq', stop reason = breakpoint 16.21 17.21
+    frame #0: 0x000000011d77d9b0 XCBUtil`XCBUtil.MsgPackDecoder.readBool() -> Swift.Optional<Swift.Bool>
+XCBUtil`XCBUtil.MsgPackDecoder.readBool() -> Swift.Optional<Swift.Bool>:
+->  0x11d77d9b0 <+0>: pushq  %rbp
+    0x11d77d9b1 <+1>: movq   %rsp, %rbp
+    0x11d77d9b4 <+4>: pushq  %r15
+    0x11d77d9b6 <+6>: pushq  %r14
+Target 0: (xcodebuild) stopped.
+(lldb)
+Process 74704 resuming
+Process 74704 stopped
+* thread #6, queue = 'com.apple.libdispatch-io.opq', stop reason = breakpoint 15.5
+    frame #0: 0x000000011cfe0b00 XCBuild`partial apply forwarder for closure #1 (Swift.Optional<XCBProtocol.Message>) -> () in XCBuild.XCBBuildServiceSession.setSystemInfo(operatingSystemVersion: __C.NSOperatingSystemVersion, productBuildVersion: Swift.String, nativeArchitecture: Swift.String, completion: (Swift.Bool) -> ()) -> ()
+XCBuild`partial apply forwarder for closure #1 (Swift.Optional<XCBProtocol.Message>) -> () in XCBuild.XCBBuildServiceSession.setSystemInfo(operatingSystemVersion: __C.NSOperatingSystemVersion, productBuildVersion: Swift.String, nativeArchitecture: Swift.String, completion: (Swift.Bool) -> ()) -> ():
+->  0x11cfe0b00 <+0>: pushq  %rbp
+    0x11cfe0b01 <+1>: movq   %rsp, %rbp
+    0x11cfe0b04 <+4>: movq   0x10(%r13), %rsi
+    0x11cfe0b08 <+8>: movq   0x18(%r13), %rdx
+Target 0: (xcodebuild) stopped.
+(lldb)
+Process 74704 resuming
+Process 74704 stopped
+* thread #6, queue = 'com.apple.libdispatch-io.opq', stop reason = breakpoint 16.8 17.8
+    frame #0: 0x000000011d780250 XCBUtil`merged type metadata accessor for XCBUtil.MsgPackDecoder
+XCBUtil`merged type metadata accessor for XCBUtil.MsgPackDecoder:
+->  0x11d780250 <+0>: movq   (%rsi), %rax
+    0x11d780253 <+3>: testq  %rax, %rax
+    0x11d780256 <+6>: je     0x11d78025b               ; <+11>
+    0x11d780258 <+8>: xorl   %edx, %edx
+Target 0: (xcodebuild) stopped.
+(lldb)
+
+
+br s -r XCBuild.XCBBuildServiceSession.setSystemInfo*
+
+br s -r '\[DVTFilePathEventWatcher .*\]$'
+
+br s -r .*SentPIFResponse
+
+br s -r XCBProtocol*
+
+br s -r XCBProtocol.BoolResponse*
+
+
+    frame #0: 0x000000011d4e9040 XCBProtocol`protocol witness for XCBUtil.Serializable.init(from: XCBUtil.Deserializer) throws -> A in conformance XCBProtocol.BuildCreated : XCBUtil.Serializable in XCBProtocol
+XCBProtocol`protocol witness for XCBUtil.Serializable.init(from: XCBUtil.Deserializer) throws -> A in conformance XCBProtocol.BuildCreated : XCBUtil.Serializable in XCBProtocol:
+
+
+
+### msgpack unpacking
+
+data = b"\x00\x00\x00\x00\x00\x00\x18\x00\x00\x00\xadBUILD_CREATED\x91\xd3\x00\x00\x00\x00\x00\x00\x00\x00\x07"
+
+# At position 9 in the array, we have \x18 ( the number 24 )
+
+# This means that msgpack should
+# - increase the offset by 1
+# - unpack until 24
+
+msgpack.unpackb(data[9+1:9+24])
+b'BUILD_CREATED'
+
+
+# It appears that there is an incrementing ID for each build
+# Xcode opens the build service and sends several builds to it
+
+# The following messages correspond to that number ( And more )
+
+$ grep -r -B3 \\[7 /tmp/xcbuild.diags
+/tmp/xcbuild.diags-2019-08-23 18:17:35.417382 INFO: BUILD_TASK_STARTED
+/tmp/xcbuild.diags-2019-08-23 18:17:35.417385 INFO: Pack
+/tmp/xcbuild.diags-2019-08-23 18:17:35.417388 INFO: AT 6277
+/tmp/xcbuild.diags:2019-08-23 18:17:35.417394 INFO: [7, 0, None, ['com.apple.build-tools.write-file', b'5d9f34bf86d0150e5c5343bd83cdefa7', 'WriteAuxiliaryFile /Users/jerrymarino/Library/Developer/Xcode/DerivedData/iOSApp-dxsndsmbfrlanxbfeqoqjilvoreh/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-own-target-headers.hmap', 'Write /Users/jerrymarino/Library/Developer/Xcode/DerivedData/iOSApp-dxsndsmbfrlanxbfeqoqjilvoreh/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-own-target-headers.hmap', '    cd /Users/jerrymarino/Projects/IDEXCBProgress/ProtocolHook/iOSApp\n    write-file /Users/jerrymarino/Library/Developer/Xcode/DerivedData/iOSApp-dxsndsmbfrlanxbfeqoqjilvoreh/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-own-target-headers.hmap\n', None, []]]
+--
+/tmp/xcbuild.diags-2019-08-23 18:17:35.418495 INFO: BUILD_TASK_ENDED
+/tmp/xcbuild.diags-2019-08-23 18:17:35.418497 INFO: Pack
+/tmp/xcbuild.diags-2019-08-23 18:17:35.418500 INFO: AT 8756
+/tmp/xcbuild.diags:2019-08-23 18:17:35.418504 INFO: [7, 0, False, None, []]
+--
+/tmp/xcbuild.diags-2019-08-23 18:17:35.419786 INFO: BUILD_TASK_ENDED
+/tmp/xcbuild.diags-2019-08-23 18:17:35.419789 INFO: Pack
+/tmp/xcbuild.diags-2019-08-23 18:17:35.419792 INFO: AT 16829
+/tmp/xcbuild.diags:2019-08-23 18:17:35.419795 INFO: [12, 0, False, [70167, 45624, 20484096, 588301396122413, 137462], []]
+--
+/tmp/xcbuild.diags-2019-08-23 18:17:35.430509 INFO: BUILD_CREATED
+/tmp/xcbuild.diags-2019-08-23 18:17:35.430512 INFO: Pack
+/tmp/xcbuild.diags-2019-08-23 18:17:35.430515 INFO: AT 24639
+/tmp/xcbuild.diags:2019-08-23 18:17:35.430518 INFO: [7]
+--
+/tmp/xcbuild.diags-2019-08-23 18:17:35.430746 INFO: BUILD_OPERATION_STARTED
+/tmp/xcbuild.diags-2019-08-23 18:17:35.430749 INFO: Pack
+/tmp/xcbuild.diags-2019-08-23 18:17:35.430752 INFO: AT 24704
+/tmp/xcbuild.diags:2019-08-23 18:17:35.430755 INFO: [7]
+--
+/tmp/xcbuild.diags-2019-08-23 18:17:35.430984 INFO: BUILD_OPERATION_ENDED
+/tmp/xcbuild.diags-2019-08-23 18:17:35.430986 INFO: Pack
+/tmp/xcbuild.diags-2019-08-23 18:17:35.430989 INFO: AT 24789
+/tmp/xcbuild.diags:2019-08-23 18:17:35.430992 INFO: [7, 0, None]
+--
+/tmp/xcbuild.diags-2019-08-23 18:17:35.433543 INFO: BUILD_TASK_STARTED
+/tmp/xcbuild.diags-2019-08-23 18:17:35.433546 INFO: Pack
+/tmp/xcbuild.diags-2019-08-23 18:17:35.433549 INFO: AT 30531
+/tmp/xcbuild.diags:2019-08-23 18:17:35.433552 INFO: [7, 0, None, ['com.apple.build-tools.write-file', b'75232f509cd0dfc6e02738b38e2c5e24', 'WriteAuxiliaryFile /Users/jerrymarino/Library/Developer/Xcode/DerivedData/iOSApp-dxsndsmbfrlanxbfeqoqjilvoreh/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-project-headers.hmap', 'Write /Users/jerrymarino/Library/Developer/Xcode/DerivedData/iOSApp-dxsndsmbfrlanxbfeqoqjilvoreh/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-project-headers.hmap', '    cd /Users/jerrymarino/Projects/IDEXCBProgress/ProtocolHook/iOSApp\n    write-file /Users/jerrymarino/Library/Developer/Xcode/DerivedData/iOSApp-dxsndsmbfrlanxbfeqoqjilvoreh/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-project-headers.hmap\n', None, []]]
+--
+/tmp/xcbuild.diags-2019-08-23 18:17:35.434946 INFO: BUILD_TASK_ENDED
+/tmp/xcbuild.diags-2019-08-23 18:17:35.434949 INFO: Pack
+/tmp/xcbuild.diags-2019-08-23 18:17:35.434951 INFO: AT 32938
+/tmp/xcbuild.diags:2019-08-23 18:17:35.434955 INFO: [7, 0, False, None, []]
+$
+
+
+# Better to:
+- do a couple builds
+- reset /tmp/xcbuild.out
+
+Diff the outputs
+
+
+
+
