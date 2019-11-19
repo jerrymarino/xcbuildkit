@@ -251,18 +251,6 @@ enum BasicResponseHandler {
         XCBRawValue.uint(gMsgId - 3),
         ]
     }
-    
-    // This currently fails ( couldn't decode a bool )
-    static func planningOperationWillStartResponse3n(_ input: XCBInputStream) -> XCBResponse {
-        return [ XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0),
-        XCBRawValue.uint(70),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("BUILD_PROGRESS_UPDATED"),
-        XCBRawValue.array([XCBRawValue.string(""), XCBRawValue.string("!to create a life you love ;)     "), XCBRawValue.double(-1.0), XCBRawValue.bool(true)]),
-        XCBRawValue.bool(false)]
-    }
 
     // This currently fails ( could not decode a string )
     static func planningOperationWillStartResponse3(_ input: XCBInputStream) -> XCBResponse {
