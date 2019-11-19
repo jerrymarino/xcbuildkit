@@ -1,0 +1,8 @@
+language: generic
+os:
+  - osx
+cache:
+  directories:
+    - $HOME/.bazelenv
+osx_image: xcode11
+script: make test

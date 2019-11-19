@@ -34,22 +34,21 @@ DUMMY_XCODE_ARGS=-target CLI
 test: xcbrunner
 	$(BAZEL) build BSBuildService
 	rm -rf /tmp/xcbuild.*
-	/usr/bin/env - TERM="$(TERM)"; \
-		export SHELL="$(SHELL)"; \
-		export PATH="$(PATH)"; \
-		export HOME="$(HOME)"; \
-		export XCODE="$(XCODE)"; \
-		export XCBBUILDSERVICE_PATH=$(XCBBUILDSERVICE_PATH); \
-		export XCODE=$(XCODE); \
-		cd iOSApp;  \
-		$(DTRUSS) sleep 3 && $(XCB) build -jobs 1 $(DUMMY_XCODE_ARGS) \
-		-sdk iphonesimulator
+	/usr/bin/env - TERM="$(TERM)" \
+		SHELL="$(SHELL)" \
+		PATH="$(PATH)" \
+		HOME="$(HOME)" \
+		XCODE="$(XCODE)" \
+		XCBBUILDSERVICE_PATH=$(XCBBUILDSERVICE_PATH) \
+		XCODE=$(XCODE) \
+		PWD=$(PWD)/iOSApp \
+		$(XCB) -project $(PWD)/iOSApp/iOSApp.xcodeproj build -jobs 1 $(DUMMY_XCODE_ARGS)
 
 # Known issues with Xcode
 # - indexing requests aren't done yet
 # - it will only work after the first build
 # - if you have a nasty environment, this will not work!
-open_xcode:
+open_xcode: build
 	defaults write com.apple.dt.XCode IDEIndexDisable 1
 	/usr/bin/env - TERM="$(TERM)"; \
 	    export SHELL="$(SHELL)"; \
@@ -80,24 +79,6 @@ read_streams_to_debug:
 
 dump:
 	echo "print(repr(open('$(FILE)', 'rb').read()))" | python
-
-test_debug: 
-test_debug: TARGET=CLI
-test_debug: xcbr
-	rm -rf /tmp/xcbuild.*
-	/usr/bin/env - TERM="$(TERM)"; \
-		export SHELL="$(SHELL)"; \
-		export PATH="$(PATH)"; \
-		export HOME="$(HOME)"; \
-		export XCODE="$(XCODE)"; \
-		export XCBUILD_TRACING_URL=/tmp/xcbuild.trace; \
-		export XCODE=$(XCODE); \
-		export XCBBUILDSERVICE_PATH=$(XCBBUILDSERVICE_PATH); \
-		cd iOSApp;  \
-		$(DTRUSS) sleep 4 && $(XCB) build -jobs 1 $(DUMMY_XCODE_ARGS)  \
-		 2>&1 | tee  /tmp/xcodebuild.log
-
-
 
 # Tests the differences between what we expect and not.
 # The implementation here is poor and it'd be nice to have better tooling for
