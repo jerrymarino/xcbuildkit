@@ -19,13 +19,12 @@ enum BasicResponseHandler {
         let url = URL(fileURLWithPath: "/tmp/xcbuild.log")
         let entry = str + "\n"
         do {
-           let fileUpdater = try FileHandle(forWritingTo: url) 
-           fileUpdater.seekToEndOfFile()
-           fileUpdater.write(entry.data(using: .utf8)!)
-           fileUpdater.closeFile()
+            let fileUpdater = try FileHandle(forWritingTo: url) 
+            fileUpdater.seekToEndOfFile()
+            fileUpdater.write(entry.data(using: .utf8)!)
+            fileUpdater.closeFile()
         } catch {
             try! entry.write(to: url, atomically: false, encoding: .utf8)
-            // fatalError(error.localizedDescription)
         }
     }
 
@@ -102,7 +101,6 @@ enum BasicResponseHandler {
         XCBRawValue.uint(0),
         XCBRawValue.string("PING"),
         XCBRawValue.nil,
-        //XCBRawValue.uint(6),
         XCBRawValue.uint(gMsgId + 1),
 
         ]
