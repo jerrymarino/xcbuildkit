@@ -24,9 +24,16 @@ load(
 )
 
 swift_library(
-    name = "BSBuildServiceLib",
-    srcs = glob(["Sources/BSBuildService/*.swift"]),
+    name = "XCBProtocol",
+    srcs = glob(["Sources/XCBProtocol/*.swift"]),
     deps = ["//third_party/xcbuildkit-MessagePack:MessagePack"],
+)
+
+
+swift_library(
+    name = "BKBuildService",
+    srcs = glob(["Sources/BKBuildService/*.swift"]),
+    deps = ["//third_party/xcbuildkit-MessagePack:MessagePack", ":XCBProtocol"],
 )
 
 apple_bundle_version(
@@ -34,11 +41,18 @@ apple_bundle_version(
     build_version = "1.0",
 )
 
+
+swift_library(
+    name = "BSBuildServiceLib",
+    srcs = glob(["Examples/BSBuildService/*.swift"]),
+    deps = ["//third_party/xcbuildkit-MessagePack:MessagePack", ":BKBuildService"],
+)
+
 # This is an end to end integration test utility
 macos_application(
     name = "BSBuildService",
-    bundle_id = "com.xcbuildkit.bsbuildservice",
-    infoplists = ["Sources/BSBuildService/Info.plist"],
+    bundle_id = "com.xcbuildkit.example",
+    infoplists = ["Examples/BSBuildService/Info.plist"],
     minimum_os_version = "10.14",
     version = ":XCBuildKitVersion",
     deps = [":BSBuildServiceLib"],

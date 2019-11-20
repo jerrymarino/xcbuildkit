@@ -1,13 +1,28 @@
 import Foundation
 import MessagePack
+import XCBProtocol
 
-public typealias XCBResponseHandler = (XCBInputStream, Any?) -> Void
+/// (input, data, context)
+///
+/// @param input is only useful for encoder
+/// e.g. XCBDecoder(input: input).decodeMessage()
+///
+/// @param data used to forward messages
+///
+/// @param context is used to pass state around
 
-public enum XCBService {
+public typealias XCBResponseHandler = (XCBInputStream, Data, Any?) -> Void
+
+public class BKBuildService {
+    let shouldDump: Bool
+
+    public init() {
+        shouldDump = CommandLine.arguments.contains("--dump")
+    }
+
     /// Starts a service on standard input
-    public static func readFromStandardInput(responseHandler: @escaping
-        XCBResponseHandler, debug: Bool,
-                                             context: Any?) {
+    public func start(responseHandler: @escaping XCBResponseHandler, context:
+        Any?) {
         let file = FileHandle.standardInput
         file.readabilityHandler = {
             h in
@@ -16,13 +31,22 @@ public enum XCBService {
                 exit(0)
             }
 
-            /// Once the
-            let result = Unpacker.unpackAll(data).makeIterator()
-            if debug {
-                // Effectively, this is used to parse a stream
+            /// Unpack everything
+            let result = Unpacker.unpackAll(data)
+            guard case let .uint(id) = result.first else {
+                fatalError("missing id")
+            }
+            let msgId = id + 1
+            log("respond.msgId" + String(describing: msgId))
+
+            let resultItr = result.makeIterator()
+            if self.shouldDump {
+                // Dumps out the protocol
+                // useful for shouldDumpging, code gen'ing protocol messages, and
+                // upgrading Xcode versions
                 result.forEach { print("." + String(describing: $0) + ",") }
             } else {
-                responseHandler(result, context)
+                responseHandler(resultItr, data, context)
             }
         }
         repeat {
@@ -30,7 +54,7 @@ public enum XCBService {
         } while true
     }
 
-    public static func write(_ v: XCBResponse) {
+    public func write(_ v: XCBResponse) {
         let datas = v.map {
             mm -> Data in
             XCBPacker.pack(mm)
@@ -43,7 +67,7 @@ public enum XCBService {
 typealias Chunk = (XCBRawValue, Data)
 
 // This is mostly an implementation detail for now
-enum Unpacker {
+private enum Unpacker {
     public static func unpackOne(_ data: Data) -> Chunk? {
         return try? unpack(data)
     }
@@ -78,7 +102,6 @@ enum Unpacker {
             if let next = startNext(curr) {
                 curr = next
             } else {
-                // print("INFO: Break")
                 break
             }
         } while true
