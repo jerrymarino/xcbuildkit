@@ -15,7 +15,7 @@ public typealias XCBResponseHandler = (XCBInputStream, Data, Any?) -> Void
 
 public class BKBuildService {
     let shouldDump: Bool
-    internal static let writeQueue = DispatchQueue(label: "queuename")
+    internal static let writeQueue = DispatchQueue(label: "com.xcbuildkite.bkbuildservice")
 
     public init() {
         shouldDump = CommandLine.arguments.contains("--dump")

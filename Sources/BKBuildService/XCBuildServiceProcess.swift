@@ -1,6 +1,5 @@
 import Foundation
 
-
 /// Interact with XCBBuildService
 public class XCBuildServiceProcess {
     public static let bsPath = "/Contents/SharedFrameworks/XCBuild.framework/PlugIns/XCBBuildService.bundle/Contents/MacOS/XCBBuildService"

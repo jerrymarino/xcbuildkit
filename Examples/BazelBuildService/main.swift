@@ -2,14 +2,13 @@ import BKBuildService
 import Foundation
 import MessagePack
 import XCBProtocol
+import BEP
+import SwiftProtobuf
 
 struct BasicResponseContext {
     let xcbbuildService: XCBuildServiceProcess
     let bkservice: BKBuildService
 }
-
-import BEP
-import SwiftProtobuf
 
 public typealias BEPReadHandler = (BuildEventStream_BuildEvent) -> Void
 
