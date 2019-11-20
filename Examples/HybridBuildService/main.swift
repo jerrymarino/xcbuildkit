@@ -4,7 +4,7 @@ import MessagePack
 import XCBProtocol
 
 struct BasicResponseContext {
-    let xcbbuildService: XCBuildServiceProcess
+    let xcbbuildService: XCBBuildServiceProcess
     let bkservice: BKBuildService
 }
 
@@ -17,13 +17,9 @@ enum BasicResponseHandler {
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
         let encoder = XCBEncoder(input: input)
-        //
         if let msg = decoder.decodeMessage() {
-            if msg is CreateSessionRequest {
-                // Xcode's internal build system needs to be initialized
-                // TODO: this has a dependency of CreateSessionRequest.
-                xcbbuildService.start()
-                xcbbuildService.write(data)
+            if let createSessionRequest = msg as? CreateSessionRequest {
+                xcbbuildService.startIfNecessary(xcode: createSessionRequest.xcode)
             } else if msg is BuildStartRequest {
                 bkservice.write(try! BuildStartResponse().encode(encoder))
 
@@ -42,7 +38,7 @@ enum BasicResponseHandler {
     }
 }
 
-let xcbbuildService = XCBuildServiceProcess()
+let xcbbuildService = XCBBuildServiceProcess()
 let bkservice = BKBuildService()
 
 let context = BasicResponseContext(

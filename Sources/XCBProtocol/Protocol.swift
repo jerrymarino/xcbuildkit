@@ -18,77 +18,72 @@ let XCBProtocolVersion = "11"
 private var gBuildNumber: Int64 = -1
 
 public struct CreateSessionRequest: XCBProtocolMessage {
-    let workspace: String
-    let xcode: String
-    let xcbuildDataPath: String
+    public let workspace: String
+    public let xcode: String
+    public let xcbuildDataPath: String
 
-    init(input _: XCBInputStream) {
-        workspace = ""
-        xcode = ""
-        xcbuildDataPath = ""
+    init(input : XCBInputStream) throws {
+        var minput = input
+
+        /// Perhaps this shouldn't fatal error
+        guard case let .array(msgInfo) = minput.next(), msgInfo.count > 2 else {
+           throw XCBProtocolError.unexpectedInput(for: input)
+        }
+
+        if case let .string(workspaceInfo) = msgInfo[0] {
+           self.workspace = workspaceInfo
+        } else {
+            self.workspace = ""
+        }
+
+        if case let .string(xcode) = msgInfo[1] {
+           self.xcode = xcode
+        } else {
+           self.xcode = ""
+        }
+
+        if case let .string(xcbuildDataPath) = msgInfo[2] {
+           self.xcbuildDataPath = xcbuildDataPath
+        } else {
+           self.xcbuildDataPath = ""
+        }
     }
 }
 
 /// Input "Request" Messages
 public struct TransferSessionPIFRequest: XCBProtocolMessage {
-    public init(input _: XCBInputStream) {}
+    public init(input _: XCBInputStream) throws {}
 }
 
 public struct TransferSessionPIFObjectsLegacyRequest: XCBProtocolMessage {
-    public init(input _: XCBInputStream) {}
+    public init(input _: XCBInputStream) throws {}
 }
 
 public struct SetSessionSystemInfoRequest: XCBProtocolMessage {
-    public init(input _: XCBInputStream) {}
+    public init(input _: XCBInputStream) throws {}
 }
 
 public struct SetSessionUserInfoRequest: XCBProtocolMessage {
-    public init(input _: XCBInputStream) {}
+    public init(input _: XCBInputStream) throws {}
 }
 
 public struct CreateBuildRequest: XCBProtocolMessage {
-    public init(input _: XCBInputStream) {
-        // guard case var .array(msg) = minput.next() else {
-        //   fatalError("unexpected message")
-        // }
-        // This contains all info about the build see above
-        // log("CREATE_BUILD.input[0] " + String(describing: msg[0]))
-        // log("CREATE_BUILD.input[1] " + String(describing: msg[1]))
-
-        // TODO: Increment the build number?
-    }
+    public init(input _: XCBInputStream) throws {}
 }
 
 public struct BuildStartRequest: XCBProtocolMessage {
-    public init(input _: XCBInputStream) {}
+    public init(input _: XCBInputStream) throws {}
 }
 
 public struct IndexingInfoRequested: XCBProtocolMessage {
-    public init(input _: XCBInputStream) {}
+    public init(input _: XCBInputStream) throws {}
 }
 
 /// Output "Response" messages
 /// These are high level representations of how XCBuild responds to requests.
 
-public struct PingResponse: XCBProtocolMessage {
-    public init() {}
-
-    /// Unused! FIXME: Determine how to reuse this.
-    public func encode(_ encoder: XCBEncoder) throws -> XCBResponse {
-        return [
-            XCBRawValue.uint(6),
-            XCBRawValue.uint(0),
-            XCBRawValue.uint(0),
-            XCBRawValue.uint(0),
-            XCBRawValue.string("PING"),
-            XCBRawValue.nil,
-            XCBRawValue.uint(encoder.msgId + 1),
-        ]
-    }
-}
-
 public struct CreateSessionResponse: XCBProtocolMessage {
-    public init() {}
+    public init() throws {}
 
     /// Responses take an input from the segement of an input stream
     /// containing the input message

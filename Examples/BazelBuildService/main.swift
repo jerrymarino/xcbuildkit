@@ -6,7 +6,7 @@ import BEP
 import SwiftProtobuf
 
 struct BasicResponseContext {
-    let xcbbuildService: XCBuildServiceProcess
+    let xcbbuildService: XCBBuildServiceProcess
     let bkservice: BKBuildService
 }
 
@@ -71,17 +71,22 @@ var gWatcher: BEPWatcher?
 
 /// This example listens to a BEP stream to display some output.
 ///
-/// Perhaps, we might beable to just intelligently parse bazel's stdout
+///
+/// All operations are delegated to XCBBuildService and we inject
+/// progress from BEP.
+///
+/// Perhaps, we might may instead intelligently parse bazel's stdout
 /// skip the BEP altogether, which could servce as a simple
-/// example, and drop in replacement for Bazel users.
+/// drop in replacement for all Bazel users.
+///
+/// Some people may implement this in a way to remove runscripts.
 ///
 /// e.g. [x / n] tasks
 
 enum BasicResponseHandler {
-    static func startWatcher(path _: String, startBuildInput: XCBInputStream, bkservice: BKBuildService) throws {
+    static func startWatcher(bepPath: String, startBuildInput: XCBInputStream, bkservice: BKBuildService) throws {
         log("startWatcher " + String(describing: startBuildInput))
-        let bepPath = "/tmp/bep.bep"
-        // TODO: we probably can use a better solution to not dump the first build
+        // FIXME: find a better solution to not delete the BEP first!
         try? FileManager.default.removeItem(atPath: bepPath)
         let watcher = try BEPWatcher(path: bepPath)
         var lastProgress: Int32 = 0
@@ -114,33 +119,26 @@ enum BasicResponseHandler {
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
         if let msg = decoder.decodeMessage() {
-            // All operations are delegated to XCBBuildService and we inject
-            // progress from BEP
-            if msg is CreateSessionRequest {
-                // Xcode's internal build system needs to be initialized
-                // TODO: this has a dependency of CreateSessionRequest.
-                xcbbuildService.start()
+            if let createSessionRequest = msg as? CreateSessionRequest {
+                xcbbuildService.startIfNecessary(xcode: createSessionRequest.xcode)
             } else if msg is BuildStartRequest {
                 do {
                     let bepPath = "/tmp/bep.bep"
-                    try startWatcher(path: bepPath, startBuildInput: input, bkservice: bkservice)
+                    try startWatcher(bepPath: bepPath, startBuildInput: input, bkservice: bkservice)
                 } catch {
                     fatalError("Failed to init watcher" + error.localizedDescription)
                 }
 
-                /// Just dump
                 let encoder = XCBEncoder(input: input)
                 let response = BuildProgressUpdatedResponse()
                 bkservice.write(try! response.encode(encoder))
-                xcbbuildService.write(data)
-                return
             }
         }
         xcbbuildService.write(data)
     }
 }
 
-let xcbbuildService = XCBuildServiceProcess()
+let xcbbuildService = XCBBuildServiceProcess()
 let bkservice = BKBuildService()
 
 let context = BasicResponseContext(
