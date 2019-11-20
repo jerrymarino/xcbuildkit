@@ -1,7 +1,6 @@
 import Foundation
 import MessagePack
 
-
 /// Current build number. None of this is expected to be thread safe and Xcode
 /// is forced to use J=1 ( IDEBuildOperationMaxNumberOfConcurrentCompileTasks )
 /// for debugging and development purposes
@@ -19,7 +18,7 @@ enum BasicResponseHandler {
         let url = URL(fileURLWithPath: "/tmp/xcbuild.log")
         let entry = str + "\n"
         do {
-            let fileUpdater = try FileHandle(forWritingTo: url) 
+            let fileUpdater = try FileHandle(forWritingTo: url)
             fileUpdater.seekToEndOfFile()
             fileUpdater.write(entry.data(using: .utf8)!)
             fileUpdater.closeFile()
@@ -28,81 +27,82 @@ enum BasicResponseHandler {
         }
     }
 
-
     /// Responses take an input from the segement of an input stream
     /// containing the input message
-    static func createSessionResponse(_ input: XCBInputStream) -> XCBResponse {
+    static func createSessionResponse(_: XCBInputStream) -> XCBResponse {
         return [
-        XCBRawValue.uint(1),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(11),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("STRING"),
-        XCBRawValue.array([XCBRawValue.string("S0")]),
-        XCBRawValue.uint(2),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(32),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0)]
+            XCBRawValue.uint(1),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(11),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("STRING"),
+            XCBRawValue.array([XCBRawValue.string("S0")]),
+            XCBRawValue.uint(2),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(32),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+        ]
     }
 
-    static func transferSessionPIFResponse(_ input: XCBInputStream) -> XCBResponse {
+    static func transferSessionPIFResponse(_: XCBInputStream) -> XCBResponse {
         return [
-        XCBRawValue.string("TRANSFER_SESSION_PIF_RESPONSE"),
-        XCBRawValue.array([XCBRawValue.array([])]),
-        XCBRawValue.uint(3)]
+            XCBRawValue.string("TRANSFER_SESSION_PIF_RESPONSE"),
+            XCBRawValue.array([XCBRawValue.array([])]),
+            XCBRawValue.uint(3),
+        ]
     }
 
-    static func setSessionSystemInfoResponse(_ input: XCBInputStream) -> XCBResponse {
+    static func setSessionSystemInfoResponse(_: XCBInputStream) -> XCBResponse {
         return [
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(6),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("PING"),
-        XCBRawValue.nil,
-        XCBRawValue.uint(4),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0)]
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(6),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("PING"),
+            XCBRawValue.nil,
+            XCBRawValue.uint(4),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+        ]
     }
 
-    static func setSessionUserInfoResponse(_ input: XCBInputStream) -> XCBResponse {
+    static func setSessionUserInfoResponse(_: XCBInputStream) -> XCBResponse {
         return [
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(6),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("PING"),
-        XCBRawValue.nil,
-        XCBRawValue.uint(gMsgId + 1),
-
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(6),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("PING"),
+            XCBRawValue.nil,
+            XCBRawValue.uint(gMsgId + 1),
         ]
     }
 
@@ -122,7 +122,7 @@ enum BasicResponseHandler {
         log("CREATE_BUILD.input " + String(describing: input))
         guard case var .array(msg) = minput.next() else {
             fatalError("unexpected message")
-        } 
+        }
         // This contains all info about the build see above
         log("CREATE_BUILD.input[0] " + String(describing: msg[0]))
         log("CREATE_BUILD.input[1] " + String(describing: msg[1]))
@@ -131,20 +131,20 @@ enum BasicResponseHandler {
         gBuildNumber += 1
 
         return [
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(24),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(24),
 
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("BUILD_CREATED"),
-        [Int64(gBuildNumber)],
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("BUILD_CREATED"),
+            [Int64(gBuildNumber)],
         ]
     }
 
@@ -169,155 +169,154 @@ enum BasicResponseHandler {
     // array([bool(true)]) 453 bytes
     // uint(59) 452 bytes
 
-    static func buildStartResponse(_ input: XCBInputStream) -> XCBResponse {
+    static func buildStartResponse(_: XCBInputStream) -> XCBResponse {
         return [
+            // Begin prefix
+            XCBRawValue.uint(gMsgId),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
 
-        // Begin prefix
-        XCBRawValue.uint(gMsgId),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
 
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.int(7),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("BOOL"),
+            XCBRawValue.array([XCBRawValue.bool(true)]),
+            XCBRawValue.uint(gMsgId),
+            // END
 
-        XCBRawValue.uint(0),
-        XCBRawValue.int(7),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("BOOL"),
-        XCBRawValue.array([XCBRawValue.bool(true)]),
-        XCBRawValue.uint(gMsgId),
-        // END
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
 
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
 
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(7),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("BOOL"),
-        XCBRawValue.array([XCBRawValue.bool(true)]),
-        XCBRawValue.uint(gMsgId - 3),
-        // END
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(7),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("BOOL"),
+            XCBRawValue.array([XCBRawValue.bool(true)]),
+            XCBRawValue.uint(gMsgId - 3),
+            // END
         ]
     }
 
-    static func planningOperationWillStartResponse(_ input: XCBInputStream) -> XCBResponse {
+    static func planningOperationWillStartResponse(_: XCBInputStream) -> XCBResponse {
         return [
-        XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0),
-        XCBRawValue.uint(72),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("PLANNING_OPERATION_WILL_START"),
-        XCBRawValue.array([XCBRawValue.string("S0"), XCBRawValue.string("FC5F5C50-8B9C-43D6-8F5A-031E967F5CC0")]),
-        XCBRawValue.uint(gMsgId - 3),
+            XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0),
+            XCBRawValue.uint(72),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("PLANNING_OPERATION_WILL_START"),
+            XCBRawValue.array([XCBRawValue.string("S0"), XCBRawValue.string("FC5F5C50-8B9C-43D6-8F5A-031E967F5CC0")]),
+            XCBRawValue.uint(gMsgId - 3),
         ]
     }
 
-    static func buildProgressUpdatedResponse(_ input: XCBInputStream) -> XCBResponse {
-        return [ XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0),
-        XCBRawValue.uint(61),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("BUILD_PROGRESS_UPDATED"),
-        XCBRawValue.array([.nil, XCBRawValue.string("Getting that inspiration'"), XCBRawValue.double(-1.0), XCBRawValue.bool(true)]),
-        XCBRawValue.bool(false)]
+    static func buildProgressUpdatedResponse(_: XCBInputStream) -> XCBResponse {
+        return [XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0),
+                XCBRawValue.uint(61),
+                XCBRawValue.uint(0),
+                XCBRawValue.uint(0),
+                XCBRawValue.uint(0),
+                XCBRawValue.string("BUILD_PROGRESS_UPDATED"),
+                XCBRawValue.array([.nil, XCBRawValue.string("Getting that inspiration'"), XCBRawValue.double(-1.0), XCBRawValue.bool(true)]),
+                XCBRawValue.bool(false)]
     }
 
-    static func planningOperationWillEndResponse(_ input: XCBInputStream) -> XCBResponse {
+    static func planningOperationWillEndResponse(_: XCBInputStream) -> XCBResponse {
         return [
-        XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0),
-        XCBRawValue.uint(70),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("PLANNING_OPERATION_FINISHED"),
-        XCBRawValue.array([XCBRawValue.string("S0"), XCBRawValue.string("FC5F5C50-8B9C-43D6-8F5A-031E967F5CC0")]),
-        XCBRawValue.uint(gMsgId - 3),
+            XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0),
+            XCBRawValue.uint(70),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("PLANNING_OPERATION_FINISHED"),
+            XCBRawValue.array([XCBRawValue.string("S0"), XCBRawValue.string("FC5F5C50-8B9C-43D6-8F5A-031E967F5CC0")]),
+            XCBRawValue.uint(gMsgId - 3),
         ]
     }
 
     // This currently fails ( could not decode a string )
-    static func planningOperationWillStartResponse3(_ input: XCBInputStream) -> XCBResponse {
+    static func planningOperationWillStartResponse3(_: XCBInputStream) -> XCBResponse {
         return [
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(29),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("BUILD_PREPARATION_COMPLETED"),
-        XCBRawValue.nil,
-        XCBRawValue.uint(5),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(34)]
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(29),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("BUILD_PREPARATION_COMPLETED"),
+            XCBRawValue.nil,
+            XCBRawValue.uint(5),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(34),
+        ]
     }
-    
-    static func buildOperationEndedResponse(_ input: XCBInputStream) -> XCBResponse {
-        return [
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
 
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(42),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.uint(0),
-        XCBRawValue.string("BUILD_OPERATION_ENDED"),
-        [Int64(gBuildNumber), Int64(0), XCBRawValue.nil],
-        XCBRawValue.uint(gMsgId + 1),
-    ]
+    static func buildOperationEndedResponse(_: XCBInputStream) -> XCBResponse {
+        return [
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(42),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("BUILD_OPERATION_ENDED"),
+            [Int64(gBuildNumber), Int64(0), XCBRawValue.nil],
+            XCBRawValue.uint(gMsgId + 1),
+        ]
     }
 
     static func respond(input: XCBInputStream, context: Any?) {
-       var v = input
-       guard case let .uint(id)  = v.next() else {
-           fatalError("missing id")
-       }
-       gMsgId = id + 1
-       log("respond.gMsgID " + String(describing: gMsgId))
-       while var value = v.next() {
-           /// Write handler
-           let write: ((XCBResponse) -> Void) = {
+        var v = input
+        guard case let .uint(id) = v.next() else {
+            fatalError("missing id")
+        }
+        gMsgId = id + 1
+        log("respond.gMsgID " + String(describing: gMsgId))
+        while var value = v.next() {
+            /// Write handler
+            let write: ((XCBResponse) -> Void) = {
                 v in
                 if let b = context as? Bool, b == true {
                     print(v)
                 } else {
                     XCBService.write(v)
                 }
-           }
+            }
 
             switch value {
-            case XCBRawValue.string(let str):
-                //print("Info: XCBRawValue.string(", str, ")")
+            case let XCBRawValue.string(str):
+                // print("Info: XCBRawValue.string(", str, ")")
                 if str == "CREATE_SESSION" {
                     write(BasicResponseHandler.createSessionResponse(v))
                 } else if str == "TRANSFER_SESSION_PIF_REQUEST" {
@@ -338,8 +337,8 @@ enum BasicResponseHandler {
                 }
             default:
                 continue
-           }
-       }
+            }
+        }
     }
 }
 
