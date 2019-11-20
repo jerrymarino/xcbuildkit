@@ -58,3 +58,42 @@ macos_application(
     deps = [":BSBuildServiceLib"],
 )
 
+swift_library(
+    name = "HybridBuildServiceLib",
+    srcs = glob(["Examples/HybridBuildService/*.swift"]),
+    deps = ["//third_party/xcbuildkit-MessagePack:MessagePack", ":BKBuildService"],
+)
+
+# This is an end to end integration test utility
+macos_application(
+    name = "HybridBuildService",
+    bundle_id = "com.xcbuildkit.example",
+    infoplists = ["Examples/HybridBuildService/Info.plist"],
+    minimum_os_version = "10.14",
+    version = ":XCBuildKitVersion",
+    deps = [":BSBuildServiceLib"],
+)
+
+# Bazel BEP Protobuf libary
+swift_library(
+    name = "BEP",
+    srcs = glob(["Examples/BEP/*.swift"]),
+    deps = ["@xcbuildkit-SwiftProtobuf//:SwiftProtobuf"],
+)
+
+swift_library(
+    name = "BazelBuildServiceLib",
+    srcs = glob(["Examples/BazelBuildService/*.swift"]),
+    deps = ["//third_party/xcbuildkit-MessagePack:MessagePack", ":BKBuildService", ":BEP"],
+)
+
+# This is an end to end integration test utility
+macos_application(
+    name = "BazelBuildService",
+    bundle_id = "com.xcbuildkit.example",
+    infoplists = ["Examples/BazelBuildService/Info.plist"],
+    minimum_os_version = "10.14",
+    version = ":XCBuildKitVersion",
+    deps = [":BazelBuildServiceLib"],
+)
+

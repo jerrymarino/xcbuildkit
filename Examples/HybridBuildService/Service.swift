@@ -2,23 +2,13 @@ import Foundation
 import MessagePack
 import XCBProtocol
 
-/// (input, data, context)
-///
-/// @param input is only useful for encoder
-/// e.g. XCBDecoder(input: input).decodeMessage()
-///
-/// @param data used to forward messages
-///
-/// @param context is used to pass state around
-
 public typealias XCBResponseHandler = (XCBInputStream, Data, Any?) -> Void
 
 public class BKBuildService {
-    let shouldDump: Bool
-    internal static let writeQueue = DispatchQueue(label: "queuename")
+    let debug: Bool
 
     public init() {
-        shouldDump = CommandLine.arguments.contains("--dump")
+        debug = CommandLine.arguments.contains("--dump")
     }
 
     /// Starts a service on standard input
@@ -32,23 +22,13 @@ public class BKBuildService {
                 exit(0)
             }
 
-            /// Unpack everything
-            let result = Unpacker.unpackAll(data)
-            if case let .uint(id) = result.first {
-                let msgId = id + 1
-                log("respond.msgId" + String(describing: msgId))
-            } else {
-                log("missing id")
-            }
-
-            let resultItr = result.makeIterator()
-            if self.shouldDump {
-                // Dumps out the protocol
-                // useful for shouldDumpging, code gen'ing protocol messages, and
-                // upgrading Xcode versions
+            /// Once the
+            let result = Unpacker.unpackAll(data).makeIterator()
+            if self.debug {
+                // Effectively, this is used to parse a stream
                 result.forEach { print("." + String(describing: $0) + ",") }
             } else {
-                responseHandler(resultItr, data, context)
+                responseHandler(result, data, context)
             }
         }
         repeat {
@@ -57,16 +37,12 @@ public class BKBuildService {
     }
 
     public func write(_ v: XCBResponse) {
-        // print("Datas", datasmap { $0.hbytes() }.joined())
-        BKBuildService.writeQueue.sync {
-            let datas = v.map {
-                mm -> Data in
-                log("Write: " + String(describing: mm))
-                return XCBPacker.pack(mm)
-            }
-
-            datas.forEach { FileHandle.standardOutput.write($0) }
+        let datas = v.map {
+            mm -> Data in
+            XCBPacker.pack(mm)
         }
+        // print("Datas", datasmap { $0.hbytes() }.joined())
+        datas.forEach { FileHandle.standardOutput.write($0) }
     }
 }
 
@@ -108,6 +84,7 @@ private enum Unpacker {
             if let next = startNext(curr) {
                 curr = next
             } else {
+                // print("INFO: Break")
                 break
             }
         } while true

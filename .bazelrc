@@ -1,4 +1,5 @@
 build \
  --spawn_strategy=standalone \
  --strategy=SwiftCompile=worker \
- --experimental_strict_action_env=true
+ --experimental_strict_action_env=true \
+ --build_event_binary_file=/tmp/bep.bep

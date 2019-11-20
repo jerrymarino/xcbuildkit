@@ -89,7 +89,17 @@ def dependencies():
     dependencies of  are downloaded and that they are isolated from
     changes to those dependencies.
     """
-    pass
+    namespaced_new_git_repository(
+        name = "SwiftProtobuf",
+        remote = "https://github.com/apple/swift-protobuf.git",
+        build_file_content = namespaced_build_file([
+            namespaced_swift_library(
+                name = "SwiftProtobuf",
+                srcs = ["Sources/SwiftProtobuf/*.swift"],
+            ),
+        ]),
+        commit = "0a8f81884973d7b265dc8cca6b2db2f349aca54d",
+        )
     # Fork this internally
     #namespaced_new_git_repository(
     #    name = "MessagePack",

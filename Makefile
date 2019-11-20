@@ -33,7 +33,7 @@ DUMMY_XCODE_ARGS=-target CLI
 
 test: build
 	# Disable defaults for static only
-	defaults write com.apple.dt.XCode IDEIndexDisable 0
+	defaults write com.apple.dt.XCode IDEIndexDisable 1
 	$(BAZEL) build BSBuildService
 	rm -rf /tmp/xcbuild.*
 	/usr/bin/env - TERM="$(TERM)" \
@@ -97,6 +97,7 @@ debug_output:
 
 # Dumps the parsed stream
 debug_input:
+	defaults write com.apple.dt.XCode IDEIndexDisable 1
 	@cat /tmp/xcbuild.in | \
 	    $(BAZEL) run BSBuildService -- --dump
 

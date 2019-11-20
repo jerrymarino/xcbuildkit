@@ -254,18 +254,38 @@ public struct BuildStartResponse: XCBProtocolMessage {
     }
 }
 
+/// Note: this is assumed to be used during a build
+/// responding to a StartBuild request.
 public struct BuildProgressUpdatedResponse: XCBProtocolMessage {
-    public init() {}
+    let progress: Double
+    let taskName: String
+    let message: String
 
-    public func encode(_: XCBEncoder) throws -> XCBResponse {
-        return [XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0), XCBRawValue.uint(0),
-                XCBRawValue.uint(61),
-                XCBRawValue.uint(0),
-                XCBRawValue.uint(0),
-                XCBRawValue.uint(0),
-                XCBRawValue.string("BUILD_PROGRESS_UPDATED"),
-                XCBRawValue.array([.nil, XCBRawValue.string("Getting that inspiration'"), XCBRawValue.double(-1.0), XCBRawValue.bool(true)]),
-                XCBRawValue.bool(false)]
+    public init(progress: Double = -1.0, taskName: String = "", message: String = "Updated 1 task") {
+        self.progress = progress
+        self.taskName = taskName
+        self.message = message
+    }
+
+    public func encode(_ encoder: XCBEncoder) throws -> XCBResponse {
+        let padding = 14 // sizeof messages, random things
+        let length = "BUILD_PROGRESS_UPDATED".utf8.count + taskName.utf8.count + message.utf8.count
+        return [
+            XCBRawValue.uint(encoder.msgId - 3),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(UInt64(length + padding)),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("BUILD_PROGRESS_UPDATED"),
+            XCBRawValue.array([.string(taskName), .string(self.message), .double(self.progress), .bool(true)]),
+        ]
     }
 }
 
