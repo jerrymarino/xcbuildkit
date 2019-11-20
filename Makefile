@@ -7,8 +7,8 @@ XCODE=$(dir $(shell dirname $(shell xcode-select -p)))
 INC=$(XCODE)/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include
 BAZEL=tools/bazelwrapper
 
-# Compilation of the runner
-# This is mainly a debugging utility. Consider using Bazel
+# Compilation of the bash debugging runner
+# FIXME: Consider using Bazel to build this
 xcbrunner: main.c
 	clang -I $(INC) main.c -o xcbrunner
 
@@ -25,14 +25,15 @@ XCBBUILDSERVICE_PATH=$(PWD)/xcbrunner
 
 .PHONY: build
 build: xcbrunner
-	defaults write com.apple.dt.XCode IDEIndexDisable 0
-	$(BAZEL) build BSBuildService
+	$(BAZEL) build :*
 
 # Available dummy targets
 DUMMY_XCODE_ARGS=-target CLI
 # DUMMY_XCODE_ARGS=-target iOSApp -sdk iphonesimulator
 
-test: xcbrunner
+test: build
+	# Disable defaults for static only
+	defaults write com.apple.dt.XCode IDEIndexDisable 0
 	$(BAZEL) build BSBuildService
 	rm -rf /tmp/xcbuild.*
 	/usr/bin/env - TERM="$(TERM)" \
@@ -98,11 +99,6 @@ debug_output:
 debug_input:
 	@cat /tmp/xcbuild.in | \
 	    $(BAZEL) run BSBuildService -- --dump
-
-# Dumps the MsgPack data structure for an input
-debug_raw_input:
-	@cat /tmp/xcbuild.in | \
-	    $(BAZEL) run BSBuildService -- --raw
 
 # FIXME see stub on using `replace`/`redirect`
 debug_output_python: build

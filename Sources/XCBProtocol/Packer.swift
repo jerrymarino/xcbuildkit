@@ -65,29 +65,14 @@ public typealias XCBRawValue = MessagePackValue
 public typealias XCBInputStream = IndexingIterator<[MessagePackValue]>
 public typealias XCBResponse = [XCBValue]
 
-/// Workaround for an issue in MessagePack, this xbd prefix
-/// https://github.com/msgpack/msgpack/blob/master/spec.md
-class MsgPackStringXbd: XCBValue {
-    let value: String
-
-    public init(_ value: String) {
-        self.value = value
-    }
-
-    public func toXCB() -> Data {
-        let utf8 = value.utf8
-        let count = UInt32(utf8.count)
-        let prefix = Data([0xBD])
-        return prefix + utf8
-    }
-}
-
-// TODO: Complete protocol implementation
+// FIXME: Fix protocol implementation
+// Some of the API uses Swift primitives and some uses MessagePackValue due to
+// the fact that a lot of MessagePack.swift doesn't correctly handle all data
+// types. This is an implementation detail of XCBProtocol and needs fixing.
+// Finally, I started forking since some issues weren't possible to fix ad-hoc
+// This should be patched into MessagePack.swift if it stays around
 extension MessagePackValue: XCBValue {
     public func toXCB() -> Data {
-        // if case let .string(string) = self {
-        //    return encodeString(string)
-        // }
         return MessagePack.pack(self)
     }
 }
@@ -129,7 +114,7 @@ extension Array: XCBValue where Element == XCBValue {
     }
 }
 
-enum XCBPacker {
+public enum XCBPacker {
     public static func pack(_ value: XCBValue) -> Data {
         return value.toXCB()
     }
