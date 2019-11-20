@@ -110,15 +110,10 @@ enum BasicResponseHandler {
     }
 
     static func respond(input: XCBInputStream, data: Data, context: Any?) {
-        var v = input
-        guard case let .uint(id) = v.next() else {
-            fatalError("missing id")
-        }
         let basicCtx = context as! BasicResponseContext
         let xcbbuildService = basicCtx.xcbbuildService
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
-        let encoder = XCBEncoder(input: input)
 
         // FIXME: move over to a switch ( and actual data types )
         // to the original build service which make
