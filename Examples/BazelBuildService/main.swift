@@ -71,7 +71,7 @@ public class BEPWatcher {
 var gWatcher: BEPWatcher?
 
 /// This example listens to a BEP stream to display some output.
-/// 
+///
 /// Perhaps, we might beable to just intelligently parse bazel's stdout
 /// skip the BEP altogether, which could servce as a simple
 /// example, and drop in replacement for Bazel users.
@@ -114,10 +114,9 @@ enum BasicResponseHandler {
         let xcbbuildService = basicCtx.xcbbuildService
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
-
-        // FIXME: move over to a switch ( and actual data types )
-        // to the original build service which make
         if let msg = decoder.decodeMessage() {
+            // All operations are delegated to XCBBuildService and we inject
+            // progress from BEP
             if msg is CreateSessionRequest {
                 // Xcode's internal build system needs to be initialized
                 // TODO: this has a dependency of CreateSessionRequest.
