@@ -1,0 +1,4 @@
+build \
+ --spawn_strategy=standalone \
+ --strategy=SwiftCompile=worker \
+ --experimental_strict_action_env=true

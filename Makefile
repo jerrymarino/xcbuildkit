@@ -25,6 +25,7 @@ XCBBUILDSERVICE_PATH=$(PWD)/xcbrunner
 
 .PHONY: build
 build: xcbrunner
+	defaults write com.apple.dt.XCode IDEIndexDisable 0
 	$(BAZEL) build BSBuildService
 
 # Available dummy targets
