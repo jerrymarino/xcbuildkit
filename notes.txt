@@ -1,3 +1,6 @@
+# This is useful to watch where messages end and begin.
+br s -r IDEXCBuildSupport\.IDEXCBuildServiceBuildOperation*
+
 # Use make debug_input and output
 
 
