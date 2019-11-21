@@ -1,6 +1,7 @@
 # xcbuildkit
 
-xcbuildkit is a framework to extend or replace Xcode's build system
+xcbuildkit is a framework to extend or replace Xcode's build system. No plugins
+needed!
 
 # Usage
 
@@ -21,8 +22,9 @@ of no progress.
 Additionally, for other features like testing, Xcode needs source files loaded
 into test targets. Currently, Xcode requires mocking out the toolchain with stub
 linkers and compilers so XCBuild can run ( e.g. XCHammer ). This adds extra,
-unavoidable overhead to each build. xcbuildkit enables entirely replacing the
-build invocation an remove overhead.
+unavoidable overhead to each build. xcbuildkit enables replacing Xcode's build
+system entirely to improves the user experience of external build systems and
+remove the hacks.
 
 
 # Build system architecture
