@@ -15,6 +15,9 @@ public typealias XCBResponseHandler = (XCBInputStream, Data, Any?) -> Void
 
 public class BKBuildService {
     let shouldDump: Bool
+
+    // This needs to be serial in order to serialize the messages / prevent
+    // crossing streams.
     internal static let writeQueue = DispatchQueue(label: "com.xcbuildkite.bkbuildservice")
 
     public init() {

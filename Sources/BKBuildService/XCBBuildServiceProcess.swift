@@ -9,17 +9,20 @@ public class XCBBuildServiceProcess {
     private let stdout = Pipe()
     private let stderr = Pipe()
     private let process = Process()
-    private let serialQueue = DispatchQueue(label: "com.bkbuildservice.xcbuildservicewrite")
 
     public init() {}
 
+    /// Write `data` to the build service.
+    /// This has the effect that the XCBBuildService will respond normally to
+    /// the request.
+    ///
+    /// This isn't safe and should be called seraially during a response handler
     public func write(_ data: Data) {
         guard self.process.isRunning else {
             fatalError("called write when build service isn't running")
         }
-        self.serialQueue.async {
-            self.stdin.fileHandleForWriting.write(data)
-        }
+        // writes aren't serial here ( rational it already is via stdin )
+        self.stdin.fileHandleForWriting.write(data)
     }
 
     /// An XCBResponseHandler
