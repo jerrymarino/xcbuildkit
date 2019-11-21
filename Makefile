@@ -86,14 +86,6 @@ read_streams_to_debug:
 dump:
 	echo "print(repr(open('$(FILE)', 'rb').read()))" | python
 
-# Tests the differences between what we expect and not.
-# The implementation here is poor and it'd be nice to have better tooling for
-# this
-# test_writer:
-#	@cat example_output/nooped/xcbuild.in | \
-#	    $(BAZEL) run BSBuildService > /tmp/x
-#	./utils/diff.py /tmp/x $(PWD)/golden_output/xcbuild.basic.out
-
 # Dumps the parsed stream
 debug_output:
 	@cat /tmp/xcbuild.out | \
