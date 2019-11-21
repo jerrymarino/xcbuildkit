@@ -3,7 +3,6 @@
 # The service is adjacent to this program
 # The layer of indirection is useful for debugging and not
 # a production component
-# SERVICE="$(dirname $XCBBUILDSERVICE_PATH)/bazel-bin/BSBuildService-intermediates/BSBuildService"
 SERVICE="$(dirname $XCBBUILDSERVICE_PATH)/bazel-bin/BazelBuildService-intermediates/BazelBuildService"
 
 function redirect() {

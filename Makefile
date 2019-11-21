@@ -31,9 +31,14 @@ build: xcbrunner
 DUMMY_XCODE_ARGS=-target CLI
 # DUMMY_XCODE_ARGS=-target iOSApp -sdk iphonesimulator
 
-test: build
-	# Disable defaults for static only
+enable_indexing:
 	defaults write com.apple.dt.XCode IDEIndexDisable 1
+
+# Note: the static build service doesn't work with this ATM
+disable_indexing:
+	defaults write com.apple.dt.XCode IDEIndexDisable 0
+
+test: build
 	$(BAZEL) build BSBuildService
 	rm -rf /tmp/xcbuild.*
 	/usr/bin/env - TERM="$(TERM)" \
@@ -51,7 +56,6 @@ test: build
 # - it will only work after the first build
 # - if you have a nasty environment, this will not work!
 open_xcode: build
-	defaults write com.apple.dt.XCode IDEIndexDisable 1
 	/usr/bin/env - TERM="$(TERM)"; \
 	    export SHELL="$(SHELL)"; \
 	    export PATH="$(PATH)"; \
@@ -97,7 +101,6 @@ debug_output:
 
 # Dumps the parsed stream
 debug_input:
-	defaults write com.apple.dt.XCode IDEIndexDisable 1
 	@cat /tmp/xcbuild.in | \
 	    $(BAZEL) run BSBuildService -- --dump
 
