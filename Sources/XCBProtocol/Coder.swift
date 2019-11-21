@@ -10,7 +10,7 @@ public class XCBEncoder {
     /// This is state of protocol messages, and perhaps it would be encapsulated in a
     /// better way. Xcode uses this internally
     var msgId: UInt64 {
-        var v = input
+        var v = self.input
         guard case let .uint(id) = v.next() else {
             fatalError("missing id")
         }
@@ -55,7 +55,7 @@ extension XCBDecoder {
     }
 
     private func decodeMessageImpl() throws -> XCBProtocolMessage? {
-        var minput = input
+        var minput = self.input
         while var value = minput.next() {
             switch value {
             case let XCBRawValue.string(str):

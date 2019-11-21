@@ -11,13 +11,13 @@ public class XCBBuildServiceProcess {
     private let process = Process()
     private let serialQueue = DispatchQueue(label: "com.bkbuildservice.xcbuildservicewrite")
 
-    public init() { }
+    public init() {}
 
     public func write(_ data: Data) {
-        guard process.isRunning else {
+        guard self.process.isRunning else {
             fatalError("called write when build service isn't running")
         }
-        serialQueue.async {
+        self.serialQueue.async {
             self.stdin.fileHandleForWriting.write(data)
         }
     }
@@ -25,16 +25,16 @@ public class XCBBuildServiceProcess {
     /// An XCBResponseHandler
     /// To implement a hybrid build service, call after a CreateSessionRequest
     public func startIfNecessary(xcode: String) {
-        guard process.isRunning == false else {
+        guard self.process.isRunning == false else {
             return
         }
 
-        let path = xcode + "/"  + XCBBuildServiceProcess.bsPath
+        let path = xcode + "/" + XCBBuildServiceProcess.bsPath
         self.start(path: path)
     }
 
     private func start(path: String) {
-        stdout.fileHandleForReading.readabilityHandler = {
+        self.stdout.fileHandleForReading.readabilityHandler = {
             handle in
             let data = handle.availableData
             // Dump stdout to the current standard output
@@ -42,12 +42,11 @@ public class XCBBuildServiceProcess {
                 FileHandle.standardOutput.write(data)
             }
         }
-        process.environment = ProcessInfo.processInfo.environment
-        process.standardOutput = stdout
-        process.standardError = stderr
-        process.standardInput = stdin
-        process.launchPath = path
-        process.launch()
+        self.process.environment = ProcessInfo.processInfo.environment
+        self.process.standardOutput = self.stdout
+        self.process.standardError = self.stderr
+        self.process.standardInput = self.stdin
+        self.process.launchPath = path
+        self.process.launch()
     }
-
 }

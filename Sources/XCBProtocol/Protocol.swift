@@ -22,30 +22,30 @@ public struct CreateSessionRequest: XCBProtocolMessage {
     public let xcode: String
     public let xcbuildDataPath: String
 
-    init(input : XCBInputStream) throws {
+    init(input: XCBInputStream) throws {
         var minput = input
 
         /// Perhaps this shouldn't fatal error
         guard case let .array(msgInfo) = minput.next(), msgInfo.count > 2 else {
-           throw XCBProtocolError.unexpectedInput(for: input)
+            throw XCBProtocolError.unexpectedInput(for: input)
         }
 
         if case let .string(workspaceInfo) = msgInfo[0] {
-           self.workspace = workspaceInfo
+            self.workspace = workspaceInfo
         } else {
             self.workspace = ""
         }
 
         if case let .string(xcode) = msgInfo[1] {
-           self.xcode = xcode
+            self.xcode = xcode
         } else {
-           self.xcode = ""
+            self.xcode = ""
         }
 
         if case let .string(xcbuildDataPath) = msgInfo[2] {
-           self.xcbuildDataPath = xcbuildDataPath
+            self.xcbuildDataPath = xcbuildDataPath
         } else {
-           self.xcbuildDataPath = ""
+            self.xcbuildDataPath = ""
         }
     }
 }
@@ -264,7 +264,7 @@ public struct BuildProgressUpdatedResponse: XCBProtocolMessage {
 
     public func encode(_ encoder: XCBEncoder) throws -> XCBResponse {
         let padding = 14 // sizeof messages, random things
-        let length = "BUILD_PROGRESS_UPDATED".utf8.count + taskName.utf8.count + message.utf8.count
+        let length = "BUILD_PROGRESS_UPDATED".utf8.count + self.taskName.utf8.count + self.message.utf8.count
         return [
             XCBRawValue.uint(encoder.msgId - 3),
             XCBRawValue.uint(0),

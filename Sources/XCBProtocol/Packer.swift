@@ -47,7 +47,7 @@ extension Character {
     }
 
     var ascii: UInt32? {
-        return isAscii ? unicodeScalars.first?.value : nil
+        return self.isAscii ? unicodeScalars.first?.value : nil
     }
 }
 

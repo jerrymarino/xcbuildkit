@@ -18,7 +18,7 @@ public class BKBuildService {
     internal static let writeQueue = DispatchQueue(label: "com.xcbuildkite.bkbuildservice")
 
     public init() {
-        shouldDump = CommandLine.arguments.contains("--dump")
+        self.shouldDump = CommandLine.arguments.contains("--dump")
     }
 
     /// Starts a service on standard input
