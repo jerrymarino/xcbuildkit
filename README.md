@@ -31,7 +31,7 @@ build invocation an remove overhead.
 
 To build applications, Xcode code runs tools like compilers and linkers via the
 build service, aka the build system daemon. They communicate back and forth via
-XCBProtocol message.  For example, to create a build, Xcode sends an XCBProtocol
+XCBProtocol messages.  For example, to create a build, Xcode sends an XCBProtocol
 message that represents creating a build. When the build is done, the build
 system sends a
 XCBProtocol message to let Xcode know it's done.
@@ -56,7 +56,7 @@ _See examples/BazelBuildService for an example implementation_
 ![build service replacement](Docs/xcbuildkit_replacement.png?raw=true "Build service replacement")
 
 
-It's desireable in many usecases to replace Xcodes default build system. This
+It's desirable in many usecases to replace Xcode's default build system. This
 approach allows Xcode to run external build systems run transparently.
 Additionally, it removes the need to have ad-hoc integration via runscripts,
 which require stubbing out Xcode's toolchain with mock tools. 
