@@ -2,7 +2,7 @@
 
 xcbuildkit is a framework to extend or replace Xcode's build system
 
-# Usaage
+# Usage
 
 Checkout the examples directory
 
@@ -31,10 +31,9 @@ build invocation an remove overhead.
 
 To build applications, Xcode code runs tools like compilers and linkers via the
 build service, aka the build system daemon. They communicate back and forth via
-XCBProtocol messages.  For example, to create a build, Xcode sends an XCBProtocol
-message that represents creating a build. When the build is done, the build
-system sends a
-XCBProtocol message to let Xcode know it's done.
+XCBProtocol messages.  For example, to create a build, Xcode sends an
+XCBProtocol message that represents creating a build. When the build is done,
+the build system sends a XCBProtocol message to let Xcode know it's done.
 
 xcbuildkit simply implements this protocol to enable extending or replacing
 default behavior. No plugins or hacks necessary!
