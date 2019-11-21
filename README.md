@@ -4,9 +4,9 @@ xcbuildkit is a framework to extend or replace Xcode's build system
 
 # Usage
 
-Checkout the examples directory
+Checkout the [examples/](Examples/) directory.
 
-## What is this used for?
+# What is this used for?
 
 Generally, integrating third party build systems like Bazel.
 
@@ -50,7 +50,7 @@ inject progress messages and build diagnostics xcbuildkit provides a proxy build
 service. The main difference between the default architecture is that progress
 messages are injected within XCBBuildService's message.
 
-_See examples/BazelBuildService for an example implementation_
+_See [examples/BazelBuildService](Examples/BazelBuildService) for an example implementation._
 
 # Replacing Xcode's build system with an external build system
 
@@ -62,4 +62,4 @@ one. This approach allows Xcode to run external build systems run transparently
 to the user.  Additionally, it removes the need to have ad-hoc integration via
 runscripts, which require stubbing out Xcode's toolchain with mock tools. 
 
-
+_See [examples/BSBuildService](Examples/BSBuildService) for an example implementation._
