@@ -29,11 +29,13 @@ build invocation an remove overhead.
 
 ![default achitecture](Docs/default_architecture.png?raw=true "Default achitecture")
 
-To build applications, Xcode code runs tools like compilers and linkers via the
-build service, aka the build system daemon. They communicate back and forth via
-XCBProtocol messages.  For example, to create a build, Xcode sends an
-XCBProtocol message that represents creating a build. When the build is done,
-the build system sends a XCBProtocol message to let Xcode know it's done.
+To build applications, Xcode code runs tools like compilers and linkers via a
+build service daemon. Xcode and the build service communicate via a binary
+protocol. For example, to create a build, Xcode sends a create build message.
+The build service creates the build, and when the build is done, it sends a
+message back to Xcode know it's done. Throughout the lifecycle of the build,
+diagnostics and other information are also exchanged via this protocol. Xcode's
+UI is driven by this protocol as well.
 
 xcbuildkit simply implements this protocol to enable extending or replacing
 default behavior. No plugins or hacks necessary!
@@ -55,9 +57,9 @@ _See examples/BazelBuildService for an example implementation_
 ![build service replacement](Docs/xcbuildkit_replacement.png?raw=true "Build service replacement")
 
 
-It's desirable in many usecases to replace Xcode's default build system. This
-approach allows Xcode to run external build systems run transparently.
-Additionally, it removes the need to have ad-hoc integration via runscripts,
-which require stubbing out Xcode's toolchain with mock tools. 
+It may be desirable to replace Xcode's default build system with an external
+one. This approach allows Xcode to run external build systems run transparently
+to the user.  Additionally, it removes the need to have ad-hoc integration via
+runscripts, which require stubbing out Xcode's toolchain with mock tools. 
 
 
