@@ -16,8 +16,12 @@ public typealias XCBResponseHandler = (XCBInputStream, Data, Any?) -> Void
 public class BKBuildService {
     let shouldDump: Bool
 
+    // This needs to be serial in order to serialize the messages / prevent
+    // crossing streams.
+    internal static let writeQueue = DispatchQueue(label: "com.xcbuildkite.bkbuildservice")
+
     public init() {
-        shouldDump = CommandLine.arguments.contains("--dump")
+        self.shouldDump = CommandLine.arguments.contains("--dump")
     }
 
     /// Starts a service on standard input
@@ -33,11 +37,12 @@ public class BKBuildService {
 
             /// Unpack everything
             let result = Unpacker.unpackAll(data)
-            guard case let .uint(id) = result.first else {
-                fatalError("missing id")
+            if case let .uint(id) = result.first {
+                let msgId = id + 1
+                log("respond.msgId" + String(describing: msgId))
+            } else {
+                log("missing id")
             }
-            let msgId = id + 1
-            log("respond.msgId" + String(describing: msgId))
 
             let resultItr = result.makeIterator()
             if self.shouldDump {
@@ -55,12 +60,16 @@ public class BKBuildService {
     }
 
     public func write(_ v: XCBResponse) {
-        let datas = v.map {
-            mm -> Data in
-            XCBPacker.pack(mm)
-        }
         // print("Datas", datasmap { $0.hbytes() }.joined())
-        datas.forEach { FileHandle.standardOutput.write($0) }
+        BKBuildService.writeQueue.sync {
+            let datas = v.map {
+                mm -> Data in
+                log("Write: " + String(describing: mm))
+                return XCBPacker.pack(mm)
+            }
+
+            datas.forEach { FileHandle.standardOutput.write($0) }
+        }
     }
 }
 
