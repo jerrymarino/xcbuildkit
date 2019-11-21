@@ -71,7 +71,7 @@ macos_application(
     infoplists = ["Examples/HybridBuildService/Info.plist"],
     minimum_os_version = "10.14",
     version = ":XCBuildKitVersion",
-    deps = [":BSBuildServiceLib"],
+    deps = [":HybridBuildServiceLib"],
 )
 
 # Bazel BEP Protobuf libary
