@@ -4,7 +4,7 @@ xcbuildkit is a framework to extend or replace Xcode's build system
 
 # Usage
 
-Checkout the [examples/](Examples/) directory.
+Checkout the [examples](Examples/) and [Makefile](Makefile).
 
 # What is this used for?
 
