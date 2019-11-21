@@ -31,13 +31,13 @@ remove the hacks.
 
 ![default achitecture](Docs/default_architecture.png?raw=true "Default achitecture")
 
-To build applications, Xcode code runs tools like compilers and linkers via a
-build service daemon. Xcode and the build service communicate via a binary
-protocol. For example, to create a build, Xcode sends a create build message.
-The build service creates the build, and when the build is done, it sends a
-message back to Xcode know it's done. Throughout the lifecycle of the build,
-diagnostics and other information are also exchanged via this protocol. Xcode's
-UI is driven by this protocol as well.
+To build applications, Xcode runs tools like compilers and linkers via a build
+service daemon. Xcode and the build service communicate via a binary protocol.
+For example, to create a build, Xcode sends a create build message.  The build
+service creates the build, and when the build is done, it sends a message back
+to Xcode know it's done. Throughout the lifecycle of the build, diagnostics and
+other information are also exchanged via this protocol. Xcode's UI is driven by
+this protocol as well.
 
 xcbuildkit simply implements this protocol to enable extending or replacing
 default behavior. No plugins or hacks necessary!
@@ -60,8 +60,8 @@ _See [examples/BazelBuildService](Examples/BazelBuildService) for an example imp
 
 
 It may be desirable to replace Xcode's default build system with an external
-one. This approach allows Xcode to run external build systems run transparently
-to the user.  Additionally, it removes the need to have ad-hoc integration via
+one. This approach allows Xcode to run external build systems transparently to
+the user.  Additionally, it removes the need to have ad-hoc integration via
 runscripts, which require stubbing out Xcode's toolchain with mock tools. 
 
 _See [examples/BSBuildService](Examples/BSBuildService) for an example implementation._
