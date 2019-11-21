@@ -1,16 +1,10 @@
 # xcbuildkit
 
-xcbuildkit is a system to implement external build systems inside of Xcode
+xcbuildkit is a framework to extend or replace Xcode's build system
 
-_It's currently an unstable prototype to explore how it will all fit together._
+# Usaage
 
-# Usgage
-
-See Examples/BProgress
-
-
-
-
+Checkout the examples directory
 
 ## What is this used for?
 
@@ -30,31 +24,41 @@ linkers and compilers so XCBuild can run ( e.g. XCHammer ). This adds extra,
 unavoidable overhead to each build. xcbuildkit enables entirely replacing the
 build invocation an remove overhead.
 
-## Goals and Outcomes
 
-The goal of IDEXCBProgress is to find ways to notify Xcode of updates like
-progress, errors, and warnings which can then be populated by external build
-systems like Bazel or Buck.
+# Build system architecture
 
-**This project is an unofficial, non Apple, experiment that uses private Xcode
-APIs.**
+![default achitecture](Docs/default_architecture.png?raw=true "Default achitecture")
 
-## Notes and current state
+To build applications, Xcode code runs tools like compilers and linkers via the
+build service, aka the build system daemon. They communicate back and forth via
+XCBProtocol message.  For example, to create a build, Xcode sends an XCBProtocol
+message that represents creating a build. When the build is done, the build
+system sends a
+XCBProtocol message to let Xcode know it's done.
 
-As, Xcode <-> build service, aka the build system daemon, have a clear protocol
-and interface between each other, it seems possible to hook in build systems at
-this level. Ideally, IDEXCBProgress is achievable without hacking Xcode's
-runtime via a plugin: the plugin currently exists as a fallback/alternate
-approach to utilizing the build protocol.
+xcbuildkit simply implements this protocol to enable extending or replacing
+default behavior. No plugins or hacks necessary!
 
-**Build protocol integration**
+# Injecting external build system progress messages via a Proxy
 
-XCBuildKit replaces the build service and interact with Xcode over the build
-protocol via the corresponding file descriptors. This would give total control
-of the build process to the user. A possible implementation simply dupes ad-hoc
-progress ( in the form of build protocol messages ) to the original output file
-descriptor.
+![build service proxy](Docs/xcbuildkit_proxy.png?raw=true "Build service proxy")
+
+A common path to integrate external build systems like buck or Bazel is to run
+them via a runscript. To preserve all functionality of Xcode's build system and
+inject progress messages and build diagnostics xcbuildkit provides a proxy build
+service. The main difference between the default architecture is that progress
+messages are injected within XCBBuildService's message.
+
+_See examples/BazelBuildService for an example implementation_
+
+# Replacing Xcode's build system with an external build system
+
+![build service replacement](Docs/xcbuildkit_replacement.png?raw=true "Build service replacement")
 
 
+It's desireable in many usecases to replace Xcodes default build system. This
+approach allows Xcode to run external build systems run transparently.
+Additionally, it removes the need to have ad-hoc integration via runscripts,
+which require stubbing out Xcode's toolchain with mock tools. 
 
 
