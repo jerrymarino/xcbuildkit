@@ -11,21 +11,21 @@ import XCBProtocol
 ///
 /// @param context is used to pass state around
 
-public typealias XCBResponseHandler = (XCBInputStream, Data, Any?) -> Void
+public typealias XCBMessageHandler = (XCBInputStream, Data, Any?) -> Void
 
 public class BKBuildService {
     let shouldDump: Bool
 
     // This needs to be serial in order to serialize the messages / prevent
     // crossing streams.
-    internal static let writeQueue = DispatchQueue(label: "com.xcbuildkite.bkbuildservice")
+    internal static let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice")
 
     public init() {
         self.shouldDump = CommandLine.arguments.contains("--dump")
     }
 
     /// Starts a service on standard input
-    public func start(responseHandler: @escaping XCBResponseHandler, context:
+    public func start(messageHandler: @escaping XCBMessageHandler, context:
         Any?) {
         let file = FileHandle.standardInput
         file.readabilityHandler = {
@@ -47,11 +47,11 @@ public class BKBuildService {
             let resultItr = result.makeIterator()
             if self.shouldDump {
                 // Dumps out the protocol
-                // useful for shouldDumpging, code gen'ing protocol messages, and
+                // useful for debuging, code gen'ing protocol messages, and
                 // upgrading Xcode versions
-                result.forEach { print("." + String(describing: $0) + ",") }
+                result.forEach{ $0.prettyPrint() }
             } else {
-                responseHandler(resultItr, data, context)
+                messageHandler(resultItr, data, context)
             }
         }
         repeat {
@@ -82,14 +82,16 @@ private enum Unpacker {
     }
 
     static func startNext(_ data: Data) -> Data? {
-        // If there is remaining bytes, try to strip out unparseable bytes
-        // and continue down the stream
-        var curr = data
-        if curr.count > 1 {
-            let streamLength = Int(curr[0])
+        if data.count > 1 {
+            // If there is remaining bytes, try to strip out unparseable bytes
+            // and continue down the stream
+
+            // Note: the first element is some length? This is not handled by
+            // MessagePack.swift
             // FIXME: subdata is copying over and over?
-            curr = curr.subdata(in: 1 ..< curr.count - 1)
-            return curr
+            var mdata = data
+            mdata = mdata.subdata(in: 1 ..< mdata.count - 1)
+            return mdata
         } else {
             return nil
         }

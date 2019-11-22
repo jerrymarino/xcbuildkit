@@ -46,6 +46,9 @@ enum BasicMessageHandler {
         gStream = stream
     }
 
+    /// Proxying response handler
+    /// Every message is written to the XCBBuildService
+    /// This simply injects Progress messages from the BEP
     static func respond(input: XCBInputStream, data: Data, context: Any?) {
         let basicCtx = context as! BasicMessageContext
         let xcbbuildService = basicCtx.xcbbuildService

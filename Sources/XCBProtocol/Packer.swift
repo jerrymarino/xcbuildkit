@@ -21,6 +21,28 @@ extension FixedWidthInteger {
     }
 }
 
+extension XCBRawValue {
+    func prettyPrint(_ raw: XCBRawValue, padding: String = "") {
+        if case .binary(let b) = raw {
+            print("\(padding)XCBRawValue.binary(\"" + b.rawHbytes() + "\"),")
+        } else if case .string(let str) = raw {
+            print("\(padding)XCBRawValue.string(\"\(str)\"),")
+        } else if case .array(let array) = raw {
+            print("\(padding)XCBRawValue.array([")
+            for arrayValue in array {
+               prettyPrint(arrayValue, padding: padding + "    ") 
+            }
+            print("\(padding)]),")
+        } else {
+            print(padding + "XCBRawValue." + String(describing: raw) + ",")
+        }
+    }
+
+    public func prettyPrint() {
+        prettyPrint(self, padding: " ")
+    }
+}
+
 extension Data {
     // This prints data in the form of hex bytes and ASCII characters
     func hbytes() -> String {
@@ -29,6 +51,14 @@ extension Data {
             "\\x" + String(format: "%02hhx", b)
         }.joined()
     }
+
+    func rawHbytes() -> String {
+        return "[" + map {
+            b in
+            "0x" + String(format: "%02hhx", b)
+        }.joined(separator: ",") + "]"
+    }
+
 
     func bbytes() -> String {
         return map {

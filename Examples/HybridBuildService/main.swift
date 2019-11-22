@@ -3,16 +3,16 @@ import Foundation
 import MessagePack
 import XCBProtocol
 
-struct BasicResponseContext {
+struct BasicMessageContext {
     let xcbbuildService: XCBBuildServiceProcess
     let bkservice: BKBuildService
 }
 
 // This is an example build service that implements the build portion
 // all other messages and operations are handled by XCBuild
-enum BasicResponseHandler {
+enum BasicMessageHandler {
     static func respond(input: XCBInputStream, data: Data, context: Any?) {
-        let basicCtx = context as! BasicResponseContext
+        let basicCtx = context as! BasicMessageContext
         let xcbbuildService = basicCtx.xcbbuildService
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
@@ -41,9 +41,9 @@ enum BasicResponseHandler {
 let xcbbuildService = XCBBuildServiceProcess()
 let bkservice = BKBuildService()
 
-let context = BasicResponseContext(
+let context = BasicMessageContext(
     xcbbuildService: xcbbuildService,
     bkservice: bkservice
 )
 
-bkservice.start(responseHandler: BasicResponseHandler.respond, context: context)
+bkservice.start(messageHandler: BasicMessageHandler.respond, context: context)

@@ -3,16 +3,16 @@ import Foundation
 import MessagePack
 import XCBProtocol
 
-struct BasicResponseContext {
+struct BasicMessageContext {
     let bkservice: BKBuildService
 }
 
-/// This response handler is a *minimal* but complete implementation of an
-/// XCBBuildService. All responses from Xcode are handled internally and XCBuild
+/// This message handler is a *minimal* but complete implementation of an
+/// XCBBuildService. All messages from Xcode are handled internally and XCBuild
 /// is not used
-enum BasicResponseHandler {
+enum BasicMessageHandler {
     static func respond(input: XCBInputStream, data _: Data, context: Any?) {
-        let basicCtx = context as! BasicResponseContext
+        let basicCtx = context as! BasicMessageContext
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
         let encoder = XCBEncoder(input: input)
@@ -50,5 +50,5 @@ enum BasicResponseHandler {
 
 // main
 let bkservice = BKBuildService()
-let context = BasicResponseContext(bkservice: bkservice)
-bkservice.start(responseHandler: BasicResponseHandler.respond, context: context)
+let context = BasicMessageContext(bkservice: bkservice)
+bkservice.start(messageHandler: BasicMessageHandler.respond, context: context)
