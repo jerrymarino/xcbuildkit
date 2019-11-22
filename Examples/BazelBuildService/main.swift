@@ -2,8 +2,6 @@ import BKBuildService
 import Foundation
 import MessagePack
 import XCBProtocol
-import BEP
-import SwiftProtobuf
 
 struct BasicMessageContext {
     let xcbbuildService: XCBBuildServiceProcess

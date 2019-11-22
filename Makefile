@@ -1,43 +1,20 @@
-# Don't use xcode-select here for development
-# Note: This is tested on Xcode 11 Beta 5
-#
-# The protocol has changed a bit since 10.2.1
-# Details:  was notified a build operation started without being notified that its planning operation finished
 XCODE=$(dir $(shell dirname $(shell xcode-select -p)))
-INC=$(XCODE)/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include
 BAZEL=tools/bazelwrapper
-
-# Compilation of the bash debugging runner
-# FIXME: Consider using Bazel to build this
-xcbrunner: main.c
-	clang -I $(INC) main.c -o xcbrunner
-
-clean:
-	rm -rf /tmp/xcbuild.*
-
-
-symlink_external:
-	ln -sf $(shell tools/bazelwrapper info execution_root)/external external
-
-# Hardcode all the paths to Xcode build for debugging reasons
 XCB=$(XCODE)/Contents/Developer/usr/bin/xcodebuild
-XCBBUILDSERVICE_PATH=$(PWD)/xcbrunner
+
+# For development wrap all build services inside of the shim to make it easier
+# to debug and replay builds.
+# The shim isn't used in production
+XCBBUILDSERVICE_PATH=$(PWD)/bazel-bin/BuildServiceShim/BuildServiceShim
 
 .PHONY: build
-build: xcbrunner
-	$(BAZEL) build :*
+build:
+	$(BAZEL) build :* //BuildServiceShim
 
 # Available dummy targets
+# TODO: add the ability to test all of these
 DUMMY_XCODE_ARGS=-target CLI
 # DUMMY_XCODE_ARGS=-target iOSApp -sdk iphonesimulator
-
-enable_indexing:
-	defaults write com.apple.dt.XCode IDEIndexDisable 1
-
-# Note: the static build service doesn't work with this ATM
-disable_indexing:
-	defaults write com.apple.dt.XCode IDEIndexDisable 0
-
 test: build
 	$(BAZEL) build BSBuildService
 	rm -rf /tmp/xcbuild.*
@@ -51,10 +28,8 @@ test: build
 		PWD=$(PWD)/iOSApp \
 		$(XCB) -project $(PWD)/iOSApp/iOSApp.xcodeproj build -jobs 1 $(DUMMY_XCODE_ARGS)
 
-# Known issues with Xcode
-# - indexing requests aren't done yet
-# - it will only work after the first build
-# - if you have a nasty environment, this will not work!
+# Random development commands
+# Opens Xcode with the build service selected
 open_xcode: build
 	/usr/bin/env - TERM="$(TERM)"; \
 	    export SHELL="$(SHELL)"; \
@@ -64,7 +39,21 @@ open_xcode: build
 	    export XCBBUILDSERVICE_PATH="$(XCBBUILDSERVICE_PATH)"; \
              $(XCODE)/Contents/MacOS/Xcode
 
-SERVICE=$(XCODE)/Contents/SharedFrameworks/XCBuild.framework/PlugIns/XCBBuildService.bundle/Contents/MacOS/XCBBuildService
+clean:
+	rm -rf /tmp/xcbuild.*
+
+symlink_external:
+	ln -sf $(shell tools/bazelwrapper info execution_root)/external external
+
+run_shim: build
+	XCBBUILDSERVICE_PATH=$(XCBBUILDSERVICE_PATH) $(XCBBUILDSERVICE_PATH)
+
+enable_indexing:
+	defaults write com.apple.dt.XCode IDEIndexDisable 1
+
+# Note: the static build service doesn't work with this ATM
+disable_indexing:
+	defaults write com.apple.dt.XCode IDEIndexDisable 0
 
 # Uses xxd to inspect outputs
 hex_dump: FILE_A=/tmp/xcbuild.in
@@ -73,16 +62,7 @@ hex_dump:
 	@xxd -c 16 $(FILE_A)
 	@[[ ! -f "$(FILE_B)" ]] || xxd -c 16 $(FILE_B)
 
-# Need to actually populate this first ( e.g. make test )
-read_streams_to_debug: 
-	$$(sleep 2 && killall -10 Python) &   \
-	(cat /tmp/xcbuild.in | ./unpacker.py ) || true
-	mv /tmp/xcbuild.diags /tmp/xcbuild.in.diags
-	$$(sleep 2 && killall -10 Python) &   \
-	(cat /tmp/xcbuild.out | ./unpacker.py | cat  > /tmp/xcbuild.out.diags) || true
-	mv /tmp/xcbuild.diags /tmp/xcbuild.out.diags
-
-
+# Dumps the raw bits
 dump:
 	echo "print(repr(open('$(FILE)', 'rb').read()))" | python
 
@@ -96,7 +76,6 @@ debug_input:
 	@cat /tmp/xcbuild.in | \
 	    $(BAZEL) run BSBuildService -- --dump
 
-# FIXME see stub on using `replace`/`redirect`
 debug_output_python: build
 	@cat /tmp/xcbuild.out | utils/msgpack_dumper.py
 
