@@ -1,18 +1,5 @@
-# Don't use xcode-select here for development
-# Note: This is tested on Xcode 11 Beta 5
-#
-# The protocol has changed a bit since 10.2.1
-# Details:  was notified a build operation started without being notified that its planning operation finished
 XCODE=$(dir $(shell dirname $(shell xcode-select -p)))
 BAZEL=tools/bazelwrapper
-
-clean:
-	rm -rf /tmp/xcbuild.*
-
-symlink_external:
-	ln -sf $(shell tools/bazelwrapper info execution_root)/external external
-
-# Hardcode all the paths to Xcode build for debugging reasons
 XCB=$(XCODE)/Contents/Developer/usr/bin/xcodebuild
 
 # For development wrap all build services inside of the shim to make it easier
@@ -41,6 +28,7 @@ test: build
 		PWD=$(PWD)/iOSApp \
 		$(XCB) -project $(PWD)/iOSApp/iOSApp.xcodeproj build -jobs 1 $(DUMMY_XCODE_ARGS)
 
+# Random development commands
 # Opens Xcode with the build service selected
 open_xcode: build
 	/usr/bin/env - TERM="$(TERM)"; \
@@ -50,6 +38,12 @@ open_xcode: build
 	    export XCODE="$(XCODE)"; \
 	    export XCBBUILDSERVICE_PATH="$(XCBBUILDSERVICE_PATH)"; \
              $(XCODE)/Contents/MacOS/Xcode
+
+clean:
+	rm -rf /tmp/xcbuild.*
+
+symlink_external:
+	ln -sf $(shell tools/bazelwrapper info execution_root)/external external
 
 run_shim: build
 	XCBBUILDSERVICE_PATH=$(XCBBUILDSERVICE_PATH) $(XCBBUILDSERVICE_PATH)
@@ -82,7 +76,6 @@ debug_input:
 	@cat /tmp/xcbuild.in | \
 	    $(BAZEL) run BSBuildService -- --dump
 
-# FIXME see stub on using `replace`/`redirect`
 debug_output_python: build
 	@cat /tmp/xcbuild.out | utils/msgpack_dumper.py
 
