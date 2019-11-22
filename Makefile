@@ -4,28 +4,26 @@
 # The protocol has changed a bit since 10.2.1
 # Details:  was notified a build operation started without being notified that its planning operation finished
 XCODE=$(dir $(shell dirname $(shell xcode-select -p)))
-INC=$(XCODE)/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include
 BAZEL=tools/bazelwrapper
-
-# Compilation of the bash debugging runner
-# FIXME: Consider using Bazel to build this
-xcbrunner: main.c
-	clang -I $(INC) main.c -o xcbrunner
 
 clean:
 	rm -rf /tmp/xcbuild.*
-
 
 symlink_external:
 	ln -sf $(shell tools/bazelwrapper info execution_root)/external external
 
 # Hardcode all the paths to Xcode build for debugging reasons
 XCB=$(XCODE)/Contents/Developer/usr/bin/xcodebuild
-XCBBUILDSERVICE_PATH=$(PWD)/xcbrunner
+XCBBUILDSERVICE_PATH=$(PWD)/bazel-bin/BuildServiceShim/BuildServiceShim
+
 
 .PHONY: build
-build: xcbrunner
-	$(BAZEL) build :*
+build:
+	$(BAZEL) build :* //BuildServiceShim
+
+
+run_shim: build
+	XCBBUILDSERVICE_PATH=$(XCBBUILDSERVICE_PATH) $(XCBBUILDSERVICE_PATH)
 
 # Available dummy targets
 DUMMY_XCODE_ARGS=-target CLI

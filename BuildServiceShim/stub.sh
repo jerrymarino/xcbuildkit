@@ -3,7 +3,7 @@
 # The service is adjacent to this program
 # The layer of indirection is useful for debugging and not
 # a production component
-SERVICE="$(dirname $XCBBUILDSERVICE_PATH)/bazel-bin/BazelBuildService-intermediates/BazelBuildService"
+SERVICE="$(dirname $(dirname $XCBBUILDSERVICE_PATH))/BazelBuildService-intermediates/BazelBuildService"
 
 function redirect() {
     #tee  >($SERVICE) /tmp/xcbuild.out
@@ -14,12 +14,13 @@ function redirect() {
 }
 
 function replace() {
-    # SERVICE="/Users/jerrymarino/Projects/IDEXCBProgress/utils/service.py"
     /usr/bin/env - TERM="${TERM}" SHELL="${SHELL}" PATH="${PATH}" HOME="${HOME}" \
     tee  /tmp/xcbuild.in | $SERVICE | tee /tmp/xcbuild.out
 }
 
-# FIXME: during development and testing this needs to be commented out
-# it should be a different program.
-# redirect
-replace
+# This simply redirects stdin and stdout of Xcode's build service
+if [[ "${BUILD_SERVICE_REDIRECT:-false}" == "true" ]]; then
+    redirect
+else
+    replace
+fi
