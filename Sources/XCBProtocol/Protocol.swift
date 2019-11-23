@@ -261,7 +261,7 @@ public struct BuildProgressUpdatedResponse: XCBProtocolMessage {
         self.progress = progress
         self.taskName = taskName
         self.message = message
-	self.showInActivityLog = showInActivityLog
+        self.showInActivityLog = showInActivityLog
     }
 
     public func encode(_ encoder: XCBEncoder) throws -> XCBResponse {
