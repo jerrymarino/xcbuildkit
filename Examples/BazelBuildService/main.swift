@@ -1,6 +1,5 @@
 import BKBuildService
 import Foundation
-import MessagePack
 import XCBProtocol
 
 struct BasicMessageContext {
@@ -8,6 +7,7 @@ struct BasicMessageContext {
     let bkservice: BKBuildService
 }
 
+/// FIXME: support multiple workspaces
 var gStream: BEPStream?
 
 /// This example listens to a BEP stream to display some output.
@@ -17,28 +17,17 @@ var gStream: BEPStream?
 enum BasicMessageHandler {
     static func startStream(bepPath: String, startBuildInput: XCBInputStream, bkservice: BKBuildService) throws {
         log("startStream " + String(describing: startBuildInput))
-        // FIXME: find a better solution to not delete the BEP first!
         try? FileManager.default.removeItem(atPath: bepPath)
         let stream = try BEPStream(path: bepPath)
-        var lastProgress: Int32 = 0
+        var progressView: ProgressView?
         try stream.read {
-            info in
-            let count = info.id.progress.opaqueCount
-            if count != 0 {
-                // We cannot notify for the same progress more than once.
-                // If the build has completed, then we need to stop sending progress
-                // Under a hybrid BuildService, we don't govern that last message
-                // and may need to parse the output
-                let progress = max(lastProgress, count)
-                if progress == lastProgress {
-                    return
-                }
-                log("BEPNotifyProgress" + String(describing: count))
-                let message = "Built \(progress) tasks"
+            event in
+            if let updatedView = ProgressView(event: event, last: progressView) {
                 let encoder = XCBEncoder(input: startBuildInput)
-                let response = BuildProgressUpdatedResponse(message: message)
-                lastProgress = progress
+                let response = BuildProgressUpdatedResponse(progress:
+                    updatedView.progressPercent, message: updatedView.message)
                 bkservice.write(try! response.encode(encoder))
+                progressView = updatedView
             }
         }
         gStream = stream

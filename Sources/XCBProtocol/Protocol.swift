@@ -255,11 +255,13 @@ public struct BuildProgressUpdatedResponse: XCBProtocolMessage {
     let progress: Double
     let taskName: String
     let message: String
+    let showInActivityLog: Bool
 
-    public init(progress: Double = -1.0, taskName: String = "", message: String = "Updated 1 task") {
+    public init(progress: Double = -1.0, taskName: String = "", message: String = "Updated 1 task", showInActivityLog: Bool = false) {
         self.progress = progress
         self.taskName = taskName
         self.message = message
+        self.showInActivityLog = showInActivityLog
     }
 
     public func encode(_ encoder: XCBEncoder) throws -> XCBResponse {
@@ -279,7 +281,7 @@ public struct BuildProgressUpdatedResponse: XCBProtocolMessage {
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
             XCBRawValue.string("BUILD_PROGRESS_UPDATED"),
-            XCBRawValue.array([.string(taskName), .string(self.message), .double(self.progress), .bool(true)]),
+            XCBRawValue.array([.string(taskName), .string(self.message), .double(self.progress), .bool(self.showInActivityLog)]),
         ]
     }
 }

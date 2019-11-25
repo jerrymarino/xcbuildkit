@@ -22,39 +22,39 @@ public class BEPStream {
     /// @param eventAvailableHandler - this is called with _every_ BEP event
     /// available
     public func read(eventAvailableHandler handler: @escaping BEPReadHandler) throws {
-        self.input = InputStream(fileAtPath: path)!
+        input = InputStream(fileAtPath: path)!
         readQueue.async {
             self.input.open()
             self.readLoop(eventAvailableHandler: handler)
         }
     }
 
-    private  func readLoop(eventAvailableHandler handler: @escaping BEPReadHandler) {
-        while !self.hitLastMessage {
+    private func readLoop(eventAvailableHandler handler: @escaping BEPReadHandler) {
+        while !hitLastMessage {
             if input.hasBytesAvailable {
                 do {
                     let info = try BinaryDelimited.parse(messageType:
                         BuildEventStream_BuildEvent.self, from: input)
                     handler(info)
 
-		    // When we hit the last message close the stream and end
-		    if info.lastMessage {
-			self.hitLastMessage = true
-		    	input.close()
-			break
-		    }
+                    // When we hit the last message close the stream and end
+                    if info.lastMessage {
+                        hitLastMessage = true
+                        input.close()
+                        break
+                    }
                 } catch {
                     log("BEPReadError" + error.localizedDescription)
                     input.close()
                 }
             } else {
-		// Wait until the BEP file is available
+                // Wait until the BEP file is available
                 // FIXME: replace polling with kqueue or better
-		if hasChanged() {
-		    try! read(eventAvailableHandler: handler)
-	            return
-		}
-		sleep(1)
+                if hasChanged() {
+                    try! read(eventAvailableHandler: handler)
+                    return
+                }
+                sleep(1)
             }
         }
     }
@@ -70,5 +70,4 @@ public class BEPStream {
         }
         return false
     }
-
 }
