@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Generates a plist for a given build service
 # This can be kicked off by calling launchd or used as a LaunchDaemon
 if [[ ! -n "$1" ]]; then
@@ -17,7 +19,8 @@ cat << EOF
     <string>sh</string>
     <string>-c</string>
     <string>
-        launchctl setenv XCBBUILDSERVICE_PATH $1
+        launchctl unsetenv XCBBUILDSERVICE_PATH "$1"
+        launchctl setenv XCBBUILDSERVICE_PATH "$1"
     </string>
   </array>
   <key>RunAtLoad</key>

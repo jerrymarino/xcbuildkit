@@ -7,6 +7,22 @@ needed!
 
 Checkout the [examples](Examples/) and [Makefile](Makefile).
 
+### Bazel Progress Bar Only
+
+To setup the progress bar for Bazel in Xcode, the example BazelBuildService
+provides all functionality.
+
+```
+make install_bazel_progress_bar_support
+```
+
+Additonally set Bazel options ( e.g. in `~/.bazelrc` ) :
+- setup Bazel to write a binary BEP to /tmp/
+  `--build_event_binary_file=/tmp/bep.bep` _This can be improved in the future_
+
+- _optionally_ crank up the BEP updates:
+  `--progress_report_interval=1 --build_event_publish_all_actions`
+
 # What is this used for?
 
 Generally, integrating third party build systems like Bazel.
