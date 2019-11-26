@@ -13,7 +13,16 @@ To setup the progress bar for Bazel in Xcode, the example BazelBuildService
 provides all functionality.
 
 ```
-make install_bazel_progress_bar_support
+# Recommended LaunchDaemon install ( LaunchDaemon will ask for root )
+tools/bazelwrapper run :install_bazel_progress_bar_support -- --global
+```
+
+```
+# Install per user
+tools/bazelwrapper run :install_bazel_progress_bar_support
+
+# Need to load this before Xcode opening if not a LaunchDaemon
+launchctl load ~/Library/LaunchAgents/com.xcbuildkit.envvar.plist
 ```
 
 Additonally set Bazel options ( e.g. in `~/.bazelrc` ) :
