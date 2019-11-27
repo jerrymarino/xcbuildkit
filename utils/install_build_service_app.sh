@@ -93,15 +93,14 @@ if [[ ! -d "$APP" ]]; then
     exit 1
 fi
 
-mkdir -p "$INSTALL_DIR"
 EXISTING_BUILD_SERVICE="$(find "$INSTALL_DIR" -name *.app | head)"
-
 if [[ -d "$EXISTING_BUILD_SERVICE" ]]; then
     if [[ "$(get_version "$EXISTING_BUILD_SERVICE")" == "$(get_version $APP)" ]]; then
 	exit 0
     fi
 fi
 
+mkdir -p "$INSTALL_DIR"
 # Load the plist
 INSTALLED_APP="$INSTALL_DIR/$(basename $APP)"
 ditto "$APP" "$INSTALLED_APP"
