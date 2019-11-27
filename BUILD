@@ -103,5 +103,7 @@ macos_application_installer(
     name="BazelBuildServiceInstaller",
     app=":BazelBuildService",
     identifier="com.xcbuildkit.installer",
+    distribution="Examples/BazelBuildService/InstallerPkg/distribution.xml",
+    resources="Examples/BazelBuildService/InstallerPkg/Resources/",
 )
 

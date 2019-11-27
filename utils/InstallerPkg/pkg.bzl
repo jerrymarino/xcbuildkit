@@ -1,4 +1,4 @@
-def _impl(ctx):
+def _pkg_impl(ctx):
     # Use the name of the app
     # This relies on the convention of macos_application
     app_name = ctx.attr.app.label.name
@@ -43,8 +43,8 @@ def _impl(ctx):
 # Consider implementing this into rules apple or more generally
 # https://github.com/bazelbuild/rules_pkg/tree/master/pkg
 # Provide a similar API as pkgbuild, but glob the "scripts" attribute
-_macos_application_installer = rule(
-    implementation = _impl,
+macos_application_installer_pkg = rule(
+    implementation = _pkg_impl,
     attrs = {
         "app" : attr.label(),
         "identifier": attr.string(),
@@ -56,13 +56,76 @@ _macos_application_installer = rule(
     outputs = { "pkg": "%{name}.pkg" }
 )
 
+def _product_impl(ctx):
+    # Use the name of the app
+    # This relies on the convention of macos_application
+    input_pkg = ctx.attr.package.files.to_list()[0]
+    distribution = ctx.attr.distribution.files.to_list()[0]
+    cmd = [
+        "set -x;", 
+        "productbuild", 
+        "--distribution",
+        distribution.path,
+        "--resources",
+        ctx.attr.resources_path,
+        "--version",
+        ctx.attr.version,
+        "--package-path",
+        input_pkg.dirname,
+        ctx.outputs.pkg.path
+    ]
+    inputs = [distribution, input_pkg]
+    for f in ctx.attr.resources:
+        inputs.extend(f.files.to_list())
+
+    print("Inputs", inputs)
+    ctx.actions.run_shell(outputs=[ctx.outputs.pkg], command=" ".join(cmd),
+        inputs=inputs)
+
+# productbuild --distribution  distribution.xml --version 1.0 --package-path bazel-bin/ --resources utils/InstallerPkg/resources/ x.pkg
+# Consider implementing this into rules apple or more generally
+# https://github.com/bazelbuild/rules_pkg/tree/master/pkg
+# Provide a similar API as pkgbuild, but glob the "scripts" attribute
+macos_application_installer_product = rule(
+    implementation = _product_impl,
+    attrs = {
+        "distribution" : attr.label(allow_single_file=True),
+        "resources_path": attr.string(),
+        "resources": attr.label_list(allow_files=True),
+        "version": attr.string(default="1.0"),
+        "package": attr.label(allow_single_file=True),
+    },
+    outputs = { "pkg": "%{name}.pkg" }
+)
+
+
 def macos_application_installer(**kwargs):
+    """
+    This macro builds an installer product
+    """
     scripts = "utils/InstallerPkg/scripts/"
     install_location = "/opt/XCBuildKit/XCBuildKit.app"
-    _macos_application_installer(
+    mkargs = kwargs
+    name = mkargs.pop("name")
+
+
+    resources  = mkargs.pop("resources")
+    distribution = mkargs.pop("distribution")
+
+    macos_application_installer_pkg(
+        name = name + "_impl",
         scripts_path=scripts,
         scripts=native.glob([scripts + "*"]),
         install_location=install_location,
-        **kwargs
+        **mkargs
+    )
+
+    macos_application_installer_product(
+        name = name,
+        distribution=distribution,
+        resources=native.glob([resources + "*"]),
+        resources_path=resources,
+        version = "1.0",
+        package = name + "_impl"
     )
 
