@@ -98,7 +98,6 @@ fi
 mkdir -p "$INSTALL_DIR"
 EXISTING_BUILD_SERVICE="$(find "$INSTALL_DIR" -name *.app | head)"
 
-# Print a message when replacing
 if [[ -d "$EXISTING_BUILD_SERVICE" ]]; then
     if [[ "$(get_version "$EXISTING_BUILD_SERVICE")" == "$(get_version $APP)" ]]; then
 	exit 0
