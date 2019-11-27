@@ -36,7 +36,6 @@ function load_plist() {
     if [[ "${GLOBAL:-false}" == "true" ]]; then
 	PLIST="/Library/LaunchDaemons/com.xcbuildkit.envvar.plist"
 	if [[ -n "$(grep "$BINARY" "$PLIST")" ]]; then 
-	    # Skip the update if the binary has the right plist
 	    exit 0
 	fi
 	# Setup as a launchdaemon so it starts up on boot
@@ -50,7 +49,6 @@ function load_plist() {
     else
 	PLIST="$HOME/Library/LaunchAgents/com.xcbuildkit.envvar.plist"
 	if [[ -n "$(grep "$BINARY" "$PLIST")" ]]; then 
-	    # Skip the update if the binary has the right plist
 	    exit 0
 	fi
 	gen_plist "$BINARY" "$PLIST"
