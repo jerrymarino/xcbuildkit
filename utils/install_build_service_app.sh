@@ -85,14 +85,12 @@ if [[ "$APP" == *.zip ]]; then
     ZIPDIR="$(mktemp -d -t z-XXXXXXXXXX)"
     unzip -q "$APP" -d "$ZIPDIR"
     APP="$(find "$ZIPDIR" -d 1 | head)"
-fi
-
-if [[ ! -d "$APP" ]]; then
+elif [[ ! -d "$APP" ]]; then
     echo "Can't find .app at $APP"
     exit 1
 fi
 
-EXISTING_BUILD_SERVICE="$(find "$INSTALL_DIR" -name *.app | head)"
+EXISTING_BUILD_SERVICE="$(find "$INSTALL_DIR" -name *.app 2>/dev/null | head)"
 if [[ -d "$EXISTING_BUILD_SERVICE" ]]; then
     if [[ "$(get_version "$EXISTING_BUILD_SERVICE")" == "$(get_version $APP)" ]]; then
 	exit 0
