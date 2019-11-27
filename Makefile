@@ -11,10 +11,6 @@ XCBBUILDSERVICE_PATH=$(PWD)/bazel-bin/BuildServiceShim/BuildServiceShim
 build:
 	$(BAZEL) build :* //BuildServiceShim
 
-install_bazel_progress_bar_support: build
-	unzip -q bazel-bin/BazelBuildService.zip
-	./utils/install_build_service_app.sh BazelBuildService.app
-
 # Available dummy targets
 # TODO: add the ability to test all of these
 DUMMY_XCODE_ARGS=-target CLI
