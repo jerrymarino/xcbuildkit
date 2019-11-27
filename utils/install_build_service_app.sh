@@ -35,7 +35,7 @@ function load_plist() {
     BINARY="$(find "$INSTALLED_APP/Contents/MacOS" -type f | head)"
     if [[ "${GLOBAL:-false}" == "true" ]]; then
 	PLIST="/Library/LaunchDaemons/com.xcbuildkit.envvar.plist"
-	if [[ -n "$(grep "$BINARY" "$PLIST")" ]]; then 
+	if [[ -f "$PLIST" ]] && [[ -n "$(grep "$BINARY" "$PLIST")" ]]; then
 	    exit 0
 	fi
 	# Setup as a launchdaemon so it starts up on boot
@@ -48,7 +48,7 @@ function load_plist() {
 	sudo launchctl load -w "$PLIST"
     else
 	PLIST="$HOME/Library/LaunchAgents/com.xcbuildkit.envvar.plist"
-	if [[ -n "$(grep "$BINARY" "$PLIST")" ]]; then 
+	if [[ -f "$PLIST" ]] && [[ -n "$(grep "$BINARY" "$PLIST")" ]]; then
 	    exit 0
 	fi
 	gen_plist "$BINARY" "$PLIST"
