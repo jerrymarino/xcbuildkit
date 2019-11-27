@@ -97,11 +97,11 @@ macos_application(
     deps = [":BazelBuildServiceLib"],
 )
 
-# Installs the example Bazel build service
-sh_binary(
-    name = "install_bazel_progress_bar_support",
-    srcs = ["//utils:install_build_service_app.sh"],
-    data = [":BazelBuildService"],
-    args = ["$(location :BazelBuildService).zip"]
+load("//:utils/InstallerPkg/pkg.bzl", "macos_application_installer")
+
+macos_application_installer(
+    name="BazelBuildServiceInstaller",
+    app=":BazelBuildService",
+    identifier="com.xcbuildkit.installer",
 )
 
