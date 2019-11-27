@@ -82,10 +82,7 @@ def _product_impl(ctx):
     ctx.actions.run_shell(outputs=[ctx.outputs.pkg], command=" ".join(cmd),
         inputs=inputs)
 
-# productbuild --distribution  distribution.xml --version 1.0 --package-path bazel-bin/ --resources utils/InstallerPkg/resources/ x.pkg
-# Consider implementing this into rules apple or more generally
-# https://github.com/bazelbuild/rules_pkg/tree/master/pkg
-# Provide a similar API as pkgbuild, but glob the "scripts" attribute
+# Builds packagebuild product
 macos_application_installer_product = rule(
     implementation = _product_impl,
     attrs = {

@@ -42,7 +42,6 @@ function load_plist() {
 }
 
 function main() {
-    echo "Running xcbuildkit installer 3"
     load_plist
     echo "Installer needs to re-launch Xcode"
     # Attempt to gracefully quit Xcode. If the user doesn't close it then this
