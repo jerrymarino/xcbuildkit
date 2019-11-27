@@ -30,21 +30,15 @@ EOF
 function load_plist() {
     INSTALLED_APP="$DSTROOT/$(basename $APP)"
     BINARY="$(find "$INSTALLED_APP/Contents/MacOS" -type f | head)"
-    if [[ "$USER" == "root" ]]; then
-	PLIST="/Library/LaunchDaemons/com.xcbuildkit.envvar.plist"
-	# Setup as a launchdaemon so it starts up on boot
-	# Otherwise, the user might open Xcode without it set.
-	TEMPPLIST="$(mktemp -t pl-XXXXXXXXXX)"
-	gen_plist "$BINARY" "$TEMPPLIST"
-	sudo mv "$TEMPPLIST" "$PLIST"
-	sudo chmod 0644 "$PLIST"
-	sudo chown root:wheel "$PLIST"
-	sudo launchctl load -w "$PLIST"
-    else
-	PLIST="$HOME/Library/LaunchAgents/com.xcbuildkit.envvar.plist"
-	gen_plist "$BINARY" "$PLIST"
-	launchctl load -w "$PLIST"
-    fi
+    PLIST="/Library/LaunchDaemons/com.xcbuildkit.envvar.plist"
+    # Setup as a launchdaemon so it starts up on boot
+    # Otherwise, the user might open Xcode without it set.
+    TEMPPLIST="$(mktemp -t pl-XXXXXXXXXX)"
+    gen_plist "$BINARY" "$TEMPPLIST"
+    sudo mv "$TEMPPLIST" "$PLIST"
+    sudo chmod 0644 "$PLIST"
+    sudo chown root:wheel "$PLIST"
+    sudo launchctl load -w "$PLIST"
 }
 
 function main() {

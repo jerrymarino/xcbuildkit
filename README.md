@@ -16,7 +16,7 @@ provides all functionality.
 tools/bazelwrapper build :BazelBuildServiceInstaller
 sudo installer -pkg bazel-bin/BazelBuildServiceInstaller.pkg -target /
 ```
-_The installer requires sudo to setup the environment variable override. For
+_The installer requires sudo to setup an environment variable override. For
 testing only use `make open_xcode`_
 
 

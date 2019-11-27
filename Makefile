@@ -15,7 +15,7 @@ build:
 # relaunched: Xcode / terminals
 install_bazel_progress_bar_support:
 	$(BAZEL) build :BazelBuildServiceInstaller
-	installer -pkg bazel-bin/BazelBuildServiceInstaller.pkg -target /
+	sudo installer -pkg bazel-bin/BazelBuildServiceInstaller.pkg -target /
 
 # This is for testing only - without installing
 # Generally, run `open_xcode` for testing without installing
