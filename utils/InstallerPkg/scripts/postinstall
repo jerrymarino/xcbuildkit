@@ -17,7 +17,7 @@ cat << EOF > "$2"
     <string>-c</string>
     <string>
         launchctl unsetenv XCBBUILDSERVICE_PATH
-        test -f "$1" && launchctl setenv XCBBUILDSERVICE_PATH "$1"
+        launchctl setenv XCBBUILDSERVICE_PATH "$1"
     </string>
   </array>
   <key>RunAtLoad</key>
@@ -57,5 +57,4 @@ function main() {
     open "$(dirname $(dirname $(xcode-select -p)))"
 }
 
-printenv > /tmp/x
 main "$@"

@@ -9,21 +9,16 @@ Checkout the [examples](Examples/) and [Makefile](Makefile).
 
 ### Bazel Progress Bar Only
 
-To setup the progress bar for Bazel in Xcode, the example BazelBuildService
+To install the progress bar for Bazel in Xcode, the example BazelBuildService
 provides all functionality.
 
 ```
-# Recommended LaunchDaemon install ( LaunchDaemon will ask for root )
-tools/bazelwrapper run :install_bazel_progress_bar_support -- --global
+tools/bazelwrapper build :BazelBuildServiceInstaller
+sudo installer -pkg bazel-bin/BazelBuildServiceInstaller.pkg -target /
 ```
+_The installer requires sudo to setup the environment variable override. For
+testing only use `make open_xcode`_
 
-```
-# Install per user
-tools/bazelwrapper run :install_bazel_progress_bar_support
-
-# Need to load this before Xcode opening if not a LaunchDaemon
-launchctl load ~/Library/LaunchAgents/com.xcbuildkit.envvar.plist
-```
 
 Additonally set Bazel options ( e.g. in `~/.bazelrc` ) :
 - setup Bazel to write a binary BEP to /tmp/
