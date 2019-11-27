@@ -11,6 +11,23 @@ XCBBUILDSERVICE_PATH=$(PWD)/bazel-bin/BuildServiceShim/BuildServiceShim
 build:
 	$(BAZEL) build :* //BuildServiceShim
 
+# Note: after using launchd to set an env var, apps that use it need to be
+# relaunched: Xcode / terminals
+install_bazel_progress_bar_support:
+	$(BAZEL) build :BazelBuildServiceInstaller
+	sudo installer -pkg bazel-bin/BazelBuildServiceInstaller.pkg -target /
+
+# This is for testing only - without installing
+# Generally, run `open_xcode` for testing without installing
+bazel_progress_bar_support: PLIST=~/Library/LaunchAgents/com.xcbuildkit.envvar.plist
+bazel_progress_bar_support:
+	$(BAZEL) build :BazelBuildService
+	@unzip -f -q bazel-bin/BazelBuildService.zip
+	@./utils/plist_generator.sh \
+	    "$(PWD)/BazelBuildService.app/Contents/Macos/BazelBuildService" > $(PLIST)
+	@launchctl unload $(PLIST)
+	@launchctl load $(PLIST)
+
 # Available dummy targets
 # TODO: add the ability to test all of these
 DUMMY_XCODE_ARGS=-target CLI

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-gui-script minSpecVersion="1">
+    <title>Bazel Build Service</title>
+    <organization>com.xcbuildkit</organization>
+    <domains enable_localSystem="true"/>
+    <options customize="never" require-scripts="true" rootVolumeOnly="true" />
+
+    <!-- Define documents displayed at various steps -->
+    <welcome    file="welcome.html"    mime-type="text/html" />
+
+    <!-- List all component packages -->
+    <pkg-ref id="com.xcbuildkit.envvar"
+             version="0"
+        auth="root">BazelBuildServiceInstaller_impl.pkg</pkg-ref>
+
+    <!-- List them again here. They can now be organized
+         as a hierarchy if you want. -->
+    <choices-outline>
+        <line choice="com.xcbuildkit.envvar"/>
+    </choices-outline>
+
+    <!-- Define each choice above -->
+    <choice
+        id="com.xcbuildkit.envvar"
+        visible="false"
+        title="Installs the launchd plist"
+        description=""
+        start_selected="true">
+      <pkg-ref id="com.xcbuildkit.envvar"/>
+    </choice>
+</installer-gui-script>
+

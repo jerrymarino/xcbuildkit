@@ -17,7 +17,7 @@ cat << EOF
     <string>sh</string>
     <string>-c</string>
     <string>
-        launchctl setenv XCBBUILDSERVICE_PATH $1
+        launchctl setenv XCBBUILDSERVICE_PATH "$1"
     </string>
   </array>
   <key>RunAtLoad</key>

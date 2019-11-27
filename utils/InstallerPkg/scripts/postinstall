@@ -1,0 +1,53 @@
+#!/bin/bash
+set -o pipefail
+
+function gen_plist() {
+    # Generates a plist for a given build service
+    # This can be kicked off by calling launchd or used as a LaunchDaemon
+cat << EOF > "$2"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.xcbuildkit.envvar</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>sh</string>
+    <string>-c</string>
+    <string>
+        launchctl unsetenv XCBBUILDSERVICE_PATH
+        launchctl setenv XCBBUILDSERVICE_PATH "$1"
+    </string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+</dict>
+</plist>
+EOF
+}
+
+function load_plist() {
+    INSTALLED_APP="$DSTROOT/$(basename $APP)"
+    BINARY="$(find "$INSTALLED_APP/Contents/MacOS" -type f | head)"
+    PLIST="/Library/LaunchDaemons/com.xcbuildkit.envvar.plist"
+    # Setup as a launchdaemon so it starts up on boot
+    # Otherwise, the user might open Xcode without it set.
+    TEMPPLIST="$(mktemp -t pl-XXXXXXXXXX)"
+    gen_plist "$BINARY" "$TEMPPLIST"
+    sudo mv "$TEMPPLIST" "$PLIST"
+    sudo chmod 0644 "$PLIST"
+    sudo chown root:wheel "$PLIST"
+    sudo launchctl load -w "$PLIST"
+}
+
+function main() {
+    load_plist
+    echo "Installer needs to re-launch Xcode"
+    # Attempt to gracefully quit Xcode. If the user doesn't close it then this
+    # wont work until the next launch
+    osascript -e 'quit app "Xcode"'
+    open "$(dirname $(dirname $(xcode-select -p)))"
+}
+
+main "$@"
