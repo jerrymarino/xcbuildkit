@@ -20,8 +20,8 @@ cat << EOF > "$2"
     <string>sh</string>
     <string>-c</string>
     <string>
-        launchctl unsetenv XCBBUILDSERVICE_PATH "$1"
-        launchctl setenv XCBBUILDSERVICE_PATH "$1"
+        launchctl unsetenv XCBBUILDSERVICE_PATH
+        test -f "$1" && launchctl setenv XCBBUILDSERVICE_PATH "$1"
     </string>
   </array>
   <key>RunAtLoad</key>
@@ -62,7 +62,6 @@ function load_plist() {
 INSTALL_DIR="$HOME/Library/Application Support/XCBuildKit"
 
 APP="$1"
-# idiomatic parameter and option handling in sh
 GLOBAL=false
 while test $# -gt 0
 do
