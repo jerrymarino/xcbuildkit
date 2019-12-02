@@ -101,14 +101,19 @@ macos_application(
 # Gen a BuildInfo.plist to be later consumed by apple bundling rules. In order
 # for this work in the context of a dependency it needs to read the value of the
 # git repo for _this_ repo.
+# If the repo_info doesn't exist then read out commit from the repo
 genrule(
     name = "BuildInfo",
     outs = ["BuildInfo.plist"],
-    srcs = [".git/HEAD"],
+    srcs = ["@xcbuildkit_repo_info//:ref"],
     cmd = """
-        pushd $$(dirname $$(dirname $(location .git/HEAD)))
-        COMMIT=$$(git rev-parse HEAD)
-        popd
+        SRC=$(SRCS)
+        COMMIT=$$(cat $$SRC)
+        if [[ ! -n "$$COMMIT" ]]; then
+            pushd "$$(cat ../../DO_NOT_BUILD_HERE)"
+            COMMIT=$$(git rev-parse HEAD)
+            popd
+        fi
         echo \"<plist version=\"1.0\"><dict><key>BUILD_COMMIT</key><string>$$COMMIT</string></dict></plist>\" > $@
         """,
 )
