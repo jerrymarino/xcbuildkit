@@ -24,8 +24,6 @@ def _pkg_impl(ctx):
         # And causes the install_location to be the name of the app.
         # e.g. /opt/XCBuildKit/XCBuildKit.app
         extracted_app.path + "/" + app_name + ".app",
-        "--scripts",
-        ctx.attr.scripts_path,
         "--identifier",
         ctx.attr.identifier,
         "--version",
@@ -34,9 +32,13 @@ def _pkg_impl(ctx):
         "--install-location", ctx.attr.install_location,
         ctx.outputs.pkg.path
     ]
+
     inputs = [extracted_app]
-    for f in ctx.attr.scripts:
-        inputs.extend(f.files.to_list())
+    if ctx.attr.scripts:
+        scripts = ctx.attr.scripts.files.to_list()
+        inputs.extend(scripts)
+        cmd.extend(["--scripts", scripts[0].dirname])
+
     ctx.actions.run_shell(outputs=[ctx.outputs.pkg], command=" ".join(cmd),
         inputs=inputs)
 
@@ -50,8 +52,7 @@ macos_application_installer_pkg = rule(
         "identifier": attr.string(),
         "version": attr.string(default="1.0"),
         "install_location": attr.string(),
-        "scripts": attr.label_list(allow_files=True),
-        "scripts_path": attr.string(),
+        "scripts": attr.label(),
     },
     outputs = { "pkg": "%{name}.pkg" }
 )
@@ -62,12 +63,9 @@ def _product_impl(ctx):
     input_pkg = ctx.attr.package.files.to_list()[0]
     distribution = ctx.attr.distribution.files.to_list()[0]
     cmd = [
-        "set -x;", 
         "productbuild", 
         "--distribution",
         distribution.path,
-        "--resources",
-        ctx.attr.resources_path,
         "--version",
         ctx.attr.version,
         "--package-path",
@@ -75,8 +73,10 @@ def _product_impl(ctx):
         ctx.outputs.pkg.path
     ]
     inputs = [distribution, input_pkg]
-    for f in ctx.attr.resources:
-        inputs.extend(f.files.to_list())
+    if ctx.attr.resources:
+        resources = ctx.attr.resources.files.to_list()
+        inputs.extend(resources)
+        cmd.extend(["--resources", resources[0].dirname])
 
     print("Inputs", inputs)
     ctx.actions.run_shell(outputs=[ctx.outputs.pkg], command=" ".join(cmd),
@@ -87,9 +87,8 @@ macos_application_installer_product = rule(
     implementation = _product_impl,
     attrs = {
         "distribution" : attr.label(allow_single_file=True),
-        "resources_path": attr.string(),
-        "resources": attr.label_list(allow_files=True),
-        "version": attr.string(default="1.0"),
+        "resources": attr.label(allow_single_file=True),
+        "version": attr.string(),
         "package": attr.label(allow_single_file=True),
     },
     outputs = { "pkg": "%{name}.pkg" }
@@ -100,29 +99,40 @@ def macos_application_installer(**kwargs):
     """
     This macro builds an installer product
     """
-    scripts = "utils/InstallerPkg/scripts/"
+    scripts = kwargs.pop("scripts")
     install_location = "/opt/XCBuildKit/XCBuildKit.app"
     mkargs = kwargs
     name = mkargs.pop("name")
 
-
     resources  = mkargs.pop("resources")
     distribution = mkargs.pop("distribution")
 
+    native.filegroup(
+        name = name + "_scripts",
+        srcs = native.glob([scripts + "/*"])
+    )
+
     macos_application_installer_pkg(
         name = name + "_impl",
-        scripts_path=scripts,
-        scripts=native.glob([scripts + "*"]),
+        scripts=name + "_scripts",
         install_location=install_location,
         **mkargs
     )
 
+    native.filegroup(
+        name = name + "_resources",
+        srcs = native.glob([resources + "/*"])
+    )
+
+    native.filegroup(
+        name = name + "_distribution",
+        srcs = native.glob([distribution])
+    )
+
     macos_application_installer_product(
         name = name,
-        distribution=distribution,
-        resources=native.glob([resources + "*"]),
-        resources_path=resources,
+        distribution = name + "_distribution",
+        resources = name + "_resources",
         version = "1.0",
         package = name + "_impl"
     )
-

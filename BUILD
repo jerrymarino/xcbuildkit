@@ -88,13 +88,34 @@ swift_library(
 )
 
 # This is an end to end integration test utility
+
 macos_application(
     name = "BazelBuildService",
     bundle_id = "com.xcbuildkit.example",
-    infoplists = ["Examples/BazelBuildService/Info.plist"],
+    infoplists = ["Examples/BazelBuildService/Info.plist", ":BuildInfo"],
     minimum_os_version = "10.14",
     version = ":XCBuildKitVersion",
     deps = [":BazelBuildServiceLib"],
+)
+
+# Gen a BuildInfo.plist to be later consumed by apple bundling rules. In order
+# for this work in the context of a dependency it needs to read the value of the
+# git repo for _this_ repo.
+# If the repo_info doesn't exist then read out commit from the repo
+genrule(
+    name = "BuildInfo",
+    outs = ["BuildInfo.plist"],
+    srcs = ["@xcbuildkit_repo_info//:ref"],
+    cmd = """
+        SRC=$(SRCS)
+        COMMIT=$$(cat $$SRC)
+        if [[ ! -n "$$COMMIT" ]]; then
+            pushd "$$(cat ../../DO_NOT_BUILD_HERE)"
+            COMMIT=$$(git rev-parse HEAD)
+            popd
+        fi
+        echo \"<plist version=\"1.0\"><dict><key>BUILD_COMMIT</key><string>$$COMMIT</string></dict></plist>\" > $@
+        """,
 )
 
 load("//:utils/InstallerPkg/pkg.bzl", "macos_application_installer")
@@ -104,6 +125,7 @@ macos_application_installer(
     app=":BazelBuildService",
     identifier="com.xcbuildkit.installer",
     distribution="Examples/BazelBuildService/InstallerPkg/distribution.xml",
-    resources="Examples/BazelBuildService/InstallerPkg/Resources/",
+    resources="Examples/BazelBuildService/InstallerPkg/Resources",
+    scripts="utils/InstallerPkg/scripts",
 )
 

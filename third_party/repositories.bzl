@@ -3,6 +3,7 @@ load(
     "git_repository",
     "new_git_repository",
 )
+load("//BazelExtensions:version.bzl", "repo_info")
 
 NAMESPACE_PREFIX = "xcbuildkit-"
 
@@ -100,6 +101,8 @@ def dependencies():
         ]),
         commit = "0a8f81884973d7b265dc8cca6b2db2f349aca54d",
         )
+    repo_info("xcbuildkit")
+
     # Fork this internally
     #namespaced_new_git_repository(
     #    name = "MessagePack",
