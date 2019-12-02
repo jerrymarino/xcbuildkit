@@ -1,5 +1,4 @@
 def _info_impl(ctx):
-    ctx.execute(["mkdir", "external/some"])
     ctx.file("BUILD", content="exports_files([\"ref\"])")
     ctx.file("WORKSPACE", content="")
     if ctx.attr.value:
