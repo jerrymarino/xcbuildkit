@@ -19,8 +19,6 @@ def _get_ref(rule):
         return None
     if rule["commit"]:
         return rule["commit"]
-    if rule["shallow_since"]:
-        return rule["shallow_since"]
     if rule["tag"]:
         return rule["tag"]
     print("WARNING: using unstable build tag")
