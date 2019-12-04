@@ -1,53 +1,50 @@
 #!/bin/bash
-set -o pipefail
+set -e
 
-function gen_plist() {
-    # Generates a plist for a given build service
-    # This can be kicked off by calling launchd or used as a LaunchDaemon
-cat << EOF > "$2"
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>com.xcbuildkit.envvar</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>sh</string>
-    <string>-c</string>
-    <string>
-        launchctl unsetenv XCBBUILDSERVICE_PATH
-        launchctl setenv XCBBUILDSERVICE_PATH "$1"
-    </string>
-  </array>
-  <key>RunAtLoad</key>
-  <true/>
-</dict>
-</plist>
-EOF
-}
+# TODO: add version checking here
+# At the moment, the current build works for all Xcode 11 releases
+function install_for_xcode() {
+    echo "Installing for Xcode $1"
+    BS_DEFAULT_LOCATION="${1}/Contents/SharedFrameworks/XCBuild.framework/PlugIns/XCBBuildService.bundle/Contents/MacOS/XCBBuildService"
+    # If someone has Xcode selected an invalid Xcode this won't work.
+    if [[ ! -f "$BS_DEFAULT_LOCATION" ]]; then
+        echo "Invalid Xcode ${1}" && exit 1
+    fi
 
-function load_plist() {
-    INSTALLED_APP="$DSTROOT/$(basename $APP)"
-    BINARY="$(find "$INSTALLED_APP/Contents/MacOS" -type f | head)"
-    PLIST="/Library/LaunchDaemons/com.xcbuildkit.envvar.plist"
-    # Setup as a launchdaemon so it starts up on boot
-    # Otherwise, the user might open Xcode without it set.
-    TEMPPLIST="$(mktemp -t pl-XXXXXXXXXX)"
-    gen_plist "$BINARY" "$TEMPPLIST"
-    sudo mv "$TEMPPLIST" "$PLIST"
-    sudo chmod 0644 "$PLIST"
-    sudo chown root:wheel "$PLIST"
-    sudo launchctl load -w "$PLIST"
+    BS_INSTALLED_LOCATION="${BS_DEFAULT_LOCATION}.default"
+    # Move the original version to the installed location
+    if [[ ! -f "$BS_INSTALLED_LOCATION" ]]; then
+        mv "$BS_DEFAULT_LOCATION" "$BS_INSTALLED_LOCATION"
+    fi
+
+    # Symlink the binary to the default location
+    BINARY="$(find "$DSTROOT/Contents/MacOS" -type f | head)"
+    ln -sf "$BINARY" "$BS_DEFAULT_LOCATION"
 }
 
 function main() {
-    load_plist
-    echo "Installer needs to re-launch Xcode"
-    # Attempt to gracefully quit Xcode. If the user doesn't close it then this
-    # wont work until the next launch
-    osascript -e 'quit app "Xcode"'
-    open "$(dirname $(dirname $(xcode-select -p)))"
-}
+    # If the user hasn't selected an Xcode then it won't work
+    XCODE="$(dirname "$(dirname "$(xcode-select -p)")")"
+    install_for_xcode "$XCODE"
 
+    # If xcode is running, then install for that Xcode
+    # If install is called 2x it doesn't make a difference
+    RUNNING_XCODES="$(ps ax | grep Contents\/MacOS\/Xcode$ | \
+        awk '{$1=$2=$3=$4="";print substr($0,5) }')"
+    for RUNNING_XCODE in "${RUNNING_XCODES[@]}"; do
+        if [[ -n "$RUNNING_XCODE" ]]; then
+            install_for_xcode "$(dirname "$(dirname "$(dirname "$RUNNING_XCODE")")")"
+        fi
+    done
+
+    # Attempt to gracefully quit and re-open Xcode
+    # Call quit for each instance of Xcode running, and then re-open
+    for RUNNING_XCODE in "${RUNNING_XCODES[@]}"; do
+        if [[ -n "$RUNNING_XCODE" ]]; then
+            echo "Installer needs to re-launch Xcode ( $RUNNING_XCODE )"
+            osascript -e 'quit app "Xcode"' || true
+            open "$(dirname "$(dirname "$(dirname "$RUNNING_XCODE")")")"
+        fi
+    done
+}
 main "$@"

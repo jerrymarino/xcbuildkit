@@ -1,8 +1,10 @@
 import Foundation
+import XCBProtocol
 
 /// Interact with XCBBuildService
 public class XCBBuildServiceProcess {
     private static let bsPath = "/Contents/SharedFrameworks/XCBuild.framework/PlugIns/XCBBuildService.bundle/Contents/MacOS/XCBBuildService"
+    private static let bsPathDefault = bsPath + ".default"
 
     private var path: String?
     private let stdin = Pipe()
@@ -32,11 +34,17 @@ public class XCBBuildServiceProcess {
             return
         }
 
-        let path = xcode + "/" + XCBBuildServiceProcess.bsPath
-        self.start(path: path)
+        // In the case we've replaced Xcode's build service then start that
+        let defaultPath = xcode + "/" + XCBBuildServiceProcess.bsPathDefault
+        if FileManager.default.fileExists(atPath: defaultPath) {
+            self.start(path: defaultPath)
+        } else {
+            self.start(path: xcode + "/" + XCBBuildServiceProcess.bsPath)
+        }
     }
 
     private func start(path: String) {
+        log("Starting build service:" + path)
         self.stdout.fileHandleForReading.readabilityHandler = {
             handle in
             let data = handle.availableData
