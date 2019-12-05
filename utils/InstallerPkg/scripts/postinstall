@@ -1,8 +1,12 @@
 #!/bin/bash
 set -e
 
-# TODO: add version checking here
-# At the moment, the current build works for all Xcode 11 releases
+SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}"  )" && pwd  )"
+pushd "$SCRIPTPATH/.." > /dev/null
+
+# Install for Xcode 11 only
+SUPPORTED_VERSION=11
+
 function install_for_xcode() {
     echo "Installing for Xcode $1"
     BS_DEFAULT_LOCATION="${1}/Contents/SharedFrameworks/XCBuild.framework/PlugIns/XCBBuildService.bundle/Contents/MacOS/XCBBuildService"
@@ -19,24 +23,28 @@ function install_for_xcode() {
 
     # Symlink the binary to the default location
     BINARY="$(find "$DSTROOT/Contents/MacOS" -type f | head)"
+    if [[ ! -f "$BINARY" ]]; then
+        echo "Invalid installer $DSTROOT" && exit 1
+    fi
     ln -sf "$BINARY" "$BS_DEFAULT_LOCATION"
 }
 
 function main() {
-    # If the user hasn't selected an Xcode then it won't work
-    XCODE="$(dirname "$(dirname "$(xcode-select -p)")")"
-    install_for_xcode "$XCODE"
+    # Install for all Xcodes for matching version.
+    # See xcode-locator.m for more info
+    ALL_XCODES=( $($SCRIPTPATH/xcode-locator $SUPPORTED_VERSION 2>&1 | \
+        grep "   \"file:" | \
+        sed -e 's, .*"file://,,g' -e 's,"$,,g' -e 's,%20, ,g') )
 
-    # If xcode is running, then install for that Xcode
-    # If install is called 2x it doesn't make a difference
-    RUNNING_XCODES="$(ps ax | grep Contents\/MacOS\/Xcode$ | \
-        awk '{$1=$2=$3=$4="";print substr($0,5) }')"
-    for RUNNING_XCODE in "${RUNNING_XCODES[@]}"; do
-        if [[ -n "$RUNNING_XCODE" ]]; then
-            install_for_xcode "$(dirname "$(dirname "$(dirname "$RUNNING_XCODE")")")"
+    for XCODE in "${ALL_XCODES[@]}"; do
+        echo "XC "$(dirname "$XCODE")""
+        if [[ -n "$XCODE" ]]; then
+            install_for_xcode "$(dirname "$XCODE")"
         fi
     done
 
+    RUNNING_XCODES="$(ps ax | grep Contents\/MacOS\/Xcode$ | \
+        awk '{$1=$2=$3=$4="";print substr($0,5) }')"
     # Attempt to gracefully quit and re-open Xcode
     # Call quit for each instance of Xcode running, and then re-open
     for RUNNING_XCODE in "${RUNNING_XCODES[@]}"; do
