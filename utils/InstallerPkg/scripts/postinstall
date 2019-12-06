@@ -32,14 +32,12 @@ function install_for_xcode() {
 function main() {
     # Install for all Xcodes for matching version.
     # See xcode-locator.m for more info
-    ALL_XCODES=( $($SCRIPTPATH/xcode-locator $SUPPORTED_VERSION 2>&1 | \
-        grep "   \"file:" | \
-        sed -e 's, .*"file://,,g' -e 's,"$,,g' -e 's,%20, ,g') )
+    ALL_XCODES=( $("$SCRIPTPATH/xcode-locator" 2>&1 | \
+         grep "expanded=$SUPPORTED_VERSION" | sed -e 's,.*file://,,g' -e 's,/:.*,,g') )
 
     for XCODE in "${ALL_XCODES[@]}"; do
-        echo "XC "$(dirname "$XCODE")""
         if [[ -n "$XCODE" ]]; then
-            install_for_xcode "$(dirname "$XCODE")"
+            install_for_xcode "$XCODE"
         fi
     done
 
