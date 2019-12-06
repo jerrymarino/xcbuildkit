@@ -17,7 +17,6 @@ var gStream: BEPStream?
 enum BasicMessageHandler {
     static func startStream(bepPath: String, startBuildInput: XCBInputStream, bkservice: BKBuildService) throws {
         log("startStream " + String(describing: startBuildInput))
-        try? FileManager.default.removeItem(atPath: bepPath)
         let stream = try BEPStream(path: bepPath)
         var progressView: ProgressView?
         try stream.read {
