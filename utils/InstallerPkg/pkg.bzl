@@ -40,9 +40,8 @@ def _pkg_impl(ctx):
         scripts_dir = ctx.actions.declare_directory(app_name + "_scripts_dir")
         prepare_scripts_cmd = ["mkdir -p", scripts_dir.path, ";\n"]
         for script in ctx.attr.scripts.files.to_list():
-            # This is no available but requires updating
-            # ctx.actions.symlink(scripts_dir.path, (scripts_dir.path + "/" + script.basename))
-            prepare_scripts_cmd.extend(["ln", script.path, scripts_dir.path + "/" + script.basename + ";\n"])
+            # build may mutate
+            prepare_scripts_cmd.extend(["ditto", script.path, scripts_dir.path + "/" + script.basename + ";\n"])
 
         scripts = ctx.attr.scripts.files.to_list()
         ctx.actions.run_shell(outputs=[scripts_dir], command=" ".join(prepare_scripts_cmd),
@@ -93,9 +92,8 @@ def _product_impl(ctx):
         resources_dir = ctx.actions.declare_directory(ctx.attr.name + "_resources_dir")
         prepare_resources_cmd = ["mkdir -p", resources_dir.path, ";\n"]
         for script in ctx.attr.resources.files.to_list():
-            # This is no available but requires updating
-            # ctx.actions.symlink(resources_dir.path, (resources_dir.path + "/" + script.basename))
-            prepare_resources_cmd.extend(["ln", script.path, resources_dir.path + "/" + script.basename + ";\n"])
+            # build may mutate
+            prepare_resources_cmd.extend(["ditto", script.path, resources_dir.path + "/" + script.basename + ";\n"])
 
         resources = ctx.attr.resources.files.to_list()
         ctx.actions.run_shell(outputs=[resources_dir], command=" ".join(prepare_resources_cmd),
