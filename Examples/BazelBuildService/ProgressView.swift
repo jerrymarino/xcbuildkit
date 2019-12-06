@@ -40,14 +40,15 @@ struct ProgressView {
         let progressTotalActions = max(lastTotalActions, totalActions)
         let progress = min(progressTotalActions, max(lastProgress, baseProgress))
         // Don't notify for the same progress more than once.
-        if progress == lastProgress, progressTotalActions == lastTotalActions {
+        if progressTotalActions > 0, progress == lastProgress, progressTotalActions == lastTotalActions {
             return nil
         }
 
         var message: String
         var progressPercent: Double = -1.0
         if progressTotalActions > 0 {
-            message = "\(progress) of \(progressTotalActions) tasks"
+	    // Pad this to prevent some strange UI
+            message = "\(progress) of \(progressTotalActions) tasks            "
             // Very early on in a build, totalActions is not fully computed, and if we set it here
             // the progress bar will jump to 100. Leave it at -1.0 until we get further along.
             // Generally, for an Xcode target there will be a codesign, link, and compile action.
@@ -70,7 +71,9 @@ struct ProgressView {
             progressPercent = 99.0
         }
 
-        self.init(progress: progress, totalActions: progressTotalActions, count: count, message: message, progressPercent: progressPercent)
+	self.init(progress: progress, totalActions: progressTotalActions,
+	   count: count, message: String(message.prefix(30)), progressPercent:
+	   progressPercent)
     }
 
     /// Look for progress like [22 / 228]
