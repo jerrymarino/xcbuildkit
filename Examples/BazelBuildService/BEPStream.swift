@@ -7,7 +7,6 @@ public typealias BEPReadHandler = (BuildEventStream_BuildEvent) -> Void
 
 public class BEPStream {
     private let path: String
-    private var hitLastMessage: Bool = false
     private var fileHandle: FileHandle?
 
     /// @param path - Binary BEP file
@@ -66,10 +65,6 @@ public class BEPStream {
                     let info = try BinaryDelimited.parse(messageType:
                         BuildEventStream_BuildEvent.self, from: input)
                     handler(info)
-                    if info.lastMessage {
-                        self.hitLastMessage = true
-                    }
-
                     log("BEPStream read event \(fileHandle.offsetInFile)")
                 } catch {
                     log("BEPStream read error: " + error.localizedDescription)
