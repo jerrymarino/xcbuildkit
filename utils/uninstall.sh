@@ -8,7 +8,6 @@ SUPPORTED_VERSION=11
 function uninstall_for_xcode() {
     echo "Checking install for Xcode $1"
     BS_DEFAULT_LOCATION="${1}/Contents/SharedFrameworks/XCBuild.framework/PlugIns/XCBBuildService.bundle/Contents/MacOS/XCBBuildService"
-    # If someone has Xcode selected an invalid Xcode this won't work.
     if [[ ! -n "$(readlink "$BS_DEFAULT_LOCATION")" ]]; then
         echo "Not installed for Xcode $1" && return
     fi
@@ -22,9 +21,9 @@ function uninstall_for_xcode() {
 }
 
 function main() {
-    # Install for all Xcodes for matching version.
     # See xcode-locator.m for more info
     "$SCRIPTPATH/../tools/bazelwrapper" build @bazel_tools//tools/osx:xcode-locator-genrule
+    # Prints a list of [Xcode.app]
     ALL_XCODES=( $("$SCRIPTPATH/../bazel-bin/external/bazel_tools/tools/osx/xcode-locator" 2>&1 | \
          grep "expanded=$SUPPORTED_VERSION" | sed -e 's,.*file://,,g' -e 's,/:.*,,g') )
     for XCODE in "${ALL_XCODES[@]}"; do
