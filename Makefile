@@ -17,6 +17,9 @@ install_bazel_progress_bar_support:
 	$(BAZEL) build :BazelBuildServiceInstaller
 	sudo installer -pkg bazel-bin/BazelBuildServiceInstaller.pkg -target /
 
+uninstall_bazel_progress_bar_support:
+	utils/uninstall.sh
+
 # Available dummy targets
 # TODO: add the ability to test all of these
 DUMMY_XCODE_ARGS=-target CLI

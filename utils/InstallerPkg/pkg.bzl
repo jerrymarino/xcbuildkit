@@ -35,9 +35,21 @@ def _pkg_impl(ctx):
 
     inputs = [extracted_app]
     if ctx.attr.scripts:
+        # We need to smash all the scripts into a directory that this can pick
+        # pkgbuild can pick them up
+        scripts_dir = ctx.actions.declare_directory(app_name + "_scripts_dir")
+        prepare_scripts_cmd = ["mkdir -p", scripts_dir.path, ";\n"]
+        for script in ctx.attr.scripts.files.to_list():
+            # build may mutate
+            prepare_scripts_cmd.extend(["ditto", script.path, scripts_dir.path + "/" + script.basename + ";\n"])
+
         scripts = ctx.attr.scripts.files.to_list()
-        inputs.extend(scripts)
-        cmd.extend(["--scripts", scripts[0].dirname])
+        ctx.actions.run_shell(outputs=[scripts_dir], command=" ".join(prepare_scripts_cmd),
+            inputs=scripts)
+
+        ## Add the scripts_dir to the main command
+        inputs.append(scripts_dir)
+        cmd.extend(["--scripts", scripts_dir.path])
 
     ctx.actions.run_shell(outputs=[ctx.outputs.pkg], command=" ".join(cmd),
         inputs=inputs)
@@ -73,12 +85,24 @@ def _product_impl(ctx):
         ctx.outputs.pkg.path
     ]
     inputs = [distribution, input_pkg]
-    if ctx.attr.resources:
-        resources = ctx.attr.resources.files.to_list()
-        inputs.extend(resources)
-        cmd.extend(["--resources", resources[0].dirname])
 
-    print("Inputs", inputs)
+    if ctx.attr.resources:
+        # We need to smash all the resources into a directory that this can pick
+        # pkgbuild can pick them up
+        resources_dir = ctx.actions.declare_directory(ctx.attr.name + "_resources_dir")
+        prepare_resources_cmd = ["mkdir -p", resources_dir.path, ";\n"]
+        for script in ctx.attr.resources.files.to_list():
+            # build may mutate
+            prepare_resources_cmd.extend(["ditto", script.path, resources_dir.path + "/" + script.basename + ";\n"])
+
+        resources = ctx.attr.resources.files.to_list()
+        ctx.actions.run_shell(outputs=[resources_dir], command=" ".join(prepare_resources_cmd),
+            inputs=resources)
+
+        ## Add the resources_dir to the main command
+        inputs.append(resources_dir)
+        cmd.extend(["--resources", resources_dir.path])
+
     ctx.actions.run_shell(outputs=[ctx.outputs.pkg], command=" ".join(cmd),
         inputs=inputs)
 
@@ -98,6 +122,14 @@ macos_application_installer_product = rule(
 def macos_application_installer(**kwargs):
     """
     This macro builds an installer product
+
+    params:
+
+    scripts: a filegroup of scripts. As pkgbuild needs these in 1 single layer,
+    they are flattend during build time
+
+    resources: a filegroup of resources. As product build needs these in 1 single layer,
+    they are flattend during build time 
     """
     scripts = kwargs.pop("scripts")
     install_location = "/opt/XCBuildKit/XCBuildKit.app"
@@ -107,21 +139,11 @@ def macos_application_installer(**kwargs):
     resources  = mkargs.pop("resources")
     distribution = mkargs.pop("distribution")
 
-    native.filegroup(
-        name = name + "_scripts",
-        srcs = native.glob([scripts + "/*"])
-    )
-
     macos_application_installer_pkg(
         name = name + "_impl",
-        scripts=name + "_scripts",
+        scripts=scripts,
         install_location=install_location,
         **mkargs
-    )
-
-    native.filegroup(
-        name = name + "_resources",
-        srcs = native.glob([resources + "/*"])
     )
 
     native.filegroup(
@@ -132,7 +154,7 @@ def macos_application_installer(**kwargs):
     macos_application_installer_product(
         name = name,
         distribution = name + "_distribution",
-        resources = name + "_resources",
+        resources = resources,
         version = "1.0",
         package = name + "_impl"
     )

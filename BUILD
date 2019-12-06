@@ -120,12 +120,24 @@ genrule(
 
 load("//:utils/InstallerPkg/pkg.bzl", "macos_application_installer")
 
+# We use the xcode-locator to determine what Xcode versions are on the system
+filegroup(
+    name = "BazelBuildServiceInstaller_scripts",
+    srcs = glob(["utils/InstallerPkg/scripts/*"]) +
+        ["@bazel_tools//tools/osx:xcode-locator-genrule"]
+)
+
+filegroup(
+    name = "BazelBuildServiceInstaller_resources",
+    srcs = glob(["Examples/BazelBuildService/InstallerPkg/Resources/*"])
+)
+
 macos_application_installer(
-    name="BazelBuildServiceInstaller",
-    app=":BazelBuildService",
-    identifier="com.xcbuildkit.installer",
-    distribution="Examples/BazelBuildService/InstallerPkg/distribution.xml",
-    resources="Examples/BazelBuildService/InstallerPkg/Resources",
-    scripts="utils/InstallerPkg/scripts",
+    name = "BazelBuildServiceInstaller",
+    app = ":BazelBuildService",
+    identifier = "com.xcbuildkit.installer",
+    distribution = "Examples/BazelBuildService/InstallerPkg/distribution.xml",
+    resources = ":BazelBuildServiceInstaller_resources",
+    scripts = ":BazelBuildServiceInstaller_scripts",
 )
 
