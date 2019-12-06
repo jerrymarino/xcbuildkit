@@ -97,8 +97,8 @@ struct ProgressView {
                 }
             }
             if numberStrings.count == 2 {
-                ranActions = Int32(numberStrings[0]) ?? 0
-                totalActions = Int32(numberStrings[1]) ?? 0
+                ranActions = Int32(numberStrings[0].replacingOccurrences(of: ",", with: "")) ?? 0
+                totalActions = Int32(numberStrings[1].replacingOccurrences(of: ",", with: "")) ?? 0
             }
         }
 
