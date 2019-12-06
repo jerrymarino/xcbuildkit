@@ -49,9 +49,6 @@ public class BEPStream {
             log("BEPStream: failed to allocate \(path)")
             return
         }
-        if let existingHandle = self.fileHandle {
-            existingHandle.closeFile()
-        }
         self.fileHandle = fileHandle
         fileHandle.readabilityHandler = {
             handle in
