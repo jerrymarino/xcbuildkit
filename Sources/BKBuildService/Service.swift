@@ -37,7 +37,7 @@ public class BKBuildService {
 
             /// Unpack everything
             let result = Unpacker.unpackAll(data)
-            if case let .uint(id) = result.first {
+            if let first = result.first, case let .uint(id) = first {
                 let msgId = id + 1
                 log("respond.msgId" + String(describing: msgId))
             } else {

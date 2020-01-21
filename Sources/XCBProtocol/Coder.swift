@@ -9,10 +9,15 @@ public class XCBEncoder {
 
     /// This is state of protocol messages, and perhaps it would be encapsulated in a
     /// better way. Xcode uses this internally
-    var msgId: UInt64 {
+    func getMsgId() throws -> UInt64 {
         var v = self.input
-        guard case let .uint(id) = v.next() else {
-            fatalError("missing id")
+        guard let next = v.next(),
+            case let .uint(id) = next else {
+            // This happens when there is unexpected input. There is an
+            // unimplemented where this does happen, triggered by
+            // BazelBuildService.
+            log("missing id")
+            throw XCBProtocolError.unexpectedInput(for: self.input)
         }
         return id + 1
     }
@@ -56,7 +61,7 @@ extension XCBDecoder {
 
     private func decodeMessageImpl() throws -> XCBProtocolMessage? {
         var minput = self.input
-        while var value = minput.next() {
+        while let value = minput.next() {
             switch value {
             case let XCBRawValue.string(str):
                 if str == "CREATE_SESSION" {
