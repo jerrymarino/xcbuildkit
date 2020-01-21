@@ -26,7 +26,9 @@ public struct CreateSessionRequest: XCBProtocolMessage {
         var minput = input
 
         /// Perhaps this shouldn't fatal error
-        guard case let .array(msgInfo) = minput.next(), msgInfo.count > 2 else {
+        guard let next = minput.next(),
+            case let .array(msgInfo) = next,
+            msgInfo.count > 2 else {
             throw XCBProtocolError.unexpectedInput(for: input)
         }
 
@@ -173,7 +175,7 @@ public struct SetSessionUserInfoResponse: XCBProtocolMessage {
             XCBRawValue.uint(0),
             XCBRawValue.string("PING"),
             XCBRawValue.nil,
-            XCBRawValue.uint(encoder.msgId + 1),
+            XCBRawValue.uint(try encoder.getMsgId() + 1),
         ]
     }
 }
@@ -209,7 +211,7 @@ public struct BuildStartResponse: XCBProtocolMessage {
     public func encode(_ encoder: XCBEncoder) throws -> XCBResponse {
         return [
             // Begin prefix
-            XCBRawValue.uint(encoder.msgId),
+            XCBRawValue.uint(try encoder.getMsgId()),
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
@@ -225,7 +227,7 @@ public struct BuildStartResponse: XCBProtocolMessage {
             XCBRawValue.uint(0),
             XCBRawValue.string("BOOL"),
             XCBRawValue.array([XCBRawValue.bool(true)]),
-            XCBRawValue.uint(encoder.msgId),
+            XCBRawValue.uint(try encoder.getMsgId()),
             // END
 
             XCBRawValue.uint(0),
@@ -243,7 +245,7 @@ public struct BuildStartResponse: XCBProtocolMessage {
             XCBRawValue.uint(0),
             XCBRawValue.string("BOOL"),
             XCBRawValue.array([XCBRawValue.bool(true)]),
-            XCBRawValue.uint(encoder.msgId - 3),
+            XCBRawValue.uint(try encoder.getMsgId() - 3),
             // END
         ]
     }
@@ -268,7 +270,7 @@ public struct BuildProgressUpdatedResponse: XCBProtocolMessage {
         let padding = 14 // sizeof messages, random things
         let length = "BUILD_PROGRESS_UPDATED".utf8.count + self.taskName.utf8.count + self.message.utf8.count
         return [
-            XCBRawValue.uint(encoder.msgId - 3),
+            XCBRawValue.uint(try encoder.getMsgId() - 3),
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
@@ -298,7 +300,7 @@ public struct PlanningOperationWillStartResponse: XCBProtocolMessage {
             XCBRawValue.uint(0),
             XCBRawValue.string("PLANNING_OPERATION_WILL_START"),
             XCBRawValue.array([XCBRawValue.string("S0"), XCBRawValue.string("FC5F5C50-8B9C-43D6-8F5A-031E967F5CC0")]),
-            XCBRawValue.uint(encoder.msgId - 3),
+            XCBRawValue.uint(try encoder.getMsgId() - 3),
         ]
     }
 }
@@ -315,7 +317,7 @@ public struct PlanningOperationWillEndResponse: XCBProtocolMessage {
             XCBRawValue.uint(0),
             XCBRawValue.string("PLANNING_OPERATION_FINISHED"),
             XCBRawValue.array([XCBRawValue.string("S0"), XCBRawValue.string("FC5F5C50-8B9C-43D6-8F5A-031E967F5CC0")]),
-            XCBRawValue.uint(encoder.msgId - 3),
+            XCBRawValue.uint(try encoder.getMsgId() - 3),
         ]
     }
 }

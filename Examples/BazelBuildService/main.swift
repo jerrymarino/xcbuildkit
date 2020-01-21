@@ -53,7 +53,9 @@ enum BasicMessageHandler {
 
                 let encoder = XCBEncoder(input: input)
                 let message = BuildProgressUpdatedResponse()
-                bkservice.write(try! message.encode(encoder))
+                if let responseData = try? message.encode(encoder) {
+                     bkservice.write(responseData)
+                }
             }
         }
         xcbbuildService.write(data)
