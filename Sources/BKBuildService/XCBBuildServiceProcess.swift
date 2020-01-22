@@ -20,17 +20,32 @@ public class XCBBuildServiceProcess {
     ///
     /// This isn't safe and should be called seraially during a response handler
     public func write(_ data: Data) {
-        guard self.process.isRunning else {
-            fatalError("called write when build service isn't running")
+        if self.process.isRunning == false {
+            // This has happened when attempting to build _swift_ toolchain from
+            // source.
+            //
+            // If the binary was copied into Xcode than start using that.
+            log("warning: attempted to message XCBBuildService before starting it")
+            startIfNecessary(xcode: nil)
         }
         // writes aren't serial here ( rational it already is via stdin )
         self.stdin.fileHandleForWriting.write(data)
     }
 
-    /// An XCBResponseHandler
-    /// To implement a hybrid build service, call after a CreateSessionRequest
-    public func startIfNecessary(xcode: String) {
+    /// Start for a given Xcode
+    /// If Xcode is not specified, it uses the adjacent build service ( setup by
+    /// the install )
+    public func startIfNecessary(xcode: String?) {
         guard self.process.isRunning == false else {
+            return
+        }
+
+        guard let xcode = xcode else {
+            let defaultPath = CommandLine.arguments[0] + ".default"
+            guard FileManager.default.fileExists(atPath: defaultPath) else {
+                fatalError("XCBBuildServiceProcess - unexpected installation.")
+            }
+            self.start(path: defaultPath)
             return
         }
 
@@ -43,7 +58,7 @@ public class XCBBuildServiceProcess {
         }
     }
 
-    private func start(path: String) {
+    public func start(path: String) {
         log("Starting build service:" + path)
         self.stdout.fileHandleForReading.readabilityHandler = {
             handle in
