@@ -95,9 +95,11 @@ public func log(_ str: String) {
     do {
         let fileUpdater = try FileHandle(forWritingTo: url)
         fileUpdater.seekToEndOfFile()
-        fileUpdater.write(entry.data(using: .utf8)!)
+        if let data = entry.data(using: .utf8) {
+            fileUpdater.write(data)
+        }
         fileUpdater.closeFile()
     } catch {
-        try! entry.write(to: url, atomically: false, encoding: .utf8)
+        try? entry.write(to: url, atomically: false, encoding: .utf8)
     }
 }

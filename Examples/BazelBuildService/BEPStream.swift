@@ -42,7 +42,7 @@ public class BEPStream {
         // - Via NSFileHandle, wait for data to be available and read all the
         //   bytes
         try? fm.removeItem(atPath: path)
-        try fm.createFile(atPath: path, contents: Data())
+        fm.createFile(atPath: path, contents: Data())
 
         guard let fileHandle = FileHandle(forReadingAtPath: path) else {
             log("BEPStream: failed to allocate \(path)")

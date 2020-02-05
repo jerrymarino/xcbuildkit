@@ -2,14 +2,6 @@ import Foundation
 import MessagePack
 
 extension FixedWidthInteger {
-    init(bytes: [UInt8]) {
-        self = bytes.withUnsafeBufferPointer {
-            $0.baseAddress!.withMemoryRebound(to: Self.self, capacity: 1) {
-                $0.pointee
-            }
-        }.bigEndian
-    }
-
     var bytes: [UInt8] {
         let capacity = MemoryLayout<Self>.size
         var mutableValue = bigEndian
