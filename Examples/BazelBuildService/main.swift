@@ -25,7 +25,9 @@ enum BasicMessageHandler {
                 let encoder = XCBEncoder(input: startBuildInput)
                 let response = BuildProgressUpdatedResponse(progress:
                     updatedView.progressPercent, message: updatedView.message)
-                bkservice.write(try! response.encode(encoder))
+                if let responseData = try? response.encode(encoder) {
+                     bkservice.write(responseData)
+                }
                 progressView = updatedView
             }
         }
