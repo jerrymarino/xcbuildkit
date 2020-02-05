@@ -19,10 +19,9 @@ private var gBuildNumber: Int64 = -1
 
 private extension XCBEncoder {
     func getResponseMsgId(subtracting  offset: UInt64) throws -> UInt64 {
-        // FIXME: consider finding ways to mitigate unexpected input in
-        // upstream code.
-        // There is some possible ways that bad messages will make it this far
-        // down the code, and this code guards against integer overflow
+        // Consider finding ways to mitigate unexpected input in upstream code.
+        // There may be possible ways that unexpected messages will make it this
+        // far. Guard against possible integer underflow
         let id = try getMsgId()
         guard id >= offset else {
             log("bad offset")
