@@ -16,7 +16,7 @@ public class XCBEncoder {
             // This happens when there is unexpected input. There is an
             // unimplemented where this does happen, triggered by
             // BazelBuildService.
-            log("missing id")
+            log("missing id for msg: " String(describing: self.input))
             throw XCBProtocolError.unexpectedInput(for: self.input)
         }
         return id + 1
