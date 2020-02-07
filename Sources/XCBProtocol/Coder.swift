@@ -16,7 +16,7 @@ public class XCBEncoder {
             // This happens when there is unexpected input. There is an
             // unimplemented where this does happen, triggered by
             // BazelBuildService.
-            log("missing id")
+            log("missing id for msg: " + String(describing: self.input))
             throw XCBProtocolError.unexpectedInput(for: self.input)
         }
         return id + 1
@@ -95,9 +95,11 @@ public func log(_ str: String) {
     do {
         let fileUpdater = try FileHandle(forWritingTo: url)
         fileUpdater.seekToEndOfFile()
-        fileUpdater.write(entry.data(using: .utf8)!)
+        if let data = entry.data(using: .utf8) {
+            fileUpdater.write(data)
+        }
         fileUpdater.closeFile()
     } catch {
-        try! entry.write(to: url, atomically: false, encoding: .utf8)
+        try? entry.write(to: url, atomically: false, encoding: .utf8)
     }
 }

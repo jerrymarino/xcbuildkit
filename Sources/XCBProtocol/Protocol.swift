@@ -17,6 +17,20 @@ let XCBProtocolVersion = "11"
 /// find a better solution
 private var gBuildNumber: Int64 = -1
 
+private extension XCBEncoder {
+    func getResponseMsgId(subtracting  offset: UInt64) throws -> UInt64 {
+        // Consider finding ways to mitigate unexpected input in upstream code.
+        // There may be possible ways that unexpected messages will make it this
+        // far. Guard against possible integer underflow
+        let id = try getMsgId()
+        guard id >= offset else {
+            log("bad offset for msg: " + String(describing: self.input))
+            throw XCBProtocolError.unexpectedInput(for: self.input)
+        }
+        return id - offset
+    }
+}
+
 public struct CreateSessionRequest: XCBProtocolMessage {
     public let workspace: String
     public let xcode: String
@@ -245,7 +259,7 @@ public struct BuildStartResponse: XCBProtocolMessage {
             XCBRawValue.uint(0),
             XCBRawValue.string("BOOL"),
             XCBRawValue.array([XCBRawValue.bool(true)]),
-            XCBRawValue.uint(try encoder.getMsgId() - 3),
+            XCBRawValue.uint(try encoder.getResponseMsgId(subtracting: 3)),
             // END
         ]
     }
@@ -270,7 +284,7 @@ public struct BuildProgressUpdatedResponse: XCBProtocolMessage {
         let padding = 14 // sizeof messages, random things
         let length = "BUILD_PROGRESS_UPDATED".utf8.count + self.taskName.utf8.count + self.message.utf8.count
         return [
-            XCBRawValue.uint(try encoder.getMsgId() - 3),
+            XCBRawValue.uint(try encoder.getResponseMsgId(subtracting: 3)),
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
@@ -300,7 +314,7 @@ public struct PlanningOperationWillStartResponse: XCBProtocolMessage {
             XCBRawValue.uint(0),
             XCBRawValue.string("PLANNING_OPERATION_WILL_START"),
             XCBRawValue.array([XCBRawValue.string("S0"), XCBRawValue.string("FC5F5C50-8B9C-43D6-8F5A-031E967F5CC0")]),
-            XCBRawValue.uint(try encoder.getMsgId() - 3),
+            XCBRawValue.uint(try encoder.getResponseMsgId(subtracting: 3)),
         ]
     }
 }
@@ -317,7 +331,7 @@ public struct PlanningOperationWillEndResponse: XCBProtocolMessage {
             XCBRawValue.uint(0),
             XCBRawValue.string("PLANNING_OPERATION_FINISHED"),
             XCBRawValue.array([XCBRawValue.string("S0"), XCBRawValue.string("FC5F5C50-8B9C-43D6-8F5A-031E967F5CC0")]),
-            XCBRawValue.uint(try encoder.getMsgId() - 3),
+            XCBRawValue.uint(try encoder.getResponseMsgId(subtracting: 3)),
         ]
     }
 }
