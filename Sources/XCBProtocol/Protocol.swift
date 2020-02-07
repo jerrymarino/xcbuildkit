@@ -24,7 +24,7 @@ private extension XCBEncoder {
         // far. Guard against possible integer underflow
         let id = try getMsgId()
         guard id >= offset else {
-            log("bad offset for msg: " String(describing: self.input))
+            log("bad offset for msg: " + String(describing: self.input))
             throw XCBProtocolError.unexpectedInput(for: self.input)
         }
         return id - offset
