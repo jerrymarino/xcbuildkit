@@ -15,6 +15,13 @@ public class BEPStream {
         self.path = path
     }
 
+    deinit {
+        // According to close should automatically happen, but it does't under a
+        // few cases:
+        // https://developer.apple.com/documentation/foundation/filehandle/1413393-closefile
+        fileHandle?.closeFile()
+        fileHandle?.readabilityHandler = nil
+    }
     /// Reads data from a BEP stream
     /// @param eventAvailableHandler - this is called with _every_ BEP event
     /// available
@@ -65,6 +72,10 @@ public class BEPStream {
                     let info = try BinaryDelimited.parse(messageType:
                         BuildEventStream_BuildEvent.self, from: input)
                     handler(info)
+                    if info.lastMessage {
+                        handle.closeFile()
+                        handle.readabilityHandler = nil
+                    }
                     log("BEPStream read event \(fileHandle.offsetInFile)")
                 } catch {
                     log("BEPStream read error: " + error.localizedDescription)
