@@ -4,8 +4,7 @@ set -e
 SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}"  )" && pwd  )"
 pushd "$SCRIPTPATH/.." > /dev/null
 
-# Install for Xcode 11 only
-SUPPORTED_VERSION=11
+SUPPORTED_VERSIONS=(11 12)
 
 function install_for_xcode() {
     echo "Installing for Xcode $1"
@@ -32,13 +31,15 @@ function install_for_xcode() {
 function main() {
     # Install for all Xcodes for matching version.
     # See xcode-locator.m for more info
-    ALL_XCODES=( $("$SCRIPTPATH/xcode-locator" 2>&1 | \
-         grep "expanded=$SUPPORTED_VERSION" | sed -e 's,.*file://,,g' -e 's,/:.*,,g') )
+    for SUPPORTED_VERSION in "${SUPPORTED_VERSIONS[@]}"; do
+      ALL_XCODES=( $("$SCRIPTPATH/xcode-locator" 2>&1 | \
+      grep "expanded=$SUPPORTED_VERSION" | sed -e 's,.*file://,,g' -e 's,/:.*,,g') )
 
-    for XCODE in "${ALL_XCODES[@]}"; do
+      for XCODE in "${ALL_XCODES[@]}"; do
         if [[ -n "$XCODE" ]]; then
-            install_for_xcode "$XCODE"
+          install_for_xcode "$XCODE"
         fi
+      done
     done
 
     RUNNING_XCODES="$(ps ax | grep Contents\/MacOS\/Xcode$ | \
