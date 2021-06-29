@@ -21,13 +21,17 @@ function uninstall_for_xcode() {
 }
 
 function main() {
+  # See xcode-locator.m for more info
+  "$SCRIPTPATH/../tools/bazelwrapper" build @bazel_tools//tools/osx:xcode-locator-genrule
+  # Prints a list of [Xcode.app]
+  IFS=$'\n'
+  ALL_XCODES=( $("$SCRIPTPATH/../bazel-bin/external/bazel_tools/tools/osx/xcode-locator" 2>&1) )
+
   for SUPPORTED_VERSION in "${SUPPORTED_VERSIONS[@]}"; do
-    # See xcode-locator.m for more info
-    "$SCRIPTPATH/../tools/bazelwrapper" build @bazel_tools//tools/osx:xcode-locator-genrule
-    # Prints a list of [Xcode.app]
-    ALL_XCODES=( $("$SCRIPTPATH/../bazel-bin/external/bazel_tools/tools/osx/xcode-locator" 2>&1 | \
+    SUPPORTED_XCODES=( $(printf '%s\n' "${ALL_XCODES[@]}" | \
     grep "expanded=$SUPPORTED_VERSION" | sed -e 's,.*file://,,g' -e 's,/:.*,,g') )
-    for XCODE in "${ALL_XCODES[@]}"; do
+
+    for XCODE in "${SUPPORTED_XCODES[@]}"; do
       if [[ -n "$XCODE" ]]; then
         uninstall_for_xcode "$XCODE"
       fi

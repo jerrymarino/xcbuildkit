@@ -31,11 +31,14 @@ function install_for_xcode() {
 function main() {
     # Install for all Xcodes for matching version.
     # See xcode-locator.m for more info
+    IFS=$'\n'
+    ALL_XCODES=( $("$SCRIPTPATH/xcode-locator" 2>&1) )
+
     for SUPPORTED_VERSION in "${SUPPORTED_VERSIONS[@]}"; do
-      ALL_XCODES=( $("$SCRIPTPATH/xcode-locator" 2>&1 | \
+      SUPPORTED_XCODES=( $(printf '%s\n' "${ALL_XCODES[@]}" | \
       grep "expanded=$SUPPORTED_VERSION" | sed -e 's,.*file://,,g' -e 's,/:.*,,g') )
 
-      for XCODE in "${ALL_XCODES[@]}"; do
+      for XCODE in "${SUPPORTED_XCODES[@]}"; do
         if [[ -n "$XCODE" ]]; then
           install_for_xcode "$XCODE"
         fi
