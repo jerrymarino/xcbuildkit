@@ -57,11 +57,11 @@ symlink_external:
 run_shim: build
 	XCBBUILDSERVICE_PATH=$(XCBBUILDSERVICE_PATH) $(XCBBUILDSERVICE_PATH)
 
-enable_indexing:
+disable_indexing:
 	defaults write com.apple.dt.XCode IDEIndexDisable 1
 
 # Note: the static build service doesn't work with this ATM
-disable_indexing:
+enable_indexing:
 	defaults write com.apple.dt.XCode IDEIndexDisable 0
 
 # Uses xxd to inspect outputs
