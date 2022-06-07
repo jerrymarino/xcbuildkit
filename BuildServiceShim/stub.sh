@@ -3,7 +3,7 @@
 # The service is adjacent to this program
 # The layer of indirection is useful for debugging and not
 # a production component
-SERVICE="$(dirname $(dirname $XCBBUILDSERVICE_PATH))/BazelBuildService-intermediates/BazelBuildService"
+SERVICE="$(dirname $(dirname $XCBBUILDSERVICE_PATH))/BazelBuildService_app_dir/BazelBuildService.app/Contents/MacOS/BazelBuildService"
 
 function redirect() {
     #tee  >($SERVICE) /tmp/xcbuild.out
