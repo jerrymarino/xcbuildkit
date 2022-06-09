@@ -15,6 +15,7 @@ public typealias XCBMessageHandler = (XCBInputStream, Data, Any?) -> Void
 
 public class BKBuildService {
     let shouldDump: Bool
+    let shouldDumpHumanReadable: Bool
 
     // This needs to be serial in order to serialize the messages / prevent
     // crossing streams.
@@ -22,6 +23,7 @@ public class BKBuildService {
 
     public init() {
         self.shouldDump = CommandLine.arguments.contains("--dump")
+        self.shouldDumpHumanReadable = CommandLine.arguments.contains("--dump_h")
     }
 
     /// Starts a service on standard input
@@ -44,14 +46,16 @@ public class BKBuildService {
                 log("missing id")
             }
 
-            let resultItr = result.makeIterator()
             if self.shouldDump {
                 // Dumps out the protocol
                 // useful for debuging, code gen'ing protocol messages, and
                 // upgrading Xcode versions
                 result.forEach{ $0.prettyPrint() }
+            } else if self.shouldDumpHumanReadable {
+                // Same as above but dumps out the protocol in human readable format
+                PrettyPrinter.prettyPrintRecursively(result)
             } else {
-                messageHandler(resultItr, data, context)
+                messageHandler(result.makeIterator(), data, context)
             }
         }
         repeat {
