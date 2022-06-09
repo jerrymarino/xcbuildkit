@@ -41,14 +41,24 @@ test: build
 
 # Random development commands
 # Opens Xcode with the build service selected
+open_xcode_with_sk_logging: build
+	/usr/bin/env - TERM="$(TERM)"; \
+			SOURCEKIT_LOGGING=3 \
+	    export SHELL="$(SHELL)"; \
+	    export PATH="$(PATH)"; \
+	    export HOME="$(HOME)"; \
+	    export XCODE="$(XCODE)"; \
+	    export XCBBUILDSERVICE_PATH="$(XCBBUILDSERVICE_PATH)"; \
+			$(XCODE)/Contents/MacOS/Xcode &> /tmp/xcode_sourcekit.log
+
 open_xcode: build
 	/usr/bin/env - TERM="$(TERM)"; \
 	    export SHELL="$(SHELL)"; \
 	    export PATH="$(PATH)"; \
 	    export HOME="$(HOME)"; \
 	    export XCODE="$(XCODE)"; \
-			export XCBBUILDSERVICE_PATH="$(XCBBUILDSERVICE_PATH)"; \
-      $(XCODE)/Contents/MacOS/Xcode
+	    export XCBBUILDSERVICE_PATH="$(XCBBUILDSERVICE_PATH)"; \
+			$(XCODE)/Contents/MacOS/Xcode
 
 clean:
 	rm -rf /tmp/xcbuild.*

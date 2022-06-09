@@ -34,6 +34,32 @@ enum BasicMessageHandler {
         gStream = stream
     }
 
+    static func fakeIndexingInfoRes() -> Data {
+        let xml = """
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+            <array>
+                <dict>
+                    <key>outputFilePath</key>
+                    <string>/iOSApp.build/Debug/CLI.build/Objects-normal/x86_64/main.o</string>
+                    <key>sourceFilePath</key>
+                    <string>/Users/thiago/Development/xcbuildkit/iOSApp/CLI/main.m</string>
+                </dict>
+            </array>
+        </plist>
+        """
+        guard let converter = BPlistConverter(xml: xml) else {
+            fatalError("Failed to allocate converter")
+        }
+        guard let fakeData = converter.convertToBinary() else {
+            fatalError("Failed to convert XML to binary plist data")
+        }
+
+        return fakeData
+    }
+
+    static let fakeTargetID = "a218dfee841498f4d1c86fb12905507da6b8608e8d79fa8addd22be62fee6ac8"
+
     /// Proxying response handler
     /// Every message is written to the XCBBuildService
     /// This simply injects Progress messages from the BEP
@@ -42,6 +68,8 @@ enum BasicMessageHandler {
         let xcbbuildService = basicCtx.xcbbuildService
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
+        let encoder = XCBEncoder(input: input)
+
         if let msg = decoder.decodeMessage() {
             if let createSessionRequest = msg as? CreateSessionRequest {
                 xcbbuildService.startIfNecessary(xcode: createSessionRequest.xcode)
@@ -52,11 +80,15 @@ enum BasicMessageHandler {
                 } catch {
                     fatalError("Failed to init stream" + error.localizedDescription)
                 }
-
-                let encoder = XCBEncoder(input: input)
-                let message = BuildProgressUpdatedResponse()
+            } else if msg is IndexingInfoRequested {
+                let message = IndexingInfoReceivedResponse(targetID: fakeTargetID, data: fakeIndexingInfoRes())
                 if let responseData = try? message.encode(encoder) {
-                     bkservice.write(responseData)
+                    bkservice.write(responseData)
+                }
+            } else if msg is BuildDescriptionTargetInfo {
+                let message = IndexingInfoReceivedResponse(targetID: fakeTargetID, data: fakeIndexingInfoRes())
+                if let responseData = try? message.encode(encoder) {
+                    bkservice.write(responseData)
                 }
             }
         }

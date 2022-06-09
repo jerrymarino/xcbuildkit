@@ -1,28 +1,28 @@
 import Foundation
 
 // Credits to: https://gist.github.com/ngbaanh/7c437d99bea75161a59f5af25be99de4
-class BPlistConverter {
+public class BPlistConverter {
     struct PlistMimeType {
         static let xmlPlist    = "text/x-apple-plist+xml"
         static let binaryPlist = "application/x-apple-binary-plist"
     }
 
     //// Visible Stuffs ////////////////////////////////////////////////////////
-    convenience init?(binaryData: Data, quiet: Bool = true) {
+    public convenience init?(binaryData: Data, quiet: Bool = true) {
         self.init(binaryData, format: .binaryFormat_v1_0, quiet: quiet)
     }
 
-    convenience init?(xml: String, quiet: Bool = true) {
+    public convenience init?(xml: String, quiet: Bool = true) {
         guard let xmlData = xml.data(using: .utf8) else { return nil }
         self.init(xmlData, format: .xmlFormat_v1_0, quiet: quiet)
     }
 
-    func convertToXML() -> String? {
+    public func convertToXML() -> String? {
         guard let xmlData = convert(to: .xmlFormat_v1_0) else { return nil }
         return String.init(data: xmlData, encoding: .utf8)
     }
 
-    func convertToBinary() -> Data? {
+    public func convertToBinary() -> Data? {
         return convert(to: .binaryFormat_v1_0)
     }
 

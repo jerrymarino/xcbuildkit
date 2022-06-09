@@ -91,6 +91,10 @@ public struct BuildStartRequest: XCBProtocolMessage {
     public init(input _: XCBInputStream) throws {}
 }
 
+public struct BuildDescriptionTargetInfo: XCBProtocolMessage {
+    public init(input _: XCBInputStream) throws {}
+}
+
 public struct IndexingInfoRequested: XCBProtocolMessage {
     public init(input _: XCBInputStream) throws {}
 }
@@ -358,3 +362,70 @@ public struct BuildOperationEndedResponse: XCBProtocolMessage {
         ]
     }
 }
+
+public struct IndexingInfoReceivedResponse: XCBProtocolMessage {
+    let targetID: String
+    let data: Data?
+
+    public init(targetID: String = "", data: Data? = nil) {
+        self.targetID = targetID
+        self.data = data
+    }
+
+    public func encode(_: XCBEncoder) throws -> XCBResponse {
+        var inputs = [XCBRawValue.string(self.targetID)]
+        if let data = self.data {
+            inputs += [XCBRawValue.binary(data)]
+        }
+
+        return [
+            XCBRawValue.uint(26),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(37),
+            XCBRawValue.uint(1),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("INDEXING_INFO_RECEIVED"),
+            XCBRawValue.array(inputs),
+        ]
+    }
+}
+
+public struct BuildTargetPreparedForIndex: XCBProtocolMessage {
+    let targetGUID: String
+
+    public init(targetGUID: String) {
+        self.targetGUID = targetGUID
+    }
+
+    public func encode(_: XCBEncoder) throws -> XCBResponse {
+        return [
+            XCBRawValue.uint(24),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(109),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("BUILD_TARGET_PREPARED_FOR_INDEX"),
+            XCBRawValue.array([
+                XCBRawValue.string(self.targetGUID),
+                XCBRawValue.array([
+                    XCBRawValue.double(677604523.7527775),
+                ]),
+            ]),
+        ]
+    }
+}
+
