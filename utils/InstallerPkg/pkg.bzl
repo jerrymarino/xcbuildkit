@@ -4,24 +4,31 @@ def _pkg_impl(ctx):
     # Use the name of the app
     # This relies on the convention of macos_application
     app_name = ctx.attr.app.label.name
-    extracted_app = ctx.actions.declare_directory(app_name + "_app_dir")
 
-    # Bazel gives us the .app as a zip file.
-    # Unzip so we can directly package the .app
     bundle_zip = ctx.attr.app[AppleBundleInfo].archive
-    unzip_cmd = [
-        "mkdir -p " + extracted_app.path + ";",
-        "unzip",
-        "-q",
-        bundle_zip.path,
-        "-d",
-        extracted_app.path,
-    ]
-    ctx.actions.run_shell(
-        inputs = ctx.attr.app.files,
-        outputs = [extracted_app],
-        command = " ".join(unzip_cmd),
-    )
+    if bundle_zip.path.endswith(".app"):
+        extracted_app = bundle_zip
+        bundle_path = extracted_app.path
+    else:
+        extracted_app = ctx.actions.declare_directory(app_name + "_app_dir")
+
+        # Bazel gives us the .app as a zip file.
+        # Unzip so we can directly package the .app
+        unzip_cmd = [
+            "mkdir -p " + extracted_app.path + ";",
+            "unzip",
+            "-q",
+            bundle_zip.path,
+            "-d",
+            extracted_app.path,
+        ]
+        ctx.actions.run_shell(
+            inputs = ctx.attr.app.files,
+            outputs = [extracted_app],
+            command = " ".join(unzip_cmd),
+        )
+
+        bundle_path = extracted_app.path + "/" + app_name + ".app"
 
     cmd = [
         "pkgbuild",
@@ -29,7 +36,7 @@ def _pkg_impl(ctx):
         # This puts the .app at the root of the package
         # And causes the install_location to be the name of the app.
         # e.g. /opt/XCBuildKit/XCBuildKit.app
-        extracted_app.path + "/" + app_name + ".app",
+        bundle_path,
         "--identifier",
         ctx.attr.identifier,
         "--version",
