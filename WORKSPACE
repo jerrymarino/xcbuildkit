@@ -1,10 +1,11 @@
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
-http_archive(
+git_repository(
     name = "build_bazel_rules_apple",
-    sha256 = "77e8bf6fda706f420a55874ae6ee4df0c9d95da6c7838228b26910fc82eea5a2",
-    url = "https://github.com/bazelbuild/rules_apple/releases/download/0.32.0/rules_apple.0.32.0.tar.gz",
+    commit = "7115f0188d141d57d64a6875735847c975956dae",
+    remote = "https://github.com/bazelbuild/rules_apple.git",
+    shallow_since = "1648060786 -0700",
 )
 
 load(
@@ -14,10 +15,11 @@ load(
 
 apple_rules_dependencies()
 
-http_archive(
+git_repository(
     name = "build_bazel_rules_swift",
-    url = "https://github.com/bazelbuild/rules_swift/releases/download/0.24.0/rules_swift.0.24.0.tar.gz",
-    sha256 = "4f167e5dbb49b082c5b7f49ee688630d69fb96f15c84c448faa2e97a5780dbbc",
+    commit = "22192877498705ff1adbecd820fdc2724414b0b2",
+    remote = "https://github.com/bazelbuild/rules_swift.git",
+    shallow_since = "1649264039 -0700",
 )
 
 load(
@@ -47,8 +49,6 @@ load(
 )
 
 protobuf_deps()
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 http_file(
     name = "xctestrunner",
