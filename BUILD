@@ -1,14 +1,6 @@
-package(default_visibility = ["//visibility:public"])
-
-licenses(["notice"])
-
 load(
     "@build_bazel_rules_apple//apple:macos.bzl",
     "macos_application",
-)
-load(
-    "@build_bazel_rules_apple//apple:resources.bzl",
-    "apple_bundle_import",
 )
 load(
     "@build_bazel_rules_swift//swift:swift.bzl",
@@ -18,10 +10,11 @@ load(
     "@build_bazel_rules_apple//apple:versioning.bzl",
     "apple_bundle_version",
 )
-load(
-    "//third_party:repositories.bzl",
-    "namespaced_name",
-)
+load("//:utils/InstallerPkg/pkg.bzl", "macos_application_installer")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
 
 swift_library(
     name = "XCBProtocol",
@@ -29,11 +22,13 @@ swift_library(
     deps = ["//third_party/xcbuildkit-MessagePack:MessagePack"],
 )
 
-
 swift_library(
     name = "BKBuildService",
     srcs = glob(["Sources/BKBuildService/*.swift"]),
-    deps = ["//third_party/xcbuildkit-MessagePack:MessagePack", ":XCBProtocol"],
+    deps = [
+        ":XCBProtocol",
+        "//third_party/xcbuildkit-MessagePack:MessagePack",
+    ],
 )
 
 apple_bundle_version(
@@ -41,11 +36,13 @@ apple_bundle_version(
     build_version = "1.0",
 )
 
-
 swift_library(
     name = "BSBuildServiceLib",
     srcs = glob(["Examples/BSBuildService/*.swift"]),
-    deps = ["//third_party/xcbuildkit-MessagePack:MessagePack", ":BKBuildService"],
+    deps = [
+        ":BKBuildService",
+        "//third_party/xcbuildkit-MessagePack:MessagePack",
+    ],
 )
 
 # This is an end to end integration test utility
@@ -61,7 +58,10 @@ macos_application(
 swift_library(
     name = "HybridBuildServiceLib",
     srcs = glob(["Examples/HybridBuildService/*.swift"]),
-    deps = ["//third_party/xcbuildkit-MessagePack:MessagePack", ":BKBuildService"],
+    deps = [
+        ":BKBuildService",
+        "//third_party/xcbuildkit-MessagePack:MessagePack",
+    ],
 )
 
 # This is an end to end integration test utility
@@ -84,7 +84,11 @@ swift_library(
 swift_library(
     name = "BazelBuildServiceLib",
     srcs = glob(["Examples/BazelBuildService/*.swift"]),
-    deps = ["//third_party/xcbuildkit-MessagePack:MessagePack", ":BKBuildService", ":BEP"],
+    deps = [
+        ":BEP",
+        ":BKBuildService",
+        "//third_party/xcbuildkit-MessagePack:MessagePack",
+    ],
 )
 
 # This is an end to end integration test utility
@@ -92,7 +96,10 @@ swift_library(
 macos_application(
     name = "BazelBuildService",
     bundle_id = "com.xcbuildkit.example",
-    infoplists = ["Examples/BazelBuildService/Info.plist", ":BuildInfo"],
+    infoplists = [
+        "Examples/BazelBuildService/Info.plist",
+        ":BuildInfo",
+    ],
     minimum_os_version = "10.14",
     version = ":XCBuildKitVersion",
     deps = [":BazelBuildServiceLib"],
@@ -104,8 +111,8 @@ macos_application(
 # If the repo_info doesn't exist then read out commit from the repo
 genrule(
     name = "BuildInfo",
-    outs = ["BuildInfo.plist"],
     srcs = ["@xcbuildkit_repo_info//:ref"],
+    outs = ["BuildInfo.plist"],
     cmd = """
         SRC=$(SRCS)
         COMMIT=$$(cat $$SRC)
@@ -118,26 +125,24 @@ genrule(
         """,
 )
 
-load("//:utils/InstallerPkg/pkg.bzl", "macos_application_installer")
-
 # We use the xcode-locator to determine what Xcode versions are on the system
 filegroup(
     name = "BazelBuildServiceInstaller_scripts",
-    srcs = glob(["utils/InstallerPkg/scripts/*"]) +
-        ["@bazel_tools//tools/osx:xcode-locator-genrule"]
+    srcs = glob(["utils/InstallerPkg/scripts/*"]) + [
+        "@bazel_tools//tools/osx:xcode-locator-genrule",
+    ],
 )
 
 filegroup(
     name = "BazelBuildServiceInstaller_resources",
-    srcs = glob(["Examples/BazelBuildService/InstallerPkg/Resources/*"])
+    srcs = glob(["Examples/BazelBuildService/InstallerPkg/Resources/*"]),
 )
 
 macos_application_installer(
     name = "BazelBuildServiceInstaller",
     app = ":BazelBuildService",
-    identifier = "com.xcbuildkit.installer",
     distribution = "Examples/BazelBuildService/InstallerPkg/distribution.xml",
+    identifier = "com.xcbuildkit.installer",
     resources = ":BazelBuildServiceInstaller_resources",
     scripts = ":BazelBuildServiceInstaller_scripts",
 )
-

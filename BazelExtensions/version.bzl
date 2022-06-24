@@ -1,14 +1,16 @@
 def _info_impl(ctx):
-    ctx.file("BUILD", content="exports_files([\"ref\"])")
-    ctx.file("WORKSPACE", content="")
+    ctx.file("BUILD", content = "exports_files([\"ref\"])")
+    ctx.file("WORKSPACE", content = "")
     if ctx.attr.value:
-        ctx.file("ref", content=str(ctx.attr.value))
+        ctx.file("ref", content = str(ctx.attr.value))
     else:
-        ctx.file("ref", content="")
+        ctx.file("ref", content = "")
 
-_repo_info = repository_rule(implementation=_info_impl,
-    attrs = { "value": attr.string() },
-    local=True)
+_repo_info = repository_rule(
+    implementation = _info_impl,
+    attrs = {"value": attr.string()},
+    local = True,
+)
 
 # While defining a repository, pass info about the repo
 # e.g. native.existing_rule("some")["commit"]
@@ -27,6 +29,4 @@ def _get_ref(rule):
 
 def repo_info(name):
     external_rule = native.existing_rule(name)
-    _repo_info(name=name + "_repo_info", value=_get_ref(external_rule))
-
-
+    _repo_info(name = name + "_repo_info", value = _get_ref(external_rule))

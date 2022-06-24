@@ -64,7 +64,7 @@ swift_c_module(
         module_map = module_map,
     ))
 
-def namespaced_swift_library(name, srcs, deps = None, defines = None, copts=[]):
+def namespaced_swift_library(name, srcs, deps = None, defines = None, copts = []):
     deps = [] if deps == None else deps
     defines = [] if defines == None else defines
     return """
@@ -100,7 +100,7 @@ def dependencies():
             ),
         ]),
         commit = "0a8f81884973d7b265dc8cca6b2db2f349aca54d",
-        )
+    )
     repo_info("xcbuildkit")
 
     # Fork this internally
