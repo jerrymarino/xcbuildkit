@@ -103,11 +103,14 @@ extension UInt64 {
         var x = self.bigEndian
         let data = Data(bytes: &x, count: MemoryLayout<UInt64>.size)
         let mapping = data.map{$0}
-        // This is only used when debugging input/output streams
-        // so force unwrapp here should be fine, if this raises for any reason
-        // is probably because someone should take a look at this logic and fix things anyway
+        // This is supposed to be used only when debugging input/output streams
+        // at the time of writing grabbing the last bit here was enough to compose sequences of bytes that can be encoded into `String`
         //
-        // Grabbing the significant value here only from a mapping tha looks like this: [0, 0, 0, 0, 0, 0, 0, 105]
-        return mapping.last!
+        // Grabbs the significant value here only from the mapping, which looks like this: [0, 0, 0, 0, 0, 0, 0, 105]
+        guard let last = mapping.last else {
+            print("warning: Failed to get last UInt8 from UInt64 mapping \(mapping)")
+            return 0
+        }
+        return last
     }
 }

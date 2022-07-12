@@ -12,7 +12,7 @@ BUILD_SERVICE=BazelBuildService
 
 .PHONY: build
 build:
-	$(BAZEL) build :* //BuildServiceShim
+	$(BAZEL) build :* //BuildServiceShim $(BUILD_SERVICE)
 
 # Note: after using launchd to set an env var, apps that use it need to be
 # relaunched: Xcode / terminals
@@ -28,7 +28,6 @@ uninstall_bazel_progress_bar_support:
 DUMMY_XCODE_ARGS=-target CLI
 # DUMMY_XCODE_ARGS=-target iOSApp -sdk iphonesimulator
 test: build
-	$(BAZEL) build $(BUILD_SERVICE)
 	rm -rf /tmp/xcbuild.*
 	/usr/bin/env - TERM="$(TERM)" \
 		SHELL="$(SHELL)" \
