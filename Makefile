@@ -7,9 +7,12 @@ XCB=$(XCODE)/Contents/Developer/usr/bin/xcodebuild
 # The shim isn't used in production
 XCBBUILDSERVICE_PATH=$(PWD)/bazel-bin/BuildServiceShim/BuildServiceShim
 
+# Build service to use when running `test` and `debug_*` actions below
+BUILD_SERVICE=BazelBuildService
+
 .PHONY: build
 build:
-	$(BAZEL) build :* //BuildServiceShim
+	$(BAZEL) build :* //BuildServiceShim $(BUILD_SERVICE)
 
 # Note: after using launchd to set an env var, apps that use it need to be
 # relaunched: Xcode / terminals
@@ -25,7 +28,6 @@ uninstall_bazel_progress_bar_support:
 DUMMY_XCODE_ARGS=-target CLI
 # DUMMY_XCODE_ARGS=-target iOSApp -sdk iphonesimulator
 test: build
-	$(BAZEL) build BSBuildService
 	rm -rf /tmp/xcbuild.*
 	/usr/bin/env - TERM="$(TERM)" \
 		SHELL="$(SHELL)" \
@@ -45,8 +47,8 @@ open_xcode: build
 	    export PATH="$(PATH)"; \
 	    export HOME="$(HOME)"; \
 	    export XCODE="$(XCODE)"; \
-	    export XCBBUILDSERVICE_PATH="$(XCBBUILDSERVICE_PATH)"; \
-             $(XCODE)/Contents/MacOS/Xcode
+			export XCBBUILDSERVICE_PATH="$(XCBBUILDSERVICE_PATH)"; \
+      $(XCODE)/Contents/MacOS/Xcode
 
 clean:
 	rm -rf /tmp/xcbuild.*
@@ -75,15 +77,25 @@ hex_dump:
 dump:
 	echo "print(repr(open('$(FILE)', 'rb').read()))" | python
 
-# Dumps the parsed stream
-debug_output:
+# Dumps raw values from the parsed output stream
+debug_output_raw:
 	@cat /tmp/xcbuild.out | \
-	    $(BAZEL) run BSBuildService -- --dump
+	    $(BAZEL) run $(BUILD_SERVICE) -- --dump
 
-# Dumps the parsed stream
-debug_input:
+# Dumps raw values from the parsed input stream
+debug_input_raw:
 	@cat /tmp/xcbuild.in | \
-	    $(BAZEL) run BSBuildService -- --dump
+	    $(BAZEL) run $(BUILD_SERVICE) -- --dump
+
+# Dumps human readable values from the parsed output stream
+debug_output_h:
+	@cat /tmp/xcbuild.out | \
+	    $(BAZEL) run $(BUILD_SERVICE) -- --dump_h
+
+# Dumps human readable values from the parsed input stream
+debug_input_h:
+	@cat /tmp/xcbuild.in | \
+	    $(BAZEL) run $(BUILD_SERVICE) -- --dump_h
 
 debug_output_python: build
 	@cat /tmp/xcbuild.out | utils/msgpack_dumper.py
