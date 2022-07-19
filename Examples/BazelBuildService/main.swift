@@ -85,11 +85,6 @@ enum BasicMessageHandler {
                 if let responseData = try? message.encode(encoder) {
                     bkservice.write(responseData)
                 }
-            } else if msg is BuildDescriptionTargetInfo {
-                let message = IndexingInfoReceivedResponse(targetID: fakeTargetID, data: fakeIndexingInfoRes())
-                if let responseData = try? message.encode(encoder) {
-                    bkservice.write(responseData)
-                }
             }
         }
         xcbbuildService.write(data)
