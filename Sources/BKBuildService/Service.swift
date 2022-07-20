@@ -33,9 +33,13 @@ public class BKBuildService {
         file.readabilityHandler = {
             h in
             let data = h.availableData
+            // let data = (try? h.read(upToCount: 1024) ?? h.availableData)!
+            // let data = (try? h.readToEnd() ?? h.availableData)!
             guard data.count > 0 else {
                 exit(0)
             }
+
+            // PrettyPrinter.fooWrite(text: data.readableString, append: true)
 
             /// Unpack everything
             let result = Unpacker.unpackAll(data)

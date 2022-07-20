@@ -18,9 +18,13 @@ function replace() {
     tee  /tmp/xcbuild.in | $SERVICE | tee /tmp/xcbuild.out
 }
 
-# This simply redirects stdin and stdout of Xcode's build service
-if [[ "${BUILD_SERVICE_REDIRECT:-false}" == "true" ]]; then
-    redirect
-else
-    replace
-fi
+# Forcing `replace` for the purposes of what is being tested here on indexing
+replace
+# redirect
+
+# # This simply redirects stdin and stdout of Xcode's build service
+# if [[ "${BUILD_SERVICE_REDIRECT:-false}" == "true" ]]; then
+#     redirect
+# else
+#     replace
+# fi

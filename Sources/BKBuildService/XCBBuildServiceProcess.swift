@@ -58,11 +58,33 @@ public class XCBBuildServiceProcess {
         }
     }
 
+    // Can be used to patch `handle.availableData` bellow replacing bytes by
+    // searching and replacing by string (e.g. replace a particular clang flag)
+    func patchData(data: inout Data, find: String, replace: String) {
+        guard data.readableString.contains(find) else {
+            return
+        }
+
+        let findData = find.data(using: .ascii)!
+        let replaceData = replace.data(using: .ascii)!
+
+        // .backwards or not depends on the Data being patched
+        // this is very manual rn and used for debugging purposes only
+        // let findRange = data.range(of: findData, options: [.backwards])!
+        let findRange = data.range(of: findData)!
+        data.replaceSubrange(findRange, with: replaceData)
+    }
+
+    public static var counter: Int = 0
+    public static var stdinCounter: Int = 0
+    static var bplistData: Data?
+    
     public func start(path: String) {
         log("Starting build service:" + path)
         self.stdout.fileHandleForReading.readabilityHandler = {
             handle in
-            let data = handle.availableData
+            var data = handle.availableData
+
             // Dump stdout to the current standard output
             BKBuildService.writeQueue.sync {
                 FileHandle.standardOutput.write(data)

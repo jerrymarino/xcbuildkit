@@ -95,6 +95,10 @@ public struct BuildDescriptionTargetInfo: XCBProtocolMessage {
     public init(input _: XCBInputStream) throws {}
 }
 
+public struct DocumentationInfoRequested: XCBProtocolMessage {
+    public init(input _: XCBInputStream) throws {}
+}
+
 public struct IndexingInfoRequested: XCBProtocolMessage {
     public init(input _: XCBInputStream) throws {}
 }
@@ -147,7 +151,6 @@ public struct TransferSessionPIFResponse: XCBProtocolMessage {
 
             XCBRawValue.string("TRANSFER_SESSION_PIF_RESPONSE"),
             XCBRawValue.array([XCBRawValue.array([])]),
-            XCBRawValue.uint(3),
         ]
     }
 }
@@ -366,10 +369,16 @@ public struct BuildOperationEndedResponse: XCBProtocolMessage {
 public struct IndexingInfoReceivedResponse: XCBProtocolMessage {
     let targetID: String
     let data: Data?
+    let responseChannel: UInt64
+    let length: UInt64
+    let clangXMLData: Data?
 
-    public init(targetID: String = "", data: Data? = nil) {
+    public init(targetID: String = "", data: Data? = nil, responseChannel: UInt64, length: UInt64, clangXMLData: Data? = Data()) {
         self.targetID = targetID
         self.data = data
+        self.responseChannel = responseChannel
+        self.length = length
+        self.clangXMLData = clangXMLData
     }
 
     public func encode(_: XCBEncoder) throws -> XCBResponse {
@@ -379,7 +388,7 @@ public struct IndexingInfoReceivedResponse: XCBProtocolMessage {
         }
 
         return [
-            XCBRawValue.uint(26),
+            XCBRawValue.uint(35),
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
@@ -387,12 +396,32 @@ public struct IndexingInfoReceivedResponse: XCBProtocolMessage {
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
-            XCBRawValue.uint(37),
-            XCBRawValue.uint(1),
+            XCBRawValue.uint(6),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("PING"),
+            XCBRawValue.nil,
+            // This changes a lot but apparently some channels receive only the contents of variable `inputs` here
+            // and some channels expect `self.clangXMLData` in chunks
+            XCBRawValue.uint(self.responseChannel),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.int(-31),
+            // Not sure how this is really calculated, hard coding at the call site
+            XCBRawValue.uint(self.length),
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
             XCBRawValue.string("INDEXING_INFO_RECEIVED"),
+            // targetID and binary plist containing `outputFilePath` and `sourceFilePath`
             XCBRawValue.array(inputs),
+            // bplist00
+            // XCBRawValue.binary(self.clangXMLData!),
         ]
     }
 }
@@ -429,3 +458,28 @@ public struct BuildTargetPreparedForIndex: XCBProtocolMessage {
     }
 }
 
+public struct DocumentationInfoReceived: XCBProtocolMessage {
+    public init() {}
+
+    public func encode(_: XCBEncoder) throws -> XCBResponse {
+        return [
+            XCBRawValue.uint(59),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(30),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("DOCUMENTATION_INFO_RECEIVED"),
+            XCBRawValue.array([
+                XCBRawValue.array([
+                ]),
+            ]),
+        ]
+    }
+}

@@ -50,7 +50,7 @@ macos_application(
     name = "BSBuildService",
     bundle_id = "com.xcbuildkit.example",
     infoplists = ["Examples/BSBuildService/Info.plist"],
-    minimum_os_version = "10.14",
+    minimum_os_version = "10.15.4",
     version = ":XCBuildKitVersion",
     deps = [":BSBuildServiceLib"],
 )
@@ -69,7 +69,7 @@ macos_application(
     name = "HybridBuildService",
     bundle_id = "com.xcbuildkit.example",
     infoplists = ["Examples/HybridBuildService/Info.plist"],
-    minimum_os_version = "10.14",
+    minimum_os_version = "10.15.4",
     version = ":XCBuildKitVersion",
     deps = [":HybridBuildServiceLib"],
 )
@@ -100,7 +100,7 @@ macos_application(
         "Examples/BazelBuildService/Info.plist",
         ":BuildInfo",
     ],
-    minimum_os_version = "10.14",
+    minimum_os_version = "10.15.4",
     version = ":XCBuildKitVersion",
     deps = [":BazelBuildServiceLib"],
 )

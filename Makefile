@@ -110,3 +110,17 @@ debug_input_h:
 debug_output_python: build
 	@cat /tmp/xcbuild.out | utils/msgpack_dumper.py
 
+# Attempt to create custom index stores to be used as source for build service
+# will come back to this later once we can pass the correct indexing msg
+# foo:
+# 	mkdir -p /tmp/xcbuildkit-debug/iOSApp /tmp/xcbuildkit-debug/CLI \
+# 	&& \
+# 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang \
+# 	-isysroot \
+# 	/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator15.4.sdk \
+# 	-index-store-path \
+# 	/tmp/xcbuildkit-debug \
+# 	-c \
+# 	iOSApp/iOSApp/main.m \
+# 	-o \
+# 	/tmp/xcbuildkit-debug/iOSApp/main.o \
