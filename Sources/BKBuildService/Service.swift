@@ -94,7 +94,7 @@ private enum Unpacker {
             // MessagePack.swift
             // FIXME: subdata is copying over and over?
             var mdata = data
-            mdata = mdata.subdata(in: 1 ..< mdata.count - 1)
+            mdata = mdata.subdata(in: 1 ..< mdata.count)
             return mdata
         } else {
             return nil
