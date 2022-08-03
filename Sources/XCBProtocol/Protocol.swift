@@ -1,7 +1,37 @@
+/*
+Copyright (c) 2022, XCBuildKit contributors
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+The views and conclusions contained in the software and documentation are those
+of the authors and should not be interpreted as representing official policies,
+either expressed or implied, of the IDEXCBProgress project.
+*/
+
 /// Implements a XCBProtocol Messages
 /// Many of these types are synthetic, high level representations of messages
 /// derived from Xcode
 import Foundation
+import MessagePack
 
 /// This protocol version represents the _Major_ version of Xcode that it was
 /// tested with. Minor and Fix versions are unaccounted for due to excellent
@@ -84,15 +114,105 @@ public struct SetSessionUserInfoRequest: XCBProtocolMessage {
 }
 
 public struct CreateBuildRequest: XCBProtocolMessage {
-    public init(input _: XCBInputStream) throws {}
+    public let configuredTargets: [String]
+    public init(input: XCBInputStream) throws {
+        var minput = input
+        guard let next = minput.next(),
+            case let .binary(jsonData) = next else {
+            throw XCBProtocolError.unexpectedInput(for: input)
+        }
+         guard let json = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
+            throw XCBProtocolError.unexpectedInput(for: input)
+         }
+         let requestJSON = json["request"] as? [String: Any] ?? [:]
+         if let ct = requestJSON["configuredTargets"] as? [[String: Any]] { 
+             self.configuredTargets = ct.compactMap { ctInfo in
+                 return ctInfo["guid"] as? String
+             }
+             log("info: got configured targets \(self.configuredTargets)")
+         } else {
+             log("warning: malformd configured targets\(json["configuredTargets"])")
+             self.configuredTargets = []
+         }
+    }
 }
 
 public struct BuildStartRequest: XCBProtocolMessage {
     public init(input _: XCBInputStream) throws {}
 }
 
-public struct IndexingInfoRequested: XCBProtocolMessage {
+public struct BuildDescriptionTargetInfo: XCBProtocolMessage {
     public init(input _: XCBInputStream) throws {}
+}
+
+public struct DocumentationInfoRequested: XCBProtocolMessage {
+    public init(input _: XCBInputStream) throws {}
+}
+extension Data {
+    /// Same as ``Data(base64Encoded:)``, but adds padding automatically
+    /// (if missing, instead of returning `nil`).
+    public static func fromBase64(_ encoded: String) -> Data? {
+        // Prefixes padding-character(s) (if needed).
+        var encoded = encoded;
+        let remainder = encoded.count % 4
+        if remainder > 0 {
+            encoded = encoded.padding(
+                toLength: encoded.count + 4 - remainder,
+                withPad: "=", startingAt: 0);
+        }
+
+        // Finally, decode.
+        return Data(base64Encoded: encoded);
+    }
+}
+public struct IndexingInfoRequested: XCBProtocolMessage {
+    /// These messages are virtually JSON blob
+    ///
+    /// From a higher level they mean different things.
+    /// code directly here for now, consider adding an enum object or other rep
+    
+    public let responseChannel: Int64
+    public let targetID: String
+    public let outputPathOnly: Bool
+    public let filePath: String
+
+    public init(input: XCBInputStream) throws {
+        var minput = input
+        guard let next = minput.next(),
+        case let .binary(jsonData) = next else {
+            // Hack - fix upstream code
+            self.targetID = "_internal_stub_"
+            self.filePath = "_internal_stub_"
+            self.outputPathOnly = false
+            self.responseChannel = -1  
+            return
+        }
+        
+         
+        // Now if it actually loads this it's bad json
+        guard let json = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
+            throw XCBProtocolError.unexpectedInput(for: input)
+        }
+        guard let tID = json["targetID"] else {
+           throw XCBProtocolError.unexpectedInput(for: input)
+        }
+        self.targetID = json["targetID"] as? String ?? "<garbage>"
+        self.responseChannel = json["responseChannel"] as? Int64 ?? 0
+        self.filePath = json["filePath"] as? String ?? "<garbage>"
+        self.outputPathOnly = json["outputPathOnly"] as? Bool ?? false
+
+        // FIXME: Disable / unused - for now
+        let requestJSON = json["request"] as? [String: Any] ?? [:]
+        log("RequestReceived \(self)")
+
+         let jsonRep64Str = requestJSON["jsonRepresentation"] as? String ?? ""
+         let jsonRepData = Data.fromBase64(jsonRep64Str) ?? Data()
+         guard let jsonJSON = try JSONSerialization.jsonObject(with: jsonRepData, options: []) as? [String: Any] else {
+            log("warning: missing rep str")
+            return
+         }
+         log("jsonRepresentation \(jsonJSON)")
+    }
 }
 
 /// Output "Response" messages
@@ -285,6 +405,7 @@ public struct BuildProgressUpdatedResponse: XCBProtocolMessage {
         let length = "BUILD_PROGRESS_UPDATED".utf8.count + self.taskName.utf8.count + self.message.utf8.count
         return [
             XCBRawValue.uint(try encoder.getResponseMsgId(subtracting: 3)),
+
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
             XCBRawValue.uint(0),
@@ -355,6 +476,83 @@ public struct BuildOperationEndedResponse: XCBProtocolMessage {
             XCBRawValue.uint(0),
             XCBRawValue.string("BUILD_OPERATION_ENDED"),
             [Int64(gBuildNumber), Int64(0), XCBRawValue.nil],
+        ]
+    }
+}
+
+public struct IndexingInfoReceivedResponse: XCBProtocolMessage {
+    let targetID: String
+    let data: Data?
+    public let responseChannel: UInt64
+    let clangXMLData: Data?
+
+    public init(targetID: String = "", data: Data? = nil, responseChannel: UInt64, clangXMLData: Data? = Data()) {
+        self.targetID = targetID
+        self.data = data
+        //self.responseChannel = 40
+        self.responseChannel = responseChannel
+        self.clangXMLData = clangXMLData
+    }
+
+    public func encode(_: XCBEncoder) throws -> XCBResponse {
+        var inputs: [XCBRawValue] = [XCBRawValue.string(self.targetID)]
+        if let data = self.data {
+            inputs += [XCBRawValue.binary(data)]
+        }
+
+        if let clangXMLData =  self.clangXMLData {
+            inputs +=  [XCBRawValue.binary(clangXMLData)]
+        }
+        return [
+             XCBRawValue.string("INDEXING_INFO_RECEIVED"),
+             XCBRawValue.array(inputs)
+        ]
+
+    }
+}
+
+public struct BuildTargetPreparedForIndex: XCBProtocolMessage {
+    let targetGUID: String
+
+    public init(targetGUID: String) {
+        self.targetGUID = targetGUID
+    }
+
+    public func encode(_: XCBEncoder) throws -> XCBResponse {
+        return [
+            XCBRawValue.string("BUILD_TARGET_PREPARED_FOR_INDEX"),
+            XCBRawValue.array([
+                XCBRawValue.string(self.targetGUID),
+                XCBRawValue.array([
+                    XCBRawValue.double( Date().timeIntervalSince1970),
+                ]),
+            ]),
+        ]
+    }
+}
+
+public struct DocumentationInfoReceived: XCBProtocolMessage {
+    public init() {}
+
+    public func encode(_: XCBEncoder) throws -> XCBResponse {
+        return [
+            XCBRawValue.uint(59),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(30),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.uint(0),
+            XCBRawValue.string("DOCUMENTATION_INFO_RECEIVED"),
+            XCBRawValue.array([
+                XCBRawValue.array([
+                ]),
+            ]),
         ]
     }
 }

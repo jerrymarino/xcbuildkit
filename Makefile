@@ -1,3 +1,29 @@
+#Copyright (c) 2022, XCBuildKit contributors
+#All rights reserved.
+#
+#Redistribution and use in source and binary forms, with or without
+#modification, are permitted provided that the following conditions are met:
+#
+#1. Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#2. Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+#THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+#ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+#ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+#ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#The views and conclusions contained in the software and documentation are those
+#of the authors and should not be interpreted as representing official policies,
+#either expressed or implied, of the IDEXCBProgress project.
 XCODE=$(dir $(shell dirname $(shell xcode-select -p)))
 BAZEL=tools/bazelwrapper
 XCB=$(XCODE)/Contents/Developer/usr/bin/xcodebuild
@@ -8,11 +34,17 @@ XCB=$(XCODE)/Contents/Developer/usr/bin/xcodebuild
 XCBBUILDSERVICE_PATH=$(PWD)/bazel-bin/BuildServiceShim/BuildServiceShim
 
 # Build service to use when running `test` and `debug_*` actions below
-BUILD_SERVICE=BazelBuildService
+BUILD_SERVICE=XCBBuildServiceProxy
+
+# See below comment - Bazel is not making a symlink.
+# This is of course just riddled with problems
+# https://github.com/jerrymarino/xcbuildkit/issues/36
+# Assumptions on Makefile and Bazelrc / Bazel 5 it works for the cases here
+BUILD_SERVICE_PATH=$(shell echo $$PWD/bazel-out/applebin_macos-darwin_*-fastbuild-ST-*/bin/$(BUILD_SERVICE)_archive-root/$(BUILD_SERVICE).app/Contents/MacOS/$(BUILD_SERVICE))
 
 .PHONY: build
 build:
-	$(BAZEL) build :* //BuildServiceShim $(BUILD_SERVICE)
+	@$(BAZEL) build :* //BuildServiceShim $(BUILD_SERVICE)
 
 # Note: after using launchd to set an env var, apps that use it need to be
 # relaunched: Xcode / terminals
@@ -24,7 +56,6 @@ uninstall_bazel_progress_bar_support:
 	utils/uninstall.sh
 
 # Available dummy targets
-# TODO: add the ability to test all of these
 DUMMY_XCODE_ARGS=-target CLI
 # DUMMY_XCODE_ARGS=-target iOSApp -sdk iphonesimulator
 test: build
@@ -34,6 +65,7 @@ test: build
 		PATH="$(PATH)" \
 		HOME="$(HOME)" \
 		XCODE="$(XCODE)" \
+	    	DEBUG_BUILDSERVICE_PATH="$(BUILD_SERVICE_PATH)"; \
 		XCBBUILDSERVICE_PATH=$(XCBBUILDSERVICE_PATH) \
 		XCODE=$(XCODE) \
 		PWD=$(PWD)/iOSApp \
@@ -41,14 +73,25 @@ test: build
 
 # Random development commands
 # Opens Xcode with the build service selected
+open_xcode_with_sk_logging: build
+	/usr/bin/env - TERM="$(TERM)"; \
+			SOURCEKIT_LOGGING=3 \
+	    export SHELL="$(SHELL)"; \
+	    export PATH="$(PATH)"; \
+	    export HOME="$(HOME)"; \
+	    export XCODE="$(XCODE)"; \
+	    export DEBUG_BUILDSERVICE_PATH="$(BUILD_SERVICE_PATH)"; \
+	    export XCBBUILDSERVICE_PATH="$(XCBBUILDSERVICE_PATH)"; \
+			$(XCODE)/Contents/MacOS/Xcode
+
 open_xcode: build
 	/usr/bin/env - TERM="$(TERM)"; \
 	    export SHELL="$(SHELL)"; \
 	    export PATH="$(PATH)"; \
 	    export HOME="$(HOME)"; \
 	    export XCODE="$(XCODE)"; \
-			export XCBBUILDSERVICE_PATH="$(XCBBUILDSERVICE_PATH)"; \
-      $(XCODE)/Contents/MacOS/Xcode
+	    export XCBBUILDSERVICE_PATH="$(XCBBUILDSERVICE_PATH)"; \
+			$(XCODE)/Contents/MacOS/Xcode
 
 clean:
 	rm -rf /tmp/xcbuild.*
