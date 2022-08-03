@@ -90,6 +90,7 @@ open_xcode: build
 	    export PATH="$(PATH)"; \
 	    export HOME="$(HOME)"; \
 	    export XCODE="$(XCODE)"; \
+      export DEBUG_BUILDSERVICE_PATH="$(BUILD_SERVICE_PATH)"; \
 	    export XCBBUILDSERVICE_PATH="$(XCBBUILDSERVICE_PATH)"; \
 			$(XCODE)/Contents/MacOS/Xcode
 
@@ -108,6 +109,12 @@ disable_indexing:
 # Note: the static build service doesn't work with this ATM
 enable_indexing:
 	defaults write com.apple.dt.XCode IDEIndexDisable 0
+
+enable_indexing_logs:
+	defaults write com.apple.dt.Xcode IDEIndexShowLog 1
+
+disable_indexing_logs:
+	defaults write com.apple.dt.Xcode IDEIndexShowLog 0
 
 # Uses xxd to inspect outputs
 hex_dump: FILE_A=/tmp/xcbuild.in

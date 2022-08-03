@@ -3,3 +3,5 @@ bazel-*
 .xcode_select_env
 external
 *.app
+iOSApp/build
+iOSApp/iOSApp.xcodeproj/project.xcworkspace/xcshareddata
