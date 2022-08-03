@@ -29,15 +29,13 @@ either expressed or implied, of the IDEXCBProgress project.
 
 import Foundation
 import BKBuildService
-import XCBProtocol
 
-// Consider:
-// decompose the "Bazel" example to work end to end with Xcode
-// hardcode DeriveData /private/var/tmp/xcbuildkit/example-dd or read
-// read workspace from xcbuild / remove jmarino
-
-// This one is rigged for /tmp/xtest
-// TODO: Populate this with an empty index
+// TODO:
+// - decompose the "Bazel" example to work end to end with Xcode
+// - hardcode DeriveData /private/var/tmp/xcbuildkit/example-dd or read
+// - read workspace from xcbuild / remove jmarino
+// - for this example - have another program generate the index and verify it
+//   works
 let clangXMLT: String = """
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -47,7 +45,7 @@ let clangXMLT: String = """
                 <key>LanguageDialect</key>
                 <string>objective-c</string>
                 <key>clangASTBuiltProductsDir</key>
-                <string>/tmp/xtest</string>
+                <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Products/Debug</string>
                 <key>clangASTCommandArguments</key>
                 <array>
                         <string>-x</string>
@@ -61,7 +59,7 @@ let clangXMLT: String = """
                         <string>-fobjc-arc</string>
                         <string>-fobjc-weak</string>
                         <string>-fmodules</string>
-                        <string>-fmodules-cache-path=/tmp/ModuleCache.noindex</string>
+                        <string>-fmodules-cache-path=/Users/jmarino/Library/Developer/Xcode/DerivedData/ModuleCache.noindex</string>
                         <string>-fmodules-prune-interval=86400</string>
                         <string>-fmodules-prune-after=345600</string>
                         <string>-Wnon-modular-include-in-framework-module</string>
@@ -129,24 +127,39 @@ let clangXMLT: String = """
                         <string>-Wno-semicolon-before-method-body</string>
                         <string>-Wunguarded-availability</string>
                         <string>-index-store-path</string>
-                        <string>/tmp/xtest/XDataStore</string>
+                        <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/DataStore</string>
+                        <string>-iquote</string>
+                        <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-generated-files.hmap</string>
+                        <string>-I/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-own-target-headers.hmap</string>
+                        <string>-I/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-all-target-headers.hmap</string>
+                        <string>-iquote</string>
+                        <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-project-headers.hmap</string>
+                        <string>-I/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Products/Debug/include</string>
+                        <string>-I/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources-normal/x86_64</string>
+                        <string>-I/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources/x86_64</string>
+                        <string>-I/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources</string>
+                        <string>-F/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Products/Debug</string>
                         <string>-fsyntax-only</string>
-                        <string>__SOURCE_FILE__</string>
+                        <string>/Users/jmarino/Development/xcbuildkit/iOSApp/CLI/main.m</string>
                         <string>-o</string>
-                        <string>/tmp/xtest/main.o</string>
+                        <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/Objects-normal/x86_64/main.o</string>
                         <string>-Xclang</string>
                         <string>-fallow-pcm-with-compiler-errors</string>
+                        <string>-ivfsoverlay</string>
+                        <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/regular-to-index-overlay.yaml</string>
+                        <string>-ivfsoverlay</string>
+                        <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/index-to-regular-overlay.yaml</string>
                         <string>-fretain-comments-from-system-headers</string>
                         <string>-ferror-limit=10</string>
-                        <string>-working-directory=__TODO_SRCROOT__</string>
+                        <string>-working-directory=/Users/jmarino/Development/xcbuildkit/iOSApp</string>
                         <string>-Xclang</string>
                         <string>-detailed-preprocessing-record</string>
-                        <string>-DXXXXXXXXX=1</string>
+                        <string>-DZZ=1</string>
                 </array>
                 <key>outputFilePath</key>
-                <string>/tmp/main.o</string>
+                <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/Objects-normal/x86_64/main.o</string>
                 <key>sourceFilePath</key>
-                <string>__SOURCE_FILE__</string>
+                <string>/Users/jmarino/Development/xcbuildkit/iOSApp/CLI/main.m</string>
                 <key>toolchains</key>
                 <array>
                         <string>com.apple.dt.toolchain.XcodeDefault</string>
@@ -161,7 +174,6 @@ public enum XCBBuildServiceProxyStub {
        //return (try? Data(contentsOf: URL(fileURLWithPath: "/Users/jmarino/Development/XCBuildResponses/indexinginfo_requested.payload"))) ?? Data()
 
        let clangXML = clangXMLT.replacingOccurrences(of:"__SOURCE_FILE__", with: outputFilePath)
-       log("CLANG XML \(clangXML)")
        return BPlistConverter(xml: clangXML)?.convertToBinary() ?? Data()
    }
 }

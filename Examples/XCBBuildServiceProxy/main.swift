@@ -88,7 +88,7 @@ enum BasicMessageHandler {
 }
 
 let xcbbuildService = XCBBuildServiceProcess()
-let bkservice = BKBuildService(indexingEnabled: false)
+let bkservice = BKBuildService(indexingEnabled: true)
 
 let context = BasicMessageContext(
     xcbbuildService: xcbbuildService,

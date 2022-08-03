@@ -108,7 +108,7 @@ public class XCBBuildServiceProcess {
                 // level
                 if XCBBuildServiceProcess.MessageDebuggingEnabled() {
                     try? data.write(to: URL(fileURLWithPath: "/tmp/stubs/xcbuild.og.stdout.\(self.proxyIdx).bin"))
-                    let str = String(decoding: data, as: UTF8.self) ??  "<starting-issue>"
+                    let str = String(decoding: data, as: UTF8.self)
                     log("XCBBuildServiceProcess.Start: \(data.count) - \(str)")
                 }
                 FileHandle.standardOutput.write(data)
