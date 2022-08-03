@@ -195,7 +195,7 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
            throw XCBProtocolError.unexpectedInput(for: input)
         }
         // Assigning this to garbage as a debug mechanism
-        self.targetID = tID targetID? String ?? "<garbage>"
+        self.targetID = targetID as? String ?? "<garbage>"
         self.responseChannel = json["responseChannel"] as? Int64 ?? 0
         self.filePath = json["filePath"] as? String ?? "<garbage>"
         self.outputPathOnly = json["outputPathOnly"] as? Bool ?? false
