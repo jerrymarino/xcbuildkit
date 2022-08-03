@@ -80,6 +80,10 @@ extension XCBDecoder {
                     return try BuildStartRequest(input: minput)
                 } else if str == "INDEXING_INFO_REQUESTED" {
                     return try IndexingInfoRequested(input: minput)
+                } else if str == "BUILD_DESCRIPTION_TARGET_INFO" {
+                    return try BuildDescriptionTargetInfo(input: minput)
+                } else if str == "DOCUMENTATION_INFO_REQUESTED" {
+                    return try DocumentationInfoRequested(input: minput)
                 }
             default:
                 continue

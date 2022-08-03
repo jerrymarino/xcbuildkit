@@ -49,6 +49,7 @@ enum BasicMessageHandler {
 }
 
 // main
+log("Start service - BSBuildService")
 let bkservice = BKBuildService()
 let context = BasicMessageContext(bkservice: bkservice)
 bkservice.start(messageHandler: BasicMessageHandler.respond, context: context)

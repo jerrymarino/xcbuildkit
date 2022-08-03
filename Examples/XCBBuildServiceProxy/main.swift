@@ -26,10 +26,8 @@ The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the IDEXCBProgress project.
 */
-
 import BKBuildService
 import Foundation
-import MessagePack
 import XCBProtocol
 
 struct BasicMessageContext {
@@ -37,9 +35,20 @@ struct BasicMessageContext {
     let bkservice: BKBuildService
 }
 
-// This is an example build service that implements the build portion
-// all other messages and operations are handled by XCBuild
+let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice-bzl")
+
+private var gChunkNumber = 0
+// FIXME: get this from the other paths
+private var gXcode = ""
+
+/// This example listens to a BEP stream to display some output.
+///
+/// All operations are delegated to XCBBuildService and we inject
+/// progress from BEP.
 enum BasicMessageHandler {
+    /// Proxying response handler
+    /// Every message is written to the XCBBuildService
+    /// This simply injects Progress messages from the BEP
     static func respond(input: XCBInputStream, data: Data, context: Any?) {
         let basicCtx = context as! BasicMessageContext
         let xcbbuildService = basicCtx.xcbbuildService
@@ -48,32 +57,43 @@ enum BasicMessageHandler {
         let encoder = XCBEncoder(input: input)
         if let msg = decoder.decodeMessage() {
             if let createSessionRequest = msg as? CreateSessionRequest {
+                gXcode = createSessionRequest.xcode
                 xcbbuildService.startIfNecessary(xcode: createSessionRequest.xcode)
-            } else if msg is BuildStartRequest {
-                bkservice.write(try! BuildStartResponse().encode(encoder))
-
-                // Planning is optional
-                bkservice.write(try! PlanningOperationWillStartResponse().encode(encoder))
-                bkservice.write(try! BuildProgressUpdatedResponse().encode(encoder))
-                bkservice.write(try! PlanningOperationWillEndResponse().encode(encoder))
-
-                bkservice.write(try! BuildOperationEndedResponse().encode(encoder))
-            } else {
-                xcbbuildService.write(data)
+            } else if !XCBBuildServiceProcess.MessageDebuggingEnabled() && msg is IndexingInfoRequested {
+                let reqMsg = msg as! IndexingInfoRequested
+                let clangXMLData = XCBBuildServiceProxyStub.getASTArgs(targetID: reqMsg.targetID, outputFilePath: reqMsg.filePath)
+                let message = IndexingInfoReceivedResponse(
+                    targetID: reqMsg.targetID,
+                    data: reqMsg.outputPathOnly ? Data() : nil,
+                    responseChannel: UInt64(reqMsg.responseChannel),
+                    clangXMLData: reqMsg.outputPathOnly ? nil : clangXMLData)
+                // Example of a custom indexing service
+                if let encoded: XCBResponse = try? message.encode(encoder) {
+                    bkservice.write(encoded, msgId:message.responseChannel)
+                    return
+                }
             }
-        } else {
-            xcbbuildService.write(data)
         }
+        
+        log("ProxyRequest \(data.count)")
+        if XCBBuildServiceProcess.MessageDebuggingEnabled() {
+            writeQueue.sync {
+                gChunkNumber += 1
+                try? data.write(to: URL(fileURLWithPath: "/tmp/in-stubs/xcbuild.og.stdin.\(gChunkNumber).bin"))
+            }
+        }
+        // writes input data to original service
+        xcbbuildService.write(data)
     }
 }
 
 let xcbbuildService = XCBBuildServiceProcess()
-let bkservice = BKBuildService()
+let bkservice = BKBuildService(indexingEnabled: false)
 
 let context = BasicMessageContext(
     xcbbuildService: xcbbuildService,
     bkservice: bkservice
 )
 
-log("Start service - HybridBuildService")
+log("Start service - XCBBuildServiceProxy")
 bkservice.start(messageHandler: BasicMessageHandler.respond, context: context)
