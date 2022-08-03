@@ -202,6 +202,7 @@ public class BKBuildService {
                 debugData.append(data)
                 try? debugData.write(to: URL(fileURLWithPath: "/tmp/x-stubs/xcbuild.pack.stdout.\(chunkId).debugData"))
                 FileHandle.standardOutput.write(data)
+                chunkId += 1
             }
         }
     }
@@ -237,6 +238,7 @@ public class BKBuildService {
                 debugData.append(data)
                 try? debugData.write(to: URL(fileURLWithPath: "/tmp/x-stubs/xcbuild.pack.stdout.\(chunkId).debugData"))
                 FileHandle.standardOutput.write(data)
+                chunkId += 1
             }
         }
     }
