@@ -5,8 +5,13 @@ cc_binary(
     srcs = ["main.c"],
 )
 
+sh_library(
+    name = "BuildServiceShim_deps",
+    data = ["stub.sh"],
+)
+
 sh_binary(
     name = "BuildServiceShim",
     srcs = [":main"],
-    data = glob(["*.sh"]),
+    deps = [":BuildServiceShim_deps"]
 )
