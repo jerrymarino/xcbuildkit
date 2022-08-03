@@ -171,8 +171,6 @@ let clangXMLT: String = """
 
 public enum XCBBuildServiceProxyStub {
    public static func getASTArgs(targetID: String, outputFilePath: String) -> Data {
-       //return (try? Data(contentsOf: URL(fileURLWithPath: "/Users/jmarino/Development/XCBuildResponses/indexinginfo_requested.payload"))) ?? Data()
-
        let clangXML = clangXMLT.replacingOccurrences(of:"__SOURCE_FILE__", with: outputFilePath)
        return BPlistConverter(xml: clangXML)?.convertToBinary() ?? Data()
    }
