@@ -187,16 +187,15 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
             self.responseChannel = -1  
             return
         }
-        
          
-        // Now if it actually loads this it's bad json
         guard let json = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
             throw XCBProtocolError.unexpectedInput(for: input)
         }
-        guard let tID = json["targetID"] else {
+        guard let targetID = json["targetID"] else {
            throw XCBProtocolError.unexpectedInput(for: input)
         }
-        self.targetID = json["targetID"] as? String ?? "<garbage>"
+        // Assigning this to garbage as a debug mechanism
+        self.targetID = targetID as? String ?? "<garbage>"
         self.responseChannel = json["responseChannel"] as? Int64 ?? 0
         self.filePath = json["filePath"] as? String ?? "<garbage>"
         self.outputPathOnly = json["outputPathOnly"] as? Bool ?? false

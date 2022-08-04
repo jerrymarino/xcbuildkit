@@ -60,6 +60,7 @@ enum BasicMessageHandler {
                 gXcode = createSessionRequest.xcode
                 xcbbuildService.startIfNecessary(xcode: createSessionRequest.xcode)
             } else if !XCBBuildServiceProcess.MessageDebuggingEnabled() && msg is IndexingInfoRequested {
+                // Example of a custom indexing service
                 let reqMsg = msg as! IndexingInfoRequested
                 let clangXMLData = XCBBuildServiceProxyStub.getASTArgs(targetID: reqMsg.targetID, outputFilePath: reqMsg.filePath)
                 let message = IndexingInfoReceivedResponse(
@@ -67,7 +68,6 @@ enum BasicMessageHandler {
                     data: reqMsg.outputPathOnly ? Data() : nil,
                     responseChannel: UInt64(reqMsg.responseChannel),
                     clangXMLData: reqMsg.outputPathOnly ? nil : clangXMLData)
-                // Example of a custom indexing service
                 if let encoded: XCBResponse = try? message.encode(encoder) {
                     bkservice.write(encoded, msgId:message.responseChannel)
                     return
@@ -76,6 +76,8 @@ enum BasicMessageHandler {
         }
         
         log("ProxyRequest \(data.count)")
+
+        // TODO: Consider moving this into the process directly
         if XCBBuildServiceProcess.MessageDebuggingEnabled() {
             writeQueue.sync {
                 gChunkNumber += 1

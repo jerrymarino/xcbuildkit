@@ -78,9 +78,7 @@ public class XCBBuildServiceProcess {
         }
 
         guard let xcode = xcode else {
-            // FIXME(https://github.com/jerrymarino/xcbuildkit/issues/36)
-            //let defaultPath = CommandLine.arguments[0] + ".default"
-            let defaultPath = "/Applications/Xcode-13.app//Contents/SharedFrameworks/XCBuild.framework/PlugIns/XCBBuildService.bundle/Contents/MacOS/XCBBuildService"
+            let defaultPath = CommandLine.arguments[0] + ".default"
             guard FileManager.default.fileExists(atPath: defaultPath) else {
                 fatalError("XCBBuildServiceProcess - unexpected installation.  \(defaultPath)")
             }
