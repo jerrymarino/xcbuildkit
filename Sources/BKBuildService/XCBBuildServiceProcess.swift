@@ -56,14 +56,14 @@ public class XCBBuildServiceProcess {
     /// the request.
     ///
     /// This isn't safe and should be called seraially during a response handler
-    public func write(_ data: Data) {
+    public func write(_ data: Data, xcode: String? = nil) {
         if self.process.isRunning == false {
             // This has happened when attempting to build _swift_ toolchain from
             // source.
             //
             // If the binary was copied into Xcode than start using that.
             log("warning: attempted to message XCBBuildService before starting it")
-            startIfNecessary(xcode: nil)
+            startIfNecessary(xcode: xcode)
         }
         // writes aren't serial here ( rational it already is via stdin )
         self.stdin.fileHandleForWriting.write(data)

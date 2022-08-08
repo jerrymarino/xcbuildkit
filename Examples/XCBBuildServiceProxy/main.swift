@@ -39,7 +39,7 @@ let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice-bzl")
 
 private var gChunkNumber = 0
 // FIXME: get this from the other paths
-private var gXcode = ""
+private var gXcode: String? = nil
 
 /// This example listens to a BEP stream to display some output.
 ///
@@ -55,10 +55,11 @@ enum BasicMessageHandler {
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
         let encoder = XCBEncoder(input: input)
+
         if let msg = decoder.decodeMessage() {
             if let createSessionRequest = msg as? CreateSessionRequest {
                 gXcode = createSessionRequest.xcode
-                xcbbuildService.startIfNecessary(xcode: createSessionRequest.xcode)
+                xcbbuildService.startIfNecessary(xcode: gXcode)
             } else if !XCBBuildServiceProcess.MessageDebuggingEnabled() && msg is IndexingInfoRequested {
                 // Example of a custom indexing service
                 let reqMsg = msg as! IndexingInfoRequested
@@ -84,8 +85,18 @@ enum BasicMessageHandler {
                 try? data.write(to: URL(fileURLWithPath: "/tmp/in-stubs/xcbuild.og.stdin.\(gChunkNumber).bin"))
             }
         }
+
+        // TODO: Remove and handle this once we're able to install `.default` build service correctly
+        // Without this early return it will try to `startIfNecessary` before finding an Xcode and raise an exception because `.default` build service is not installed.
+        // See: `Sources/BKBuildService/XCBBuildServiceProcess.swift`
+        //
+        // This was causing `make debug_*` commands to fail on master
+        guard gXcode != nil else {
+            return
+        }
+
         // writes input data to original service
-        xcbbuildService.write(data)
+        xcbbuildService.write(data, xcode: gXcode)
     }
 }
 
