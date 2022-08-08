@@ -93,8 +93,8 @@ extension XCBDecoder {
     }
 }
 
-public func log(_ str: String, logPath: String = "/tmp/xcbuild.log") {
-    let url = URL(fileURLWithPath: logPath)
+public func log(_ str: String) {
+    let url = URL(fileURLWithPath: "/tmp/xcbuild.log")
     let entry = str + "\n"
     do {
         let fileUpdater = try FileHandle(forWritingTo: url)
