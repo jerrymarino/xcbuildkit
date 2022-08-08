@@ -90,7 +90,7 @@ open_xcode: build
 	    export PATH="$(PATH)"; \
 	    export HOME="$(HOME)"; \
 	    export XCODE="$(XCODE)"; \
-      export DEBUG_BUILDSERVICE_PATH="$(BUILD_SERVICE_PATH)"; \
+	    export DEBUG_BUILDSERVICE_PATH="$(BUILD_SERVICE_PATH)"; \
 	    export XCBBUILDSERVICE_PATH="$(XCBBUILDSERVICE_PATH)"; \
 			$(XCODE)/Contents/MacOS/Xcode
 
