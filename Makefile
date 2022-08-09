@@ -95,7 +95,8 @@ open_xcode: build
 			$(XCODE)/Contents/MacOS/Xcode
 
 clean:
-	rm -rf /tmp/xcbuild.*
+	rm -fr /tmp/xcbuild.* && \
+	rm -fr /tmp/xcbuild-*
 
 symlink_external:
 	ln -sf $(shell tools/bazelwrapper info execution_root)/external external
@@ -150,3 +151,20 @@ debug_input_h:
 debug_output_python: build
 	@cat /tmp/xcbuild.out | utils/msgpack_dumper.py
 
+# For more details about the usage of these see TODOs in `Examples/XCBBuildServiceProxy/main.swift`
+#
+MACOS_SDK=$(shell xcrun --sdk macosx --show-sdk-path) # /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk
+CLANG=$(shell xcrun --find clang) # /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang
+WORKSPACE_HASH=frhmkkebaragakhdzyysbrsvbgtc
+TMP_DD=/tmp/xcbuild-dd
+TMP_INDEX_STORE=${TMP_DD}/iOSApp-${WORKSPACE_HASH}/Index/DataStore
+TMP_OUT=/tmp/xcbuild-out
+
+make generate_custom_index_store:
+	mkdir -p ${TMP_DD} && \
+	mkdir -p ${TMP_OUT} && \
+	${CLANG} \
+	-isysroot ${MACOS_SDK} \
+	-c ${PWD}/iOSApp/CLI/main.m \
+	-o ${TMP_OUT}/main.o \
+	-index-store-path ${TMP_INDEX_STORE}

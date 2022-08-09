@@ -45,7 +45,7 @@ let clangXMLT: String = """
                 <key>LanguageDialect</key>
                 <string>objective-c</string>
                 <key>clangASTBuiltProductsDir</key>
-                <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Products/Debug</string>
+                <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Products/Debug</string>
                 <key>clangASTCommandArguments</key>
                 <array>
                         <string>-x</string>
@@ -59,7 +59,7 @@ let clangXMLT: String = """
                         <string>-fobjc-arc</string>
                         <string>-fobjc-weak</string>
                         <string>-fmodules</string>
-                        <string>-fmodules-cache-path=/Users/jmarino/Library/Developer/Xcode/DerivedData/ModuleCache.noindex</string>
+                        <string>-fmodules-cache-path=__DERIVED_DATA_PATH__/ModuleCache.noindex</string>
                         <string>-fmodules-prune-interval=86400</string>
                         <string>-fmodules-prune-after=345600</string>
                         <string>-Wnon-modular-include-in-framework-module</string>
@@ -110,10 +110,10 @@ let clangXMLT: String = """
                         <string>-Wundeclared-selector</string>
                         <string>-Wdeprecated-implementations</string>
                         <string>-DDEBUG=1</string>
-                        <string>-DDEMOSQUARE=1</string>
+                        <string>-DXCBTEST=1</string>
                         <string>-DOBJC_OLD_DISPATCH_PROTOTYPES=0</string>
                         <string>-isysroot</string>
-                        <string>/Applications/Xcode-13.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk</string>
+                        <string>__MACOS_SDK__</string>
                         <string>-fasm-blocks</string>
                         <string>-fstrict-aliasing</string>
                         <string>-Wprotocol</string>
@@ -127,39 +127,39 @@ let clangXMLT: String = """
                         <string>-Wno-semicolon-before-method-body</string>
                         <string>-Wunguarded-availability</string>
                         <string>-index-store-path</string>
-                        <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/DataStore</string>
+                        <string>__INDEX_STORE_PATH__</string>
                         <string>-iquote</string>
-                        <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-generated-files.hmap</string>
-                        <string>-I/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-own-target-headers.hmap</string>
-                        <string>-I/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-all-target-headers.hmap</string>
+                        <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-generated-files.hmap</string>
+                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-own-target-headers.hmap</string>
+                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-all-target-headers.hmap</string>
                         <string>-iquote</string>
-                        <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-project-headers.hmap</string>
-                        <string>-I/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Products/Debug/include</string>
-                        <string>-I/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources-normal/x86_64</string>
-                        <string>-I/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources/x86_64</string>
-                        <string>-I/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources</string>
-                        <string>-F/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Products/Debug</string>
+                        <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-project-headers.hmap</string>
+                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Products/Debug/include</string>
+                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources-normal/x86_64</string>
+                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources/x86_64</string>
+                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources</string>
+                        <string>-F__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Products/Debug</string>
                         <string>-fsyntax-only</string>
-                        <string>/Users/jmarino/Development/xcbuildkit/iOSApp/CLI/main.m</string>
+                        <string>__SOURCE_FILE__</string>
                         <string>-o</string>
-                        <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/Objects-normal/x86_64/main.o</string>
+                        <string>__OUTPUT_FILE_PATH__</string>
                         <string>-Xclang</string>
                         <string>-fallow-pcm-with-compiler-errors</string>
                         <string>-ivfsoverlay</string>
-                        <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/regular-to-index-overlay.yaml</string>
+                        <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/regular-to-index-overlay.yaml</string>
                         <string>-ivfsoverlay</string>
-                        <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/index-to-regular-overlay.yaml</string>
+                        <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/index-to-regular-overlay.yaml</string>
                         <string>-fretain-comments-from-system-headers</string>
                         <string>-ferror-limit=10</string>
-                        <string>-working-directory=/Users/jmarino/Development/xcbuildkit/iOSApp</string>
+                        <string>-working-directory=__WORKING_DIR__</string>
                         <string>-Xclang</string>
                         <string>-detailed-preprocessing-record</string>
                         <string>-DZZ=1</string>
                 </array>
                 <key>outputFilePath</key>
-                <string>/Users/jmarino/Library/Developer/Xcode/DerivedData/iOSApp-fwoljlvejnobrkfexfutlxhtoaow/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/Objects-normal/x86_64/main.o</string>
+                <string>__OUTPUT_FILE_PATH__</string>
                 <key>sourceFilePath</key>
-                <string>/Users/jmarino/Development/xcbuildkit/iOSApp/CLI/main.m</string>
+                <string>__SOURCE_FILE__</string>
                 <key>toolchains</key>
                 <array>
                         <string>com.apple.dt.toolchain.XcodeDefault</string>
@@ -170,9 +170,22 @@ let clangXMLT: String = """
 """
 
 public enum XCBBuildServiceProxyStub {
-   public static func getASTArgs(targetID: String, outputFilePath: String) -> Data {
-       let clangXML = clangXMLT.replacingOccurrences(of:"__SOURCE_FILE__", with: outputFilePath)
-       return BPlistConverter(xml: clangXML)?.convertToBinary() ?? Data()
-   }
+        public static func getASTArgs(targetID: String,
+                                      sourceFilePath: String,
+                                      outputFilePath: String,
+                                      derivedDataPath: String,
+                                      workspaceHash: String,
+                                      macOSSDK: String,
+                                      workingDir: String) -> Data {
+                let clangXML = clangXMLT.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
+                .replacingOccurrences(of:"__OUTPUT_FILE_PATH__", with: outputFilePath)
+                .replacingOccurrences(of:"__INDEX_STORE_PATH__", with: "\(derivedDataPath)/iOSApp-\(workspaceHash)/Index/DataStore")
+                .replacingOccurrences(of:"__DERIVED_DATA_PATH__", with: derivedDataPath)
+                .replacingOccurrences(of:"__WORSPACE_HASH__", with: workspaceHash)
+                .replacingOccurrences(of:"__MACOS_SDK__", with: macOSSDK)
+                .replacingOccurrences(of:"__WORKING_DIR__", with: workingDir)
+
+                return BPlistConverter(xml: clangXML)?.convertToBinary() ?? Data()
+        }
 }
 
