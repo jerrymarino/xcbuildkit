@@ -63,6 +63,7 @@ private extension XCBEncoder {
 
 public struct CreateSessionRequest: XCBProtocolMessage {
     public let workspace: String
+    public let workspaceName: String
     public let workspaceHash: String
     public let xcode: String
     public let xcbuildDataPath: String
@@ -96,7 +97,19 @@ public struct CreateSessionRequest: XCBProtocolMessage {
         }
 
         // TODO: This is hacky, just an initial approach for better DX for now. Find a better way.
-        self.workspaceHash = self.xcbuildDataPath.components(separatedBy: "-").last!.replacingOccurrences(of: "/Build/Intermediates.noindex/XCBuildData", with: "")
+        //
+        // `self.xcbuildDataPath` looks something like this (not that `/path/to/DerivedData` can also be a custom path):
+        //
+        // /path/to/DerivedData/iOSApp-frhmkkebaragakhdzyysbrsvbgtc/Build/Intermediates.noindex/XCBuildData
+        //
+        var components = self.xcbuildDataPath.components(separatedBy: "-")
+        self.workspaceHash = components.last!.components(separatedBy: "/").first!
+        components.removeLast()
+        self.workspaceName = components.last!.components(separatedBy: "/").last!
+
+        log("Found XCBuildData path: \(self.xcbuildDataPath)")
+        log("Parsed workspaceHash: \(self.workspaceHash)")
+        log("Parsed workspaceName: \(self.workspaceName)")
     }
 }
 
@@ -181,6 +194,8 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
     public let filePath: String
     public let derivedDataPath: String
     public let workingDir: String
+    public let sdk: String
+    public let platform: String
 
     public init(input: XCBInputStream) throws {
         var minput = input
@@ -193,6 +208,8 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
             self.responseChannel = -1
             self.derivedDataPath = ""
             self.workingDir = ""
+            self.sdk = ""
+            self.platform = ""
             return
         }
 
@@ -219,6 +236,8 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
         guard let jsonJSON = try JSONSerialization.jsonObject(with: jsonRepData, options: []) as? [String: Any] else {
             log("warning: missing rep str")
             self.derivedDataPath = ""
+            self.sdk = ""
+            self.platform = ""
             log("RequestReceived \(self)")
             return
         }
@@ -228,8 +247,14 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
         let arenaInfo = parameters["arenaInfo"] as? [String: Any] ?? [:]
         self.derivedDataPath = arenaInfo["derivedDataPath"] as? String ?? ""
 
+        let activeRunDestination = parameters["activeRunDestination"] as? [String: Any] ?? [:]
+        self.sdk = activeRunDestination["sdk"] as? String ?? ""
+        self.platform = activeRunDestination["platform"] as? String ?? ""
+
         log("RequestReceived \(self)")
         log("Parsed derivedDataPath \(self.derivedDataPath)")
+        log("Parsed sdk \(self.sdk)")
+        log("Parsed platform \(self.platform)")
     }
 }
 

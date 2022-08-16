@@ -113,7 +113,7 @@ let clangXMLT: String = """
                         <string>-DXCBTEST=1</string>
                         <string>-DOBJC_OLD_DISPATCH_PROTOTYPES=0</string>
                         <string>-isysroot</string>
-                        <string>__MACOS_SDK__</string>
+                        <string>__SDK_PATH__</string>
                         <string>-fasm-blocks</string>
                         <string>-fstrict-aliasing</string>
                         <string>-Wprotocol</string>
@@ -175,14 +175,15 @@ public enum XCBBuildServiceProxyStub {
                                       outputFilePath: String,
                                       derivedDataPath: String,
                                       workspaceHash: String,
-                                      macOSSDK: String,
+                                      workspaceName: String,
+                                      sdkPath: String,
                                       workingDir: String) -> Data {
                 let clangXML = clangXMLT.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
                 .replacingOccurrences(of:"__OUTPUT_FILE_PATH__", with: outputFilePath)
-                .replacingOccurrences(of:"__INDEX_STORE_PATH__", with: "\(derivedDataPath)/iOSApp-\(workspaceHash)/Index/DataStore")
+                .replacingOccurrences(of:"__INDEX_STORE_PATH__", with: "\(derivedDataPath)/\(workspaceName)-\(workspaceHash)/Index/DataStore")
                 .replacingOccurrences(of:"__DERIVED_DATA_PATH__", with: derivedDataPath)
                 .replacingOccurrences(of:"__WORSPACE_HASH__", with: workspaceHash)
-                .replacingOccurrences(of:"__MACOS_SDK__", with: macOSSDK)
+                .replacingOccurrences(of:"__SDK_PATH__", with: sdkPath)
                 .replacingOccurrences(of:"__WORKING_DIR__", with: workingDir)
 
                 return BPlistConverter(xml: clangXML)?.convertToBinary() ?? Data()
