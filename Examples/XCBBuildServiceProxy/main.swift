@@ -50,18 +50,11 @@ private var gChunkNumber = 0
 // FIXME: get this from the other paths
 private var gXcode = ""
 // TODO: parsed in `CreateSessionRequest`, consider a more stable approach instead of parsing `xcbuildDataPath` path there
-// Should match value in `Makefile > generate_custom_index_store`
 private var workspaceHash = ""
 // TODO: parsed in `IndexingInfoRequested`, there's probably a less hacky way to get this.
 // Effectively `$PWD/iOSApp`
-// Should match value in `Makefile > generate_custom_index_store`
 private var workingDir = ""
-// TODO: parse this from somewhere
-// To generate on the cmd line run
-//
-// xcrun --sdk macosx --show-sdk-path
-//
-// Should match value in `Makefile > generate_custom_index_store`
+// TODO: parse the relative path to the SDK from somewhere
 var macOSSDK: String {
     guard gXcode.count > 0 else {
         fatalError("Failed to build macOS SDK path, Xcode path is empty: \(gXcode)")
@@ -117,13 +110,12 @@ enum BasicMessageHandler {
             } else if !XCBBuildServiceProcess.MessageDebuggingEnabled() && msg is IndexingInfoRequested {
                 // Example of a custom indexing service
                 let reqMsg = msg as! IndexingInfoRequested
+                workingDir = reqMsg.workingDir
+
                 guard let outputFilePath = outputFileForSource[reqMsg.filePath] else {
                     fatalError("Failed to find output file for source: \(reqMsg.filePath)")
                     return
                 }
-
-                workingDir = reqMsg.workingDir
-
                 log("Found output file \(outputFilePath) for source \(reqMsg.filePath)")
 
                 let clangXMLData = XCBBuildServiceProxyStub.getASTArgs(
