@@ -63,6 +63,8 @@ private extension XCBEncoder {
 
 public struct CreateSessionRequest: XCBProtocolMessage {
     public let workspace: String
+    public let workspaceName: String
+    public let workspaceHash: String
     public let xcode: String
     public let xcbuildDataPath: String
 
@@ -93,6 +95,21 @@ public struct CreateSessionRequest: XCBProtocolMessage {
         } else {
             self.xcbuildDataPath = ""
         }
+
+        // TODO: This is hacky, just an initial approach for better DX for now. Find a better way.
+        //
+        // `self.xcbuildDataPath` looks something like this (not that `/path/to/DerivedData` can also be a custom path):
+        //
+        // /path/to/DerivedData/iOSApp-frhmkkebaragakhdzyysbrsvbgtc/Build/Intermediates.noindex/XCBuildData
+        //
+        var components = self.xcbuildDataPath.components(separatedBy: "-")
+        self.workspaceHash = components.last!.components(separatedBy: "/").first!
+        components.removeLast()
+        self.workspaceName = components.last!.components(separatedBy: "/").last!
+
+        log("Found XCBuildData path: \(self.xcbuildDataPath)")
+        log("Parsed workspaceHash: \(self.workspaceHash)")
+        log("Parsed workspaceName: \(self.workspaceName)")
     }
 }
 
@@ -175,6 +192,10 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
     public let targetID: String
     public let outputPathOnly: Bool
     public let filePath: String
+    public let derivedDataPath: String
+    public let workingDir: String
+    public let sdk: String
+    public let platform: String
 
     public init(input: XCBInputStream) throws {
         var minput = input
@@ -184,10 +205,14 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
             self.targetID = "_internal_stub_"
             self.filePath = "_internal_stub_"
             self.outputPathOnly = false
-            self.responseChannel = -1  
+            self.responseChannel = -1
+            self.derivedDataPath = ""
+            self.workingDir = ""
+            self.sdk = ""
+            self.platform = ""
             return
         }
-         
+
         guard let json = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
             throw XCBProtocolError.unexpectedInput(for: input)
         }
@@ -200,17 +225,36 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
         self.filePath = json["filePath"] as? String ?? "<garbage>"
         self.outputPathOnly = json["outputPathOnly"] as? Bool ?? false
 
-        // FIXME: Disable / unused - for now
         let requestJSON = json["request"] as? [String: Any] ?? [:]
-        log("RequestReceived \(self)")
 
-         let jsonRep64Str = requestJSON["jsonRepresentation"] as? String ?? ""
-         let jsonRepData = Data.fromBase64(jsonRep64Str) ?? Data()
-         guard let jsonJSON = try JSONSerialization.jsonObject(with: jsonRepData, options: []) as? [String: Any] else {
+        // Remove last word of `$PWD/iOSApp/iOSApp.xcodeproj` to get `workingDir`
+        let containerPath = requestJSON["containerPath"] as? String ?? ""
+        self.workingDir = Array(containerPath.components(separatedBy: "/").dropLast()).joined(separator: "/")
+
+        let jsonRep64Str = requestJSON["jsonRepresentation"] as? String ?? ""
+        let jsonRepData = Data.fromBase64(jsonRep64Str) ?? Data()
+        guard let jsonJSON = try JSONSerialization.jsonObject(with: jsonRepData, options: []) as? [String: Any] else {
             log("warning: missing rep str")
+            self.derivedDataPath = ""
+            self.sdk = ""
+            self.platform = ""
+            log("RequestReceived \(self)")
             return
-         }
-         log("jsonRepresentation \(jsonJSON)")
+        }
+        log("jsonRepresentation \(jsonJSON)")
+
+        let parameters = jsonJSON["parameters"] as? [String: Any] ?? [:]
+        let arenaInfo = parameters["arenaInfo"] as? [String: Any] ?? [:]
+        self.derivedDataPath = arenaInfo["derivedDataPath"] as? String ?? ""
+
+        let activeRunDestination = parameters["activeRunDestination"] as? [String: Any] ?? [:]
+        self.sdk = activeRunDestination["sdk"] as? String ?? ""
+        self.platform = activeRunDestination["platform"] as? String ?? ""
+
+        log("RequestReceived \(self)")
+        log("Parsed derivedDataPath \(self.derivedDataPath)")
+        log("Parsed sdk \(self.sdk)")
+        log("Parsed platform \(self.platform)")
     }
 }
 

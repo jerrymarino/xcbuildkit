@@ -37,15 +37,73 @@ struct BasicMessageContext {
 
 let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice-bzl")
 
+// TODO: Make this part of an API to be consumed from callers
+//
+// "source file" => "output file" map, hardcoded for now, will be part of the API in the future
+// Should match your local path and the values set in `Makefile > generate_custom_index_store`
+private let outputFileForSource: [String: String] = [
+    "iOSApp/CLI/main.m": "/tmp/xcbuild-out/main.o"
+]
+
 private var gChunkNumber = 0
 // FIXME: get this from the other paths
 private var gXcode = ""
+// TODO: parsed in `CreateSessionRequest`, consider a more stable approach instead of parsing `xcbuildDataPath` path there
+private var workspaceHash = ""
+// TODO: parsed in `CreateSessionRequest`, consider a more stable approach instead of parsing `xcbuildDataPath` path there
+private var workspaceName = ""
+// TODO: parsed in `IndexingInfoRequested`, there's probably a less hacky way to get this.
+// Effectively `$PWD/iOSApp`
+private var workingDir = ""
+// TODO: parsed in `IndexingInfoRequested` and it's lowercased there, might not be stable in different OSes
+private var sdk = ""
+// TODO: parsed in `IndexingInfoRequested` and it's lowercased there, might not be stable in different OSes
+private var platform = ""
+// TODO: parse the relative path to the SDK from somewhere
+var sdkPath: String {
+    guard gXcode.count > 0 else {
+        fatalError("Failed to build SDK path, Xcode path is empty: \(gXcode)")
+    }
+    guard sdk.count > 0 else {
+        fatalError("Failed to build SDK path, sdk name is empty: \(sdk)")
+    }
+    guard platform.count > 0 else {
+        fatalError("Failed to build SDK path, platform is empty: \(platform)")
+    }
+
+    return "\(gXcode)/Contents/Developer/Platforms/\(platform).platform/Developer/SDKs/\(sdk).sdk"
+}
 
 /// This example listens to a BEP stream to display some output.
 ///
 /// All operations are delegated to XCBBuildService and we inject
 /// progress from BEP.
 enum BasicMessageHandler {
+    // Required if `outputPathOnly` is `true` in the indexing request
+    static func outputPathOnlyData(outputFilePath: String, sourceFilePath: String) -> Data {
+        let xml = """
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+            <array>
+                <dict>
+                    <key>outputFilePath</key>
+                    <string>\(outputFilePath)</string>
+                    <key>sourceFilePath</key>
+                    <string>\(sourceFilePath)</string>
+                </dict>
+            </array>
+        </plist>
+        """
+        guard let converter = BPlistConverter(xml: xml) else {
+            fatalError("Failed to allocate converter")
+        }
+        guard let bplistData = converter.convertToBinary() else {
+            fatalError("Failed to convert XML to binary plist data")
+        }
+
+        return bplistData
+    }
+
     /// Proxying response handler
     /// Every message is written to the XCBBuildService
     /// This simply injects Progress messages from the BEP
@@ -58,14 +116,36 @@ enum BasicMessageHandler {
         if let msg = decoder.decodeMessage() {
             if let createSessionRequest = msg as? CreateSessionRequest {
                 gXcode = createSessionRequest.xcode
-                xcbbuildService.startIfNecessary(xcode: createSessionRequest.xcode)
+                workspaceHash = createSessionRequest.workspaceHash
+                workspaceName = createSessionRequest.workspaceName
+                xcbbuildService.startIfNecessary(xcode: gXcode)
             } else if !XCBBuildServiceProcess.MessageDebuggingEnabled() && msg is IndexingInfoRequested {
                 // Example of a custom indexing service
                 let reqMsg = msg as! IndexingInfoRequested
-                let clangXMLData = XCBBuildServiceProxyStub.getASTArgs(targetID: reqMsg.targetID, outputFilePath: reqMsg.filePath)
+                workingDir = reqMsg.workingDir
+                platform = reqMsg.platform
+                sdk = reqMsg.sdk
+
+                let outputFileKey = "\(workspaceName)\(reqMsg.filePath.replacingOccurrences(of: workingDir, with: ""))"
+                guard let outputFilePath = outputFileForSource[outputFileKey] else {
+                    fatalError("Failed to find output file for source: \(reqMsg.filePath)")
+                    return
+                }
+                log("Found output file \(outputFilePath) for source \(reqMsg.filePath)")
+
+                let clangXMLData = XCBBuildServiceProxyStub.getASTArgs(
+                    targetID: reqMsg.targetID,
+                    sourceFilePath: reqMsg.filePath,
+                    outputFilePath: outputFilePath,
+                    derivedDataPath: reqMsg.derivedDataPath,
+                    workspaceHash: workspaceHash,
+                    workspaceName: workspaceName,
+                    sdkPath: sdkPath,
+                    workingDir: workingDir)
+
                 let message = IndexingInfoReceivedResponse(
                     targetID: reqMsg.targetID,
-                    data: reqMsg.outputPathOnly ? Data() : nil,
+                    data: reqMsg.outputPathOnly ? outputPathOnlyData(outputFilePath: outputFilePath, sourceFilePath: reqMsg.filePath) : nil,
                     responseChannel: UInt64(reqMsg.responseChannel),
                     clangXMLData: reqMsg.outputPathOnly ? nil : clangXMLData)
                 if let encoded: XCBResponse = try? message.encode(encoder) {
