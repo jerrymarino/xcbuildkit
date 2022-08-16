@@ -69,7 +69,14 @@ let workspaceHash = "frhmkkebaragakhdzyysbrsvbgtc"
 //
 // Should match value in `Makefile > generate_custom_index_store`
 //
-let macOSSDK = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk"
+// ps: note that globals are lazy by default
+var macOSSDK: String {
+    guard gXcode.count > 0 else {
+        fatalError("Failed to build macOS SDK path, Xcode path is empty: \(gXcode)")
+    }
+
+    return "\(gXcode)/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk"
+}
 
 // TODO: `pwd` this and pass on the cmd line or parse from input stream (?)
 //
@@ -123,7 +130,7 @@ enum BasicMessageHandler {
         if let msg = decoder.decodeMessage() {
             if let createSessionRequest = msg as? CreateSessionRequest {
                 gXcode = createSessionRequest.xcode
-                xcbbuildService.startIfNecessary(xcode: createSessionRequest.xcode)
+                xcbbuildService.startIfNecessary(xcode: gXcode)
             } else if !XCBBuildServiceProcess.MessageDebuggingEnabled() && msg is IndexingInfoRequested {
                 // Example of a custom indexing service
                 let reqMsg = msg as! IndexingInfoRequested
