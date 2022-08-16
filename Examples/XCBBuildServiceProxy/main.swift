@@ -37,30 +37,31 @@ struct BasicMessageContext {
 
 let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice-bzl")
 
-private var gChunkNumber = 0
-// FIXME: get this from the other paths
-private var gXcode = ""
-// TODO: parsed in `CreateSessionRequest`, consider a more stable approach instead of parsing `xcbuildDataPath` path there
-private var workspaceHash = ""
-
 // TODO: Make this part of an API to be consumed from callers
 //
 // "source file" => "output file" map, hardcoded for now, will be part of the API in the future
 // Should match your local path and the values set in `Makefile > generate_custom_index_store`
-//
 private let outputFileForSource: [String: String] = [
     // `echo $PWD/iOSApp/CLI/main.m`
     "/Users/thiago/Development/thiagohmcruz/xcbuildkit/iOSApp/CLI/main.m": "/tmp/xcbuild-out/main.o"
 ]
 
+private var gChunkNumber = 0
+// FIXME: get this from the other paths
+private var gXcode = ""
+// TODO: parsed in `CreateSessionRequest`, consider a more stable approach instead of parsing `xcbuildDataPath` path there
+// Should match value in `Makefile > generate_custom_index_store`
+private var workspaceHash = ""
+// TODO: parsed in `IndexingInfoRequested`, there's probably a less hacky way to get this.
+// Effectively `$PWD/iOSApp`
+// Should match value in `Makefile > generate_custom_index_store`
+private var workingDir = ""
 // TODO: parse this from somewhere
 // To generate on the cmd line run
 //
 // xcrun --sdk macosx --show-sdk-path
 //
 // Should match value in `Makefile > generate_custom_index_store`
-//
-// ps: note that globals are lazy by default
 var macOSSDK: String {
     guard gXcode.count > 0 else {
         fatalError("Failed to build macOS SDK path, Xcode path is empty: \(gXcode)")
@@ -68,16 +69,6 @@ var macOSSDK: String {
 
     return "\(gXcode)/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk"
 }
-
-// TODO: `pwd` this and pass on the cmd line or parse from input stream (?)
-//
-// Effectively the result of running this from this repo root:
-//
-// `echo $PWD/iOSApp`
-//
-// Should match value in `Makefile > generate_custom_index_store`
-//
-let workingDir = "/Users/thiago/Development/thiagohmcruz/xcbuildkit/iOSApp"
 
 /// This example listens to a BEP stream to display some output.
 ///
@@ -130,6 +121,8 @@ enum BasicMessageHandler {
                     fatalError("Failed to find output file for source: \(reqMsg.filePath)")
                     return
                 }
+
+                workingDir = reqMsg.workingDir
 
                 log("Found output file \(outputFilePath) for source \(reqMsg.filePath)")
 

@@ -180,6 +180,7 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
     public let outputPathOnly: Bool
     public let filePath: String
     public let derivedDataPath: String
+    public let workingDir: String
 
     public init(input: XCBInputStream) throws {
         var minput = input
@@ -191,6 +192,7 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
             self.outputPathOnly = false
             self.responseChannel = -1
             self.derivedDataPath = ""
+            self.workingDir = ""
             return
         }
 
@@ -208,22 +210,26 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
 
         let requestJSON = json["request"] as? [String: Any] ?? [:]
 
-         let jsonRep64Str = requestJSON["jsonRepresentation"] as? String ?? ""
-         let jsonRepData = Data.fromBase64(jsonRep64Str) ?? Data()
-         guard let jsonJSON = try JSONSerialization.jsonObject(with: jsonRepData, options: []) as? [String: Any] else {
+        // Remove last word of `$PWD/iOSApp/iOSApp.xcodeproj` to get `workingDir`
+        let containerPath = requestJSON["containerPath"] as? String ?? ""
+        self.workingDir = Array(containerPath.components(separatedBy: "/").dropLast()).joined(separator: "/")
+
+        let jsonRep64Str = requestJSON["jsonRepresentation"] as? String ?? ""
+        let jsonRepData = Data.fromBase64(jsonRep64Str) ?? Data()
+        guard let jsonJSON = try JSONSerialization.jsonObject(with: jsonRepData, options: []) as? [String: Any] else {
             log("warning: missing rep str")
             self.derivedDataPath = ""
             log("RequestReceived \(self)")
             return
-         }
-         log("jsonRepresentation \(jsonJSON)")
+        }
+        log("jsonRepresentation \(jsonJSON)")
 
-         let parameters = jsonJSON["parameters"] as? [String: Any] ?? [:]
-         let arenaInfo = parameters["arenaInfo"] as? [String: Any] ?? [:]
-         self.derivedDataPath = arenaInfo["derivedDataPath"] as? String ?? ""
+        let parameters = jsonJSON["parameters"] as? [String: Any] ?? [:]
+        let arenaInfo = parameters["arenaInfo"] as? [String: Any] ?? [:]
+        self.derivedDataPath = arenaInfo["derivedDataPath"] as? String ?? ""
 
-         log("RequestReceived \(self)")
-         log("Parsed derivedDataPath \(self.derivedDataPath)")
+        log("RequestReceived \(self)")
+        log("Parsed derivedDataPath \(self.derivedDataPath)")
     }
 }
 
