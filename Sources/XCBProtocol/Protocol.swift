@@ -202,7 +202,6 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
         self.filePath = json["filePath"] as? String ?? "<garbage>"
         self.outputPathOnly = json["outputPathOnly"] as? Bool ?? false
 
-        // FIXME: Disable / unused - for now
         let requestJSON = json["request"] as? [String: Any] ?? [:]
 
          let jsonRep64Str = requestJSON["jsonRepresentation"] as? String ?? ""
