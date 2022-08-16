@@ -40,6 +40,8 @@ let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice-bzl")
 private var gChunkNumber = 0
 // FIXME: get this from the other paths
 private var gXcode = ""
+// TODO: parsed in `CreateSessionRequest`, consider a more stable approach instead of parsing `xcbuildDataPath` path there
+private var workspaceHash = ""
 
 // TODO: Make this part of an API to be consumed from callers
 //
@@ -50,17 +52,6 @@ private let outputFileForSource: [String: String] = [
     // `echo $PWD/iOSApp/CLI/main.m`
     "/Users/thiago/Development/thiagohmcruz/xcbuildkit/iOSApp/CLI/main.m": "/tmp/xcbuild-out/main.o"
 ]
-
-// TODO: parse from input stream or Xcode env
-//
-// Example: `/path/to/DerivedData/iOSApp-frhmkkebaragakhdzyysbrsvbgtc`
-//
-// Read more about this identifier here:
-// https://pewpewthespells.com/blog/xcode_deriveddata_hashes.html
-//
-// Should match value in `Makefile > generate_custom_index_store`
-//
-let workspaceHash = "frhmkkebaragakhdzyysbrsvbgtc"
 
 // TODO: parse this from somewhere
 // To generate on the cmd line run
@@ -130,6 +121,7 @@ enum BasicMessageHandler {
         if let msg = decoder.decodeMessage() {
             if let createSessionRequest = msg as? CreateSessionRequest {
                 gXcode = createSessionRequest.xcode
+                workspaceHash = createSessionRequest.workspaceHash
                 xcbbuildService.startIfNecessary(xcode: gXcode)
             } else if !XCBBuildServiceProcess.MessageDebuggingEnabled() && msg is IndexingInfoRequested {
                 // Example of a custom indexing service

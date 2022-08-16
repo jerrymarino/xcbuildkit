@@ -63,6 +63,7 @@ private extension XCBEncoder {
 
 public struct CreateSessionRequest: XCBProtocolMessage {
     public let workspace: String
+    public let workspaceHash: String
     public let xcode: String
     public let xcbuildDataPath: String
 
@@ -93,6 +94,9 @@ public struct CreateSessionRequest: XCBProtocolMessage {
         } else {
             self.xcbuildDataPath = ""
         }
+
+        // TODO: This is hacky, just an initial approach for better DX for now. Find a better way.
+        self.workspaceHash = self.xcbuildDataPath.components(separatedBy: "-").last!.replacingOccurrences(of: "/Build/Intermediates.noindex/XCBuildData", with: "")
     }
 }
 
