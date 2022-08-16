@@ -95,8 +95,7 @@ open_xcode: build
 			$(XCODE)/Contents/MacOS/Xcode
 
 clean:
-	rm -fr /tmp/xcbuild.* && \
-	rm -fr /tmp/xcbuild-*
+	rm -fr /tmp/xcbuild{.,-}*
 
 symlink_external:
 	ln -sf $(shell tools/bazelwrapper info execution_root)/external external
