@@ -40,7 +40,22 @@ func unpackString(_ data: Subdata, count: Int) throws -> (value: String, remaind
     }
 
     let subdata = data[0 ..< count]
-    guard let result = String(data: subdata.data, encoding: .utf8) else {
+    var dataToEncode = subdata.data
+    var decoded: String? = nil
+
+    // Best guess to try to get to a valid encoded utf8 string
+    // Mostly to work with xcbuildkit use case, might not apply in general
+    //
+    // skip left most bytes and retry until a valid utf8 string is found
+    while !dataToEncode.isEmpty && decoded == nil {
+        if let utf8Encoded = String(data: dataToEncode, encoding: .utf8) {
+            decoded = utf8Encoded
+        } else {
+            dataToEncode.remove(at: 0)
+        }
+    }
+
+    guard let result = decoded else {
         throw MessagePackError.invalidData
     }
 
@@ -164,7 +179,7 @@ public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (valu
     case 0xc4 ... 0xc6:
         let intCount = 1 << Int(value - 0xc4)
         let (dataCount, remainder1) = try unpackInteger(data, count: intCount)
-        let (subdata, remainder2) = try unpackData(remainder1, count: Int(dataCount))
+        let (subdata, remainder2) = try unpackData(remainder1, count: Int(value - 0xc4))
         return (.binary(subdata.data), remainder2)
 
     // ext 8, 16, 32
