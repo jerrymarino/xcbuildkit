@@ -52,8 +52,13 @@ public class BKBuildService {
     // crossing streams.
     internal static let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice")
 
-    private var readLen: Int32 = -1
     private var buffer = Data()
+    private var bufferMsgId = Data()
+    private var bufferContentSize = Data()
+    private var bufferNext = Data()
+    private var readLen: Int32 = 0
+    private var msgId: UInt64 = 0
+    private var workingDir: String?
 
     // This is highly experimental
     private var indexingEnabled: Bool
@@ -61,104 +66,179 @@ public class BKBuildService {
     // TODO: Move record mode out
     private var chunkId = 0
 
-    public init(indexingEnabled: Bool=false) {
+    public init(indexingEnabled: Bool=false, workingDir: String? = nil) {
         self.indexingEnabled = indexingEnabled
         self.shouldDump = CommandLine.arguments.contains("--dump")
         self.shouldDumpHumanReadable = CommandLine.arguments.contains("--dump_h")
+        self.workingDir = workingDir
+    }
+
+    // Once a buffer is ready to write to stdout and respond to Xcode invoke this
+    func handleRequest(messageHandler: @escaping XCBMessageHandler, context: Any?) {
+        let result = Unpacker.unpackAll(self.buffer)
+        let input = XCBInputStream(result: result, data: self.buffer, workingDir: self.workingDir)
+        let decoder = XCBDecoder(input: input)
+        let msg = decoder.decodeMessage()
+
+        if msg is IndexingInfoRequested {
+            // Indexing msgs require a PING on the msgId before passing the payload
+            // doing this here so proxy writers don't have to worry about this impl detail
+            write([
+                XCBRawValue.string("PING"),
+                XCBRawValue.nil,
+            ], msgId: self.msgId)
+            messageHandler(input, self.buffer, context)
+        } else {
+            var ogData = Data()
+            ogData.append(self.bufferMsgId)
+            ogData.append(self.bufferContentSize)
+            ogData.append(self.buffer)
+
+            // `CreateSessionRequest` is being special cased until we start writing the correct response to it in one of the examples
+            // for now if this is detected change the input to be the one from the buffer instead of from the original stream
+            //
+            // Important: Note that `ogData` still needs to be passed below so the original build service can parse `CREATE_SESSION` and
+            // write the correct response to stdout for us for now
+            var inputResult = [MessagePackValue]()
+            var inputData = ogData
+            if msg is CreateSessionRequest {
+                inputResult = result
+                inputData = self.buffer
+            }
+
+            messageHandler(XCBInputStream(result: inputResult, data: inputData), ogData, context)
+        }
+
+        // Reset all the things
+        self.buffer = Data()
+        self.bufferMsgId = Data()
+        self.bufferContentSize = Data()
+        self.readLen = 0
+        self.msgId = 0
+
+        // See `appendToBuffer`. If the end of a message and the beginning of the next
+        // come in the same package we need to handle it and initilize the buffer with the
+        // new data before the next cycle so things continue to be processed continuously
+        //
+        // This is done below, if the leftover is a complete message just handle it right away
+        // otherwise return so the buffer continue to be populated in the next cycle
+        if self.bufferNext.count > 0 {
+            let readyToProcess = initializeBuffer(data: self.bufferNext)
+            self.bufferNext = Data()
+
+            guard readyToProcess else { return }
+            handleRequest(messageHandler: messageHandler, context: context)
+        }
+    }
+
+    // Collect msgId and size of content to be collected at the beginning of a stream
+    func collectHeaderInfo(data: Data) -> (Int32, Data) {
+        var tmpData = data
+        let readSizeFirst2 = MemoryLayout<UInt64>.size
+        let msgIdData2 = tmpData[0 ..< readSizeFirst2]
+        self.bufferMsgId = msgIdData2
+        let msgId2 = msgIdData2.withUnsafeBytes { $0.load(as: UInt64.self) }
+        tmpData = tmpData.advanced(by: readSizeFirst2)
+        self.msgId = msgId2
+
+        let readSizeSecond2 = MemoryLayout<UInt32>.size
+        let sizeD2 = tmpData[0 ..< readSizeSecond2]
+        self.bufferContentSize = sizeD2
+        let sizeB2 = sizeD2.withUnsafeBytes { $0.load(as: UInt32.self) }
+        let size2 = Int32(sizeB2)
+        tmpData = tmpData.advanced(by: readSizeSecond2)
+
+        return (size2, tmpData)
+    }
+
+    // Initialize the buffer, if it's a small message and all content comes in one packet it
+    // can be processed instantly in the call site
+    func initializeBuffer(data: Data) -> Bool {
+        // Collect msgId and size to be collected first, then initialize the buffer
+        var (size, bufferData) = collectHeaderInfo(data: data)
+
+        // If all data for this message is in `data` just store that and return
+        // a 'buffer is ready to be processed' response
+        if size <= Int32(bufferData.count) {
+            self.buffer = bufferData
+            self.readLen = 0
+
+            return true
+        }
+
+        // If data needs to be accumulated append to buffer and calculate the length
+        // of the message to be collected in the next messages
+        //
+        // Returns `false` meaning that the buffer is still not ready to be processed
+        self.buffer.append(bufferData)
+        self.readLen = min(max(size - Int32(bufferData.count), 0), Int32(bufferData.count))
+
+        return false
+    }
+
+    // If `initializeBuffer` detects that a buffer is not ready yet and more info needs to be collected
+    // do this work here and append to the buffer until the message is complete.
+    //
+    // More often than not the end of a message is going to come with the beginning of another message
+    // in that case the data will be partitioned and store in `self.bufferNext` to be picked up in the next cycle
+    //
+    // Returns the state of 'buffer is ready to be processed'
+    func appendToBuffer(data: Data) -> Bool {
+        if self.readLen > serializerToken {
+            self.buffer.append(data)
+            // Remaining length left after appending
+            self.readLen = self.readLen - Int32(data.count)
+            return false
+        } else if self.readLen > 0 {
+            var nextData = data
+
+            var finalData = nextData[0 ..< Int(self.readLen)]
+            self.buffer.append(finalData)
+
+            nextData = nextData.advanced(by: Int(self.readLen))
+
+            if nextData.count > 0 {
+                self.bufferNext = nextData
+            } else {
+                self.bufferNext = Data()
+            }
+            self.readLen = 0
+            return true
+        }
+
+        return false
     }
 
     /// Starts a service on standard input
-    public func start(messageHandler: @escaping XCBMessageHandler, context:
-        Any?) {
+    public func start(messageHandler: @escaping XCBMessageHandler, context: Any?) {
         let file = FileHandle.standardInput
         file.readabilityHandler = { [self]
             h in
-            let aData = h.availableData
-            guard aData.count > 0 else {
+            var data = h.availableData
+            guard data.count > 0 else {
                 exit(0)
             }
-            var data = aData
-            guard data.count >= MemoryLayout<UInt64>.size + MemoryLayout<UInt32>.size else {
-               self.buffer.append(data)
-               return
-            }
 
-            // The buffering code is still WIP - short circuit for now
-            guard self.indexingEnabled else {
-                let result = Unpacker.unpackAll(aData)
-                messageHandler(XCBInputStream(result: result, data: data), aData, context)
-                return
-            }
-            let gotMsgId: UInt64
-            let startSize = self.readLen
-            if self.buffer.count == 0 {
-                let readSizeFirst = MemoryLayout<UInt64>.size
-                let msgIdData = data[0 ..< readSizeFirst]
-                let msgId = msgIdData.withUnsafeBytes { $0.load(as: UInt64.self) }
-                data = data.advanced(by: readSizeFirst)
-                gotMsgId = msgId
-
-                let readSizeSecond = MemoryLayout<UInt32>.size
-                let sizeD = data[0 ..< readSizeSecond]
-                let sizeB = sizeD.withUnsafeBytes { $0.load(as: UInt32.self) }
-                let size = Int32(sizeB)
-                data = data.advanced(by: readSizeSecond)
-
-                log("Header.msgId \(msgId)")
-                log("Header.size \(size)")
-                self.readLen = size
-                self.buffer = data
-            } else {
-                gotMsgId = 0
-                self.buffer.append(data)
-                self.readLen = 0
-            }
-
-            if self.readLen > serializerToken {
-                let result = Unpacker.unpackAll(aData)
-                let decoder = XCBDecoder(input: XCBInputStream(result: result,
-                                                               data: aData))
-                guard !XCBBuildServiceProcess.MessageDebuggingEnabled() else {
-                    messageHandler(XCBInputStream(result: [], data: data), aData, context)
-                    return
-                }
-
-                let msg = decoder.decodeMessage() 
-                if msg is IndexingInfoRequested {
-                    write([
-                        XCBRawValue.string("PING"),
-                        XCBRawValue.nil,
-                    ], msgId: gotMsgId)
-                    return
-                }
-                messageHandler(XCBInputStream(result: [], data: data), aData, context)
-                return
-            } else {
-                data = self.buffer
-                self.readLen = 0
-                self.buffer = Data()
-            }
-            log("Header.Parse \(data)")
-            log("Header.Size \(self.readLen) - \(startSize) ")
-            let result = Unpacker.unpackAll(data)
-            if let first = result.first, case let .uint(id) = first {
-                let msgId = id + 1
-                log("respond.msgId" + String(describing: msgId))
-            } else {
-                log("missing id")
-            }
-
-            if self.shouldDump {
+            guard !self.shouldDump else {
                 // Dumps out the protocol
                 // useful for debuging, code gen'ing protocol messages, and
                 // upgrading Xcode versions
-                result.forEach{ $0.prettyPrint() }
-            } else if self.shouldDumpHumanReadable {
-                // Same as above but dumps out the protocol in human readable format
-                PrettyPrinter.prettyPrintRecursively(result)
-            } else {
-                messageHandler(XCBInputStream(result: result, data: data), aData, context)
+                Unpacker.unpackAll(data).forEach{ $0.prettyPrint() }
+                return
             }
+
+            guard !self.shouldDumpHumanReadable else {
+                // Same as above but dumps out the protocol in human readable format
+                PrettyPrinter.prettyPrintRecursively(Unpacker.unpackAll(data))
+                return
+            }
+
+            // Initialize or append to buffer, return value is the state of 'buffer is ready to be processed or not'
+            let readyToProcess = self.buffer.count == 0 ? initializeBuffer(data: data) : appendToBuffer(data: data)
+            guard readyToProcess else { return }
+
+            // Buffer is ready, just handle it
+            handleRequest(messageHandler: messageHandler, context: context)
         }
         repeat {
             sleep(1)
@@ -264,11 +344,13 @@ public enum Unpacker {
         var sdata = Subdata(data: data)
         while !sdata.isEmpty {
             let value: XCBRawValue
-            if let res = try? unpack(sdata) {
+            do {
+                let res = try unpack(sdata)
                 let (value, remainder) = res
                 unpacked.append(value)
                 sdata = remainder
-            } else {
+            } catch let e {
+                log("Unpacker has failed to unpack with err: \(e)")
                 // Note: likely an error condition, but deal with what we can
                 return unpacked
             }

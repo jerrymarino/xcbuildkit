@@ -45,7 +45,7 @@ let clangXMLT: String = """
                 <key>LanguageDialect</key>
                 <string>objective-c</string>
                 <key>clangASTBuiltProductsDir</key>
-                <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Products/Debug</string>
+                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORSPACE_HASH__/Index/Build/Products/Debug-iphonesimulator</string>
                 <key>clangASTCommandArguments</key>
                 <array>
                         <string>-x</string>
@@ -128,27 +128,12 @@ let clangXMLT: String = """
                         <string>-Wunguarded-availability</string>
                         <string>-index-store-path</string>
                         <string>__INDEX_STORE_PATH__</string>
-                        <string>-iquote</string>
-                        <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-generated-files.hmap</string>
-                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-own-target-headers.hmap</string>
-                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-all-target-headers.hmap</string>
-                        <string>-iquote</string>
-                        <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-project-headers.hmap</string>
-                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Products/Debug/include</string>
-                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources-normal/x86_64</string>
-                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources/x86_64</string>
-                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources</string>
-                        <string>-F__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Products/Debug</string>
                         <string>-fsyntax-only</string>
                         <string>__SOURCE_FILE__</string>
                         <string>-o</string>
                         <string>__OUTPUT_FILE_PATH__</string>
                         <string>-Xclang</string>
                         <string>-fallow-pcm-with-compiler-errors</string>
-                        <string>-ivfsoverlay</string>
-                        <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/regular-to-index-overlay.yaml</string>
-                        <string>-ivfsoverlay</string>
-                        <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/index-to-regular-overlay.yaml</string>
                         <string>-fretain-comments-from-system-headers</string>
                         <string>-ferror-limit=10</string>
                         <string>-working-directory=__WORKING_DIR__</string>
@@ -177,13 +162,16 @@ public enum XCBBuildServiceProxyStub {
                                       workspaceHash: String,
                                       workspaceName: String,
                                       sdkPath: String,
+                                      sdkName: String,
                                       workingDir: String) -> Data {
                 let clangXML = clangXMLT.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
                 .replacingOccurrences(of:"__OUTPUT_FILE_PATH__", with: outputFilePath)
                 .replacingOccurrences(of:"__INDEX_STORE_PATH__", with: "\(derivedDataPath)/\(workspaceName)-\(workspaceHash)/Index/DataStore")
+                .replacingOccurrences(of:"__WORKSPACE_NAME__", with: workspaceName)
                 .replacingOccurrences(of:"__DERIVED_DATA_PATH__", with: derivedDataPath)
                 .replacingOccurrences(of:"__WORSPACE_HASH__", with: workspaceHash)
                 .replacingOccurrences(of:"__SDK_PATH__", with: sdkPath)
+                .replacingOccurrences(of:"__SDK_NAME__", with: sdkName)
                 .replacingOccurrences(of:"__WORKING_DIR__", with: workingDir)
 
                 return BPlistConverter(xml: clangXML)?.convertToBinary() ?? Data()

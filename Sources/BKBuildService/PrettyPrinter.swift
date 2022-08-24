@@ -86,6 +86,7 @@ extension Array where Element == UInt8 {
         guard let bytesAsString = self.utf8String ?? self.asciiString else {
             fatalError("Failed to encode bytes")
         }
+
         return bytesAsString
     }
 

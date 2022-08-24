@@ -161,9 +161,15 @@ TMP_OUT=/tmp/xcbuild-out
 
 make generate_custom_index_store:
 	mkdir -p ${TMP_DD} && \
-	mkdir -p ${TMP_OUT} && \
+	mkdir -p ${TMP_OUT}/CLI && \
+	mkdir -p ${TMP_OUT}/iOSApp && \
 	${CLANG} \
 	-isysroot ${MACOS_SDK} \
 	-c ${PWD}/iOSApp/CLI/main.m \
-	-o ${TMP_OUT}/main.o \
+	-o ${TMP_OUT}/CLI/main.o \
+	-index-store-path ${TMP_INDEX_STORE} && \
+	${CLANG} \
+	-isysroot ${MACOS_SDK} \
+	-c ${PWD}/iOSApp/iOSApp/main.m \
+	-o ${TMP_OUT}/iOSApp/main.o \
 	-index-store-path ${TMP_INDEX_STORE}
