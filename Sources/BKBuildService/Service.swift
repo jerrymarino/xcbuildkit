@@ -67,6 +67,24 @@ public class BKBuildService {
         self.shouldDumpHumanReadable = CommandLine.arguments.contains("--dump_h")
     }
 
+    var identifier: String?
+    var identifierDatas: [Data] = []
+    var isCollecting: Bool = false
+    var gotMsgId: UInt64 = 0
+
+    var supportedIdentifiers: [String] = [
+        "INDEXING_INFO_REQUESTED",        
+    ]
+
+    var unsupportedIdentifiers: [String] = [
+        "CREATE_SESSION",
+        "CREATE_BUILD",
+        "SET_SESSION_SYSTEM_INFO",
+        "SET_SESSION_USER_INFO",
+        "BUILD_START",
+        "BUILD_DESCRIPTION_TARGET_INFO",
+    ]
+
     /// Starts a service on standard input
     public func start(messageHandler: @escaping XCBMessageHandler, context:
         Any?) {
@@ -78,85 +96,185 @@ public class BKBuildService {
                 exit(0)
             }
             var data = aData
-            guard data.count >= MemoryLayout<UInt64>.size + MemoryLayout<UInt32>.size else {
-               self.buffer.append(data)
-               return
+
+
+            let fooResult = Unpacker.unpackAll(aData)
+            var fooInput = XCBInputStream(result: fooResult, data: aData)
+            var justStartedCollecting: Bool = false
+            let idxData = "INDEXING_INFO_REQUESTED".data(using: .utf8)!
+            var idxRange: Range<Int>?
+            var prefixData: Data = Data()
+
+            while let next = fooInput.next() {
+                switch next {
+                    case let .string(str):
+                        if supportedIdentifiers.contains(str) {
+                            isCollecting = true
+                            justStartedCollecting = true
+                            self.identifier = str
+                            idxRange = data.range(of: idxData)
+                            log("foo-ccc-1: \(idxRange)")
+                        } else if unsupportedIdentifiers.contains(str) {
+                            isCollecting = false
+                        } else {
+                            continue
+                        }
+                    
+                    default:
+                        continue
+                }
             }
 
-            // The buffering code is still WIP - short circuit for now
-            guard self.indexingEnabled else {
-                let result = Unpacker.unpackAll(aData)
-                log("foo-buffer-6.1: \(aData.readableString)")
-                messageHandler(XCBInputStream(result: result, data: data), aData, context)
-                return
+            if isCollecting && self.identifier != nil {
+                var idxJSONData = data
+
+                if justStartedCollecting {
+                    let xFactor: Int = 13
+                    
+                    prefixData = data[0..<idxRange!.lowerBound-xFactor]
+                    log("foo-ccc-2 prefixData : \(prefixData.readableString)")
+                    log("foo-ccc-2 prefixData size: \(prefixData.count)")
+
+                    idxJSONData = data[idxRange!.lowerBound-xFactor..<data.count]
+                    log("foo-ccc-3 idxJSONData : \(idxJSONData.readableString)")
+                    log("foo-ccc-3 idxJSONData size: \(idxJSONData.count)")
+
+                    var foo = idxJSONData
+                    log("foo-aaa-0 idxJSONData unpacked: \(Unpacker.unpackAll(foo))")
+
+                    let readSizeFirst = MemoryLayout<UInt64>.size
+                    let msgIdData = idxJSONData[0 ..< readSizeFirst]
+                    let msgId = msgIdData.withUnsafeBytes { $0.load(as: UInt64.self) }
+
+                    // data = data.advanced(by: readSizeFirst)
+                    if prefixData.count > 0 {
+                        data = prefixData
+                    }
+                    self.gotMsgId = msgId
+                }                
+                self.identifierDatas.append(idxJSONData)
+                log("foo-aaa-1")
+                log("foo-aaa-1 self.identifier: \(self.identifier)")
+                var dd = Data()
+                for d in self.identifierDatas {
+                    dd.append(d)
+                }
+                log("foo-aaa-1 self.identifierDatas: \(dd.readableString)")
+                if prefixData.count == 0 {
+                    return
+                }       
             }
-            let gotMsgId: UInt64
-            let startSize = self.readLen
-            if self.buffer.count == 0 {
-                let readSizeFirst = MemoryLayout<UInt64>.size
-                let msgIdData = data[0 ..< readSizeFirst]
-                let msgId = msgIdData.withUnsafeBytes { $0.load(as: UInt64.self) }
-                data = data.advanced(by: readSizeFirst)
-                gotMsgId = msgId
 
-                let readSizeSecond = MemoryLayout<UInt32>.size
-                let sizeD = data[0 ..< readSizeSecond]
-                let sizeB = sizeD.withUnsafeBytes { $0.load(as: UInt32.self) }
-                let size = Int32(sizeB)
-                data = data.advanced(by: readSizeSecond)
+            if !isCollecting && self.identifier != nil && self.identifierDatas.count > 0 {
+                var allData: Data = Data()
+                for d in self.identifierDatas {
+                    allData.append(d)
+                }
 
-                log("Header.msgId \(msgId)")
-                log("Header.size \(size)")
-                self.readLen = size
-                self.buffer = data
-            } else {
-                gotMsgId = 0
-                self.buffer.append(data)
-                self.readLen = 0
-            }
+                log("foo-aaa-2 allData: \(allData.readableString)")
+                let idxResult = Unpacker.unpackAll(allData)
+                let idxInput = XCBInputStream(result: idxResult, data: allData)
+                let decoder = XCBDecoder(input: idxInput)
+                let msg = decoder.decodeMessage()
 
-            if self.readLen > serializerToken {
-                let result = Unpacker.unpackAll(aData)
-                let decoder = XCBDecoder(input: XCBInputStream(result: result,
-                                                               data: aData))
-                // guard !XCBBuildServiceProcess.MessageDebuggingEnabled() else {
-                //     messageHandler(XCBInputStream(result: [], data: data), aData, context)
-                //     return
-                // }
-
-                let msg = decoder.decodeMessage() 
+                log("foo-aaa-3")
                 if msg is IndexingInfoRequested {
-                    write([
-                        XCBRawValue.string("PING"),
-                        XCBRawValue.nil,
-                    ], msgId: gotMsgId)
+                    log("foo-aaa-4 PING: self.gotMsgId \(self.gotMsgId)")
+                    
+                    // write([
+                    //     XCBRawValue.string("PING"),
+                    //     XCBRawValue.nil,
+                    // ], msgId: self.gotMsgId)
+
+                    messageHandler(idxInput, allData, context)
+
+                    self.identifier = nil
+                    self.identifierDatas = []
+                    self.gotMsgId = 0
+
                     return
                 }
-                log("foo-buffer-6.2: \(aData.readableString)")
-                // log("foo-buffer-6.2.1: \(Unpacker.unpackAll(aData))")
-                messageHandler(XCBInputStream(result: [], data: data), aData, context)
-                return
-            } else {
-                data = self.buffer
-                self.readLen = 0
-                self.buffer = Data()
-
-                // let subStr = String(data.readableString.prefix(25))
-                // if subStr.contains("INDEXING_INFO_REQUESTED") {
-                //     var unpacked = Unpacker.unpackAll(data)
-                //     // unpacked.remove(at: 0)
-                //     // var fooData = data.dropFirst(1)
-                //     var fooData = data
-                //     let decoder = XCBDecoder(input: XCBInputStream(result: unpacked, data: fooData))
-                //     let msg = decoder.decodeMessage()
-                //     // log("foo-buffer-1.1: \(data.readableString)")
-                //     // log("foo-buffer-1.2: \(unpacked)")
-                //     // log("foo-buffer-1.3: \(msg)")
-                //     return
-                // }
             }
-            log("Header.Parse \(data)")
-            log("Header.Size \(self.readLen) - \(startSize) ")
+
+            // guard data.count >= MemoryLayout<UInt64>.size + MemoryLayout<UInt32>.size else {
+            //    self.buffer.append(data)
+            //    return
+            // }
+
+            // // The buffering code is still WIP - short circuit for now
+            // guard self.indexingEnabled else {
+            //     let result = Unpacker.unpackAll(aData)
+            //     log("foo-buffer-6.1: \(aData.readableString)")
+            //     messageHandler(XCBInputStream(result: result, data: data), aData, context)
+            //     return
+            // }
+            // let gotMsgId: UInt64
+            // let startSize = self.readLen
+            // if self.buffer.count == 0 {
+            //     let readSizeFirst = MemoryLayout<UInt64>.size
+            //     let msgIdData = data[0 ..< readSizeFirst]
+            //     let msgId = msgIdData.withUnsafeBytes { $0.load(as: UInt64.self) }
+            //     data = data.advanced(by: readSizeFirst)
+            //     gotMsgId = msgId
+
+            //     let readSizeSecond = MemoryLayout<UInt32>.size
+            //     let sizeD = data[0 ..< readSizeSecond]
+            //     let sizeB = sizeD.withUnsafeBytes { $0.load(as: UInt32.self) }
+            //     let size = Int32(sizeB)
+            //     data = data.advanced(by: readSizeSecond)
+
+            //     log("Header.msgId \(msgId)")
+            //     log("Header.size \(size)")
+            //     self.readLen = size
+            //     self.buffer = data
+            // } else {
+            //     gotMsgId = 0
+            //     self.buffer.append(data)
+            //     self.readLen = 0
+            // }
+
+            // if self.readLen > serializerToken {
+            //     let result = Unpacker.unpackAll(aData)
+            //     let decoder = XCBDecoder(input: XCBInputStream(result: result,
+            //                                                    data: aData))
+            //     // guard !XCBBuildServiceProcess.MessageDebuggingEnabled() else {
+            //     //     messageHandler(XCBInputStream(result: [], data: data), aData, context)
+            //     //     return
+            //     // }
+
+            //     let msg = decoder.decodeMessage() 
+            //     if msg is IndexingInfoRequested {
+            //         write([
+            //             XCBRawValue.string("PING"),
+            //             XCBRawValue.nil,
+            //         ], msgId: gotMsgId)
+            //         return
+            //     }
+            //     log("foo-buffer-6.2: \(aData.readableString)")
+            //     // log("foo-buffer-6.2.1: \(Unpacker.unpackAll(aData))")
+            //     messageHandler(XCBInputStream(result: [], data: data), aData, context)
+            //     return
+            // } else {
+            //     data = self.buffer
+            //     self.readLen = 0
+            //     self.buffer = Data()
+
+            //     // let subStr = String(data.readableString.prefix(25))
+            //     // if subStr.contains("INDEXING_INFO_REQUESTED") {
+            //     //     var unpacked = Unpacker.unpackAll(data)
+            //     //     // unpacked.remove(at: 0)
+            //     //     // var fooData = data.dropFirst(1)
+            //     //     var fooData = data
+            //     //     let decoder = XCBDecoder(input: XCBInputStream(result: unpacked, data: fooData))
+            //     //     let msg = decoder.decodeMessage()
+            //     //     // log("foo-buffer-1.1: \(data.readableString)")
+            //     //     // log("foo-buffer-1.2: \(unpacked)")
+            //     //     // log("foo-buffer-1.3: \(msg)")
+            //     //     return
+            //     // }
+            // }
+            // log("Header.Parse \(data)")
+            // log("Header.Size \(self.readLen) - \(startSize) ")
             let result = Unpacker.unpackAll(data)
             if let first = result.first, case let .uint(id) = first {
                 let msgId = id + 1
