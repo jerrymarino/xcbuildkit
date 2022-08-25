@@ -91,11 +91,12 @@ public class BKBuildService {
         let file = FileHandle.standardInput
         file.readabilityHandler = { [self]
             h in
-            let aData = h.availableData
+            var aData = h.availableData
             guard aData.count > 0 else {
                 exit(0)
             }
             var data = aData
+            log("foo-buffer-6.0: \(data.readableString)")
 
 
             let fooResult = Unpacker.unpackAll(aData)
@@ -129,7 +130,18 @@ public class BKBuildService {
                 var idxJSONData = data
 
                 if justStartedCollecting {
+                    // let xFactor: Int = 0
                     let xFactor: Int = 13
+                    // var xFactor = serializerToken - (data.count - idxRange!.lowerBound)
+
+                    if xFactor > 13 {
+                        log("foo-ccc-2.1.1 will:")
+                        log("foo-ccc-2.1.1 data: \(data.readableString)")
+                        let xxFactor = 13
+                        let fooPrefixData = data[0..<idxRange!.lowerBound-xxFactor]
+                        log("foo-ccc-2.1.1 fooPrefixData: \(fooPrefixData.readableString)")
+                    }
+                    log("foo-ccc-2 xFactor : \(xFactor)")
                     
                     prefixData = data[0..<idxRange!.lowerBound-xFactor]
                     log("foo-ccc-2 prefixData : \(prefixData.readableString)")
@@ -139,16 +151,27 @@ public class BKBuildService {
                     log("foo-ccc-3 idxJSONData : \(idxJSONData.readableString)")
                     log("foo-ccc-3 idxJSONData size: \(idxJSONData.count)")
 
-                    var foo = idxJSONData
-                    log("foo-aaa-0 idxJSONData unpacked: \(Unpacker.unpackAll(foo))")
+                    // var foo = idxJSONData
+                    // log("foo-aaa-0 idxJSONData unpacked: \(Unpacker.unpackAll(foo))")
+
+                    log("foo-aaa-9.0")
 
                     let readSizeFirst = MemoryLayout<UInt64>.size
-                    let msgIdData = idxJSONData[0 ..< readSizeFirst]
+                    log("foo-aaa-9.0.1: readSizeFirst \(readSizeFirst)")
+                    log("foo-aaa-9.0.1.2: idxJSONData \(idxJSONData.prefix(10))")
+                    log("foo-aaa-9.0.1.3: idxJSONData \(idxJSONData.readableString)")
+                    // let msgIdData = idxJSONData[0 ..< readSizeFirst]
+                    let msgIdData = idxJSONData.prefix(readSizeFirst)
+                    log("foo-aaa-9.0.2")
                     let msgId = msgIdData.withUnsafeBytes { $0.load(as: UInt64.self) }
+                    log("foo-aaa-9.0.3")
 
                     // data = data.advanced(by: readSizeFirst)
+                    log("foo-aaa-9.1")
                     if prefixData.count > 0 {
+                        log("foo-aaa-9.2")
                         data = prefixData
+                        aData = data
                     }
                     self.gotMsgId = msgId
                 }                
@@ -161,11 +184,14 @@ public class BKBuildService {
                 }
                 log("foo-aaa-1 self.identifierDatas: \(dd.readableString)")
                 if prefixData.count == 0 {
+                    log("foo-aaa-9.3")
                     return
-                }       
+                } 
             }
 
+            log("foo-aaa-9.4")
             if !isCollecting && self.identifier != nil && self.identifierDatas.count > 0 {
+                log("foo-aaa-9.5")
                 var allData: Data = Data()
                 for d in self.identifierDatas {
                     allData.append(d)
@@ -180,12 +206,15 @@ public class BKBuildService {
                 log("foo-aaa-3")
                 if msg is IndexingInfoRequested {
                     log("foo-aaa-4 PING: self.gotMsgId \(self.gotMsgId)")
+                    log("foo-aaa-4.1: \(aData.count)")
                     
-                    // write([
-                    //     XCBRawValue.string("PING"),
-                    //     XCBRawValue.nil,
-                    // ], msgId: self.gotMsgId)
+                    write([
+                        XCBRawValue.string("PING"),
+                        XCBRawValue.nil,
+                    ], msgId: self.gotMsgId)
 
+                    // log("foo-buffer-6.1: \(msg)")
+                    log("foo-buffer-6.1: \(allData.readableString)")
                     messageHandler(idxInput, allData, context)
 
                     self.identifier = nil
@@ -292,8 +321,7 @@ public class BKBuildService {
                 // Same as above but dumps out the protocol in human readable format
                 PrettyPrinter.prettyPrintRecursively(result)
             } else {
-                log("foo-buffer-6.3: \(aData.readableString)")
-                // log("foo-buffer-6.3.1: \(Unpacker.unpackAll(aData))")
+                log("foo-buffer-6.2: \(aData.readableString)")
                 messageHandler(XCBInputStream(result: result, data: data), aData, context)
             }
         }
