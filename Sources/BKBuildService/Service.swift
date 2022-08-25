@@ -102,22 +102,28 @@ public class BKBuildService {
             let fooResult = Unpacker.unpackAll(aData)
             var fooInput = XCBInputStream(result: fooResult, data: aData)
             var justStartedCollecting: Bool = false
+            var justStoppedCollecting: Bool = false
             let idxData = "INDEXING_INFO_REQUESTED".data(using: .utf8)!
             var idxRange: Range<Int>?
             var prefixData: Data = Data()
 
             while let next = fooInput.next() {
+                // log("foo-aaa-10.1: \(next.description)")
                 switch next {
                     case let .string(str):
                         if supportedIdentifiers.contains(str) {
+                            log("foo-aaa-10.1.1")
                             isCollecting = true
                             justStartedCollecting = true
                             self.identifier = str
                             idxRange = data.range(of: idxData)
                             log("foo-ccc-1: \(idxRange)")
                         } else if unsupportedIdentifiers.contains(str) {
+                            log("foo-aaa-10.1.2")
                             isCollecting = false
+                            justStoppedCollecting = true
                         } else {
+                            log("foo-aaa-10.1.3")
                             continue
                         }
                     
@@ -187,6 +193,8 @@ public class BKBuildService {
                     log("foo-aaa-9.3")
                     return
                 } 
+            } else {
+                log("foo-aaa-9.3.1 nope")
             }
 
             log("foo-aaa-9.4")
@@ -219,10 +227,10 @@ public class BKBuildService {
 
                     self.identifier = nil
                     self.identifierDatas = []
-                    self.gotMsgId = 0
-
-                    return
+                    self.gotMsgId = 0                    
                 }
+            } else {
+                log("foo-aaa-9.5.1 nope 2")
             }
 
             // guard data.count >= MemoryLayout<UInt64>.size + MemoryLayout<UInt32>.size else {

@@ -82,11 +82,15 @@ public extension Data {
 }
 
 extension Array where Element == UInt8 {
-    var readableString: String {
-        guard let bytesAsString = self.utf8String ?? self.asciiString else {
-            fatalError("Failed to encode bytes")
+    var readableString: String {        
+        do {
+            guard let bytesAsString = self.asciiString ?? self.utf8String else {
+                fatalError("Failed to encode bytes")
+            }
+            return bytesAsString
+        } catch let e {
+            log("foo-aaa-ext-data-1: \(e)")
         }
-        return bytesAsString
     }
 
     private var utf8String: String? {
