@@ -202,6 +202,7 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
         guard let next = minput.next(),
         case let .binary(jsonData) = next else {
             // Hack - fix upstream code
+            log("foo-buffer-5.1: \(input.data.readableString)")
             self.targetID = "_internal_stub_"
             self.filePath = "_internal_stub_"
             self.outputPathOnly = false
@@ -212,10 +213,35 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
             self.platform = ""
             return
         }
+        // // let foo = minput.next()
+        // let next = minput.next()
 
-        guard let json = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
+        // var jsonData: Data = Data()
+
+        // switch next {
+        //     case let .binary(jsonDataFoo):
+        //         jsonData = jsonDataFoo
+        //     default:
+        //         log("foo-buffer-5.1: \(next?.description)")
+        //         // Hack - fix upstream code
+        //         self.targetID = "_internal_stub_"
+        //         self.filePath = "_internal_stub_"
+        //         self.outputPathOnly = false
+        //         self.responseChannel = -1
+        //         self.derivedDataPath = ""
+        //         self.workingDir = ""
+        //         self.sdk = ""
+        //         self.platform = ""
+        //         log("foo-buffer-4.2")
+        //         return        
+        // }
+
+        log("foo-buffer-4.3: jsonData: \(jsonData.readableString)")
+        guard let json = try? JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
+            log("foo-buffer-4.4")
             throw XCBProtocolError.unexpectedInput(for: input)
         }
+        log("foo-buffer-4.5")
         guard let targetID = json["targetID"] else {
            throw XCBProtocolError.unexpectedInput(for: input)
         }

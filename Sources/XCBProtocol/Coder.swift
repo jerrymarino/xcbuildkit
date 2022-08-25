@@ -46,15 +46,44 @@ public class XCBDecoder {
     }
 }
 
+public extension Data {
+    public var readableString: String {
+        return self.bytes.readableString
+    }
+
+    private var bytes: [UInt8] {
+        return [UInt8](self)
+    }
+}
+
+extension Array where Element == UInt8 {
+    var readableString: String {
+        guard let bytesAsString = self.utf8String ?? self.asciiString else {
+            fatalError("Failed to encode bytes")
+        }
+        return bytesAsString
+    }
+
+    private var utf8String: String? {
+        return String(bytes: self, encoding: .utf8)
+    }
+
+    private var asciiString: String? {
+        return String(bytes: self, encoding: .ascii)
+    }
+}
+
 extension XCBDecoder {
     /// Decodes a message
     public func decodeMessage() -> XCBProtocolMessage? {
+        // log("foo-buffer-3.0: \(self.input.data.readableString)")
         do {
             let msg = try decodeMessageImpl()
-            log("decoded" + String(describing: msg))
+            // log("foo-buffer-3.1: decoded \(String(describing: msg))")
+            // log("foo-buffer-3.1.1: msg \(msg)")
             return msg
         } catch {
-            log("decoding failed \(error)")
+            log("foo-buffer-3.2: decoding failed \(error)\nfoo-buffer-3.2.data: \(self.input.data.readableString)")
             return nil
         }
     }
@@ -79,6 +108,7 @@ extension XCBDecoder {
                 } else if str == "BUILD_START" {
                     return try BuildStartRequest(input: minput)
                 } else if str == "INDEXING_INFO_REQUESTED" {
+                    log("foo-buffer-4.1")
                     return try IndexingInfoRequested(input: minput)
                 } else if str == "BUILD_DESCRIPTION_TARGET_INFO" {
                     return try BuildDescriptionTargetInfo(input: minput)

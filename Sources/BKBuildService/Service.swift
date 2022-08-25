@@ -86,6 +86,7 @@ public class BKBuildService {
             // The buffering code is still WIP - short circuit for now
             guard self.indexingEnabled else {
                 let result = Unpacker.unpackAll(aData)
+                log("foo-buffer-6.1: \(aData.readableString)")
                 messageHandler(XCBInputStream(result: result, data: data), aData, context)
                 return
             }
@@ -118,10 +119,10 @@ public class BKBuildService {
                 let result = Unpacker.unpackAll(aData)
                 let decoder = XCBDecoder(input: XCBInputStream(result: result,
                                                                data: aData))
-                guard !XCBBuildServiceProcess.MessageDebuggingEnabled() else {
-                    messageHandler(XCBInputStream(result: [], data: data), aData, context)
-                    return
-                }
+                // guard !XCBBuildServiceProcess.MessageDebuggingEnabled() else {
+                //     messageHandler(XCBInputStream(result: [], data: data), aData, context)
+                //     return
+                // }
 
                 let msg = decoder.decodeMessage() 
                 if msg is IndexingInfoRequested {
@@ -131,12 +132,28 @@ public class BKBuildService {
                     ], msgId: gotMsgId)
                     return
                 }
+                log("foo-buffer-6.2: \(aData.readableString)")
+                // log("foo-buffer-6.2.1: \(Unpacker.unpackAll(aData))")
                 messageHandler(XCBInputStream(result: [], data: data), aData, context)
                 return
             } else {
                 data = self.buffer
                 self.readLen = 0
                 self.buffer = Data()
+
+                // let subStr = String(data.readableString.prefix(25))
+                // if subStr.contains("INDEXING_INFO_REQUESTED") {
+                //     var unpacked = Unpacker.unpackAll(data)
+                //     // unpacked.remove(at: 0)
+                //     // var fooData = data.dropFirst(1)
+                //     var fooData = data
+                //     let decoder = XCBDecoder(input: XCBInputStream(result: unpacked, data: fooData))
+                //     let msg = decoder.decodeMessage()
+                //     // log("foo-buffer-1.1: \(data.readableString)")
+                //     // log("foo-buffer-1.2: \(unpacked)")
+                //     // log("foo-buffer-1.3: \(msg)")
+                //     return
+                // }
             }
             log("Header.Parse \(data)")
             log("Header.Size \(self.readLen) - \(startSize) ")
@@ -157,6 +174,8 @@ public class BKBuildService {
                 // Same as above but dumps out the protocol in human readable format
                 PrettyPrinter.prettyPrintRecursively(result)
             } else {
+                log("foo-buffer-6.3: \(aData.readableString)")
+                // log("foo-buffer-6.3.1: \(Unpacker.unpackAll(aData))")
                 messageHandler(XCBInputStream(result: result, data: data), aData, context)
             }
         }
@@ -264,11 +283,13 @@ public enum Unpacker {
         var sdata = Subdata(data: data)
         while !sdata.isEmpty {
             let value: XCBRawValue
-            if let res = try? unpack(sdata) {
+            do {
+                let res = try unpack(sdata)
                 let (value, remainder) = res
                 unpacked.append(value)
                 sdata = remainder
-            } else {
+            } catch let e {
+                log("Failed to unpack with err: \(e)")
                 // Note: likely an error condition, but deal with what we can
                 return unpacked
             }

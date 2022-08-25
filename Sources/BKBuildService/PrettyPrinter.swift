@@ -64,8 +64,8 @@ class PrettyPrinter {
     }
 }
 
-extension Data {
-    var readableString: String {
+public extension Data {
+    public var readableString: String {
         if let bplist = self.bplist {
             return "bplist(\(bplist))"
         }

@@ -12,6 +12,7 @@ func unpackInteger(_ data: Subdata, count: Int) throws -> (value: UInt64, remain
     }
 
     guard data.count >= count else {
+        log2("foo-xxx-1")
         throw MessagePackError.insufficientData
     }
 
@@ -22,6 +23,15 @@ func unpackInteger(_ data: Subdata, count: Int) throws -> (value: UInt64, remain
     }
 
     return (value, data[count ..< data.count])
+}
+
+func clean(data: inout Data) -> String {
+    data.append(0)
+    let s = data.withUnsafeBytes { p in
+        String(cString: p.bindMemory(to: CChar.self).baseAddress!)
+    }
+    let clean = s.replacingOccurrences(of: "\u{FFFD}", with: "")
+    return clean
 }
 
 /// Joins bytes to form a string.
@@ -36,28 +46,36 @@ func unpackString(_ data: Subdata, count: Int) throws -> (value: String, remaind
     }
 
     guard data.count >= count else {
+        log2("foo-xxx-2")
         throw MessagePackError.insufficientData
     }
 
     let subdata = data[0 ..< count]
     var dataToEncode = subdata.data
-    var decoded: String? = nil
+    // var decoded: String? = nil
+    var result: String = clean(data: &dataToEncode)
+        
+    // guard let result = String(data: subdata.data, encoding: .utf8) else {
+    //     throw MessagePackError.invalidData
+    // }
 
     // Best guess to try to get to a valid encoded utf8 string
     // Mostly to work with xcbuildkit use case, might not apply in general
     //
     // skip left most bytes and retry until a valid utf8 string is found
-    while !dataToEncode.isEmpty && decoded == nil {
-        if let utf8Encoded = String(data: dataToEncode, encoding: .utf8) {
-            decoded = utf8Encoded
-        } else {
-            dataToEncode.remove(at: 0)
-        }
-    }
+    // while !dataToEncode.isEmpty && decoded == nil {
+    //     if let utf8Encoded = String(data: dataToEncode, encoding: .utf8) {
+    //         decoded = utf8Encoded
+    //     } else {
+    //         log2("foo-zzz-1")
+    //         dataToEncode.remove(at: 0)
+    //     }
+    // }
 
-    guard let result = decoded else {
-        throw MessagePackError.invalidData
-    }
+    // guard let result = decoded else {
+    //     log2("foo-xxx-3")
+    //     throw MessagePackError.invalidData
+    // }
 
     return (result, data[count ..< data.count])
 }
@@ -70,6 +88,8 @@ func unpackString(_ data: Subdata, count: Int) throws -> (value: String, remaind
 /// - returns: A subsection of data representing `size` bytes and the not-unpacked remaining data.
 func unpackData(_ data: Subdata, count: Int) throws -> (value: Subdata, remainder: Subdata) {
     guard data.count >= count else {
+        log2("foo-buffer-thirdparty: data: \(data.count) count: \(count)")
+        log2("foo-xxx-4")
         throw MessagePackError.insufficientData
     }
 
@@ -89,6 +109,10 @@ func unpackArray(_ data: Subdata, count: Int, compatibility: Bool) throws -> (va
     var newValue: MessagePackValue
 
     for _ in 0 ..< count {
+        if remainder.count == 0 {
+            continue
+        }
+        log2("foo-xxxx-1: remainder \(remainder.count)")
         (newValue, remainder) = try unpack(remainder, compatibility: compatibility)
         values.append(newValue)
     }
@@ -107,6 +131,7 @@ func unpackMap(_ data: Subdata, count: Int, compatibility: Bool) throws -> (valu
     var dict = [MessagePackValue: MessagePackValue](minimumCapacity: count)
     var lastKey: MessagePackValue? = nil
 
+    log2("foo-yyy-1: data \(data.count)")
     let (array, remainder) = try unpackArray(data, count: 2 * count, compatibility: compatibility)
     for item in array {
         if let key = lastKey {
@@ -120,6 +145,21 @@ func unpackMap(_ data: Subdata, count: Int, compatibility: Bool) throws -> (valu
     return (dict, remainder)
 }
 
+public func log2(_ str: String) {
+    let url = URL(fileURLWithPath: "/tmp/xcbuild.log")
+    let entry = str + "\n"
+    do {
+        let fileUpdater = try FileHandle(forWritingTo: url)
+        fileUpdater.seekToEndOfFile()
+        if let data = entry.data(using: .utf8) {
+            fileUpdater.write(data)
+        }
+        fileUpdater.closeFile()
+    } catch {
+        try? entry.write(to: url, atomically: false, encoding: .utf8)
+    }
+}
+
 /// Unpacks data into a MessagePackValue and returns the remaining data.
 ///
 /// - parameter data: The input data to unpack.
@@ -128,6 +168,7 @@ func unpackMap(_ data: Subdata, count: Int, compatibility: Bool) throws -> (valu
 /// - returns: A `MessagePackValue`and the not-unpacked remaining data.
 public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (value: MessagePackValue, remainder: Subdata) {
     guard !data.isEmpty else {
+        log2("foo-xxx-5")
         throw MessagePackError.insufficientData
     }
 
@@ -149,6 +190,7 @@ public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (valu
     // fixarray
     case 0x90 ... 0x9f:
         let count = Int(value - 0x90)
+        log2("foo-yyy-2: data \(data.count)")
         let (array, remainder) = try unpackArray(data, count: count, compatibility: compatibility)
         return (.array(array), remainder)
 
@@ -179,7 +221,11 @@ public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (valu
     case 0xc4 ... 0xc6:
         let intCount = 1 << Int(value - 0xc4)
         let (dataCount, remainder1) = try unpackInteger(data, count: intCount)
-        let (subdata, remainder2) = try unpackData(remainder1, count: Int(value - 0xc4))
+        log2("foo-buffer-thirdparty-1: dataCount: \(Int(dataCount))")
+        log2("foo-buffer-thirdparty-1: actual dataCount: \(Int(remainder1.count))")
+        // let (subdata, remainder2) = try unpackData(remainder1, count: Int(dataCount))
+        let (subdata, remainder2) = try unpackData(remainder1, count: Int(remainder1.count))
+        // let (subdata, remainder2) = try unpackData(remainder1, count: Int(value - 0xc4))
         return (.binary(subdata.data), remainder2)
 
     // ext 8, 16, 32
@@ -188,6 +234,7 @@ public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (valu
 
         let (dataCount, remainder1) = try unpackInteger(data, count: intCount)
         guard !remainder1.isEmpty else {
+            log2("foo-xxx-6")
             throw MessagePackError.insufficientData
         }
 
@@ -216,6 +263,7 @@ public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (valu
     // int 8
     case 0xd0:
         guard !data.isEmpty else {
+            log2("foo-xxx-7")
             throw MessagePackError.insufficientData
         }
 
@@ -245,6 +293,7 @@ public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (valu
         let count = 1 << Int(value - 0xd4)
 
         guard !data.isEmpty else {
+            log2("foo-xxx-8")
             throw MessagePackError.insufficientData
         }
 
@@ -268,6 +317,7 @@ public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (valu
     case 0xdc ... 0xdd:
         let countSize = 1 << Int(value - 0xdb)
         let (count, remainder1) = try unpackInteger(data, count: countSize)
+        log2("foo-yyy-3: data \(remainder1.count)")
         let (array, remainder2) = try unpackArray(remainder1, count: Int(count), compatibility: compatibility)
         return (.array(array), remainder2)
 
@@ -297,6 +347,7 @@ public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (valu
 ///
 /// - returns: A `MessagePackValue` and the not-unpacked remaining data.
 public func unpack(_ data: Data, compatibility: Bool = false) throws -> (value: MessagePackValue, remainder: Data) {
+    log2("foo-xxxx-2: Subdata(data: data) \(Subdata(data: data).count)")
     let (value, remainder) = try unpack(Subdata(data: data), compatibility: compatibility)
     return (value, remainder.data)
 }
@@ -308,6 +359,7 @@ public func unpack(_ data: Data, compatibility: Bool = false) throws -> (value: 
 ///
 /// - returns: The contained `MessagePackValue`.
 public func unpackFirst(_ data: Data, compatibility: Bool = false) throws -> MessagePackValue {
+    log2("foo-xxxx-3: data \(data.count)")
     return try unpack(data, compatibility: compatibility).value
 }
 
@@ -323,6 +375,7 @@ public func unpackAll(_ data: Data, compatibility: Bool = false) throws -> [Mess
     var data = Subdata(data: data)
     while !data.isEmpty {
         let value: MessagePackValue
+        log2("foo-xxxx-4: data \(data.count)")
         (value, data) = try unpack(data, compatibility: compatibility)
         values.append(value)
     }
