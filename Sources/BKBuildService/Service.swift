@@ -85,9 +85,40 @@ public class BKBuildService {
         "BUILD_DESCRIPTION_TARGET_INFO",
     ]
 
+    func sendIdxMsgIfExists(messageHandler: @escaping XCBMessageHandler, context: Any?) {
+        log("foo-aaa-9.5")
+        var allData: Data = Data()
+        for d in self.identifierDatas {
+            allData.append(d)
+        }
+
+        log("foo-aaa-2 allData: \(allData.readableString)")
+        let idxResult = Unpacker.unpackAll(allData)
+        let idxInput = XCBInputStream(result: idxResult, data: allData)
+        let decoder = XCBDecoder(input: idxInput)
+        let msg = decoder.decodeMessage()
+
+        log("foo-aaa-3")
+        if msg is IndexingInfoRequested {
+            log("foo-aaa-4 PING: self.gotMsgId \(self.gotMsgId)")
+            
+            write([
+                XCBRawValue.string("PING"),
+                XCBRawValue.nil,
+            ], msgId: self.gotMsgId)
+
+            // log("foo-buffer-6.1: \(msg)")
+            log("foo-buffer-6.1: \(allData.readableString)")
+            messageHandler(idxInput, allData, context)
+
+            self.identifier = nil
+            self.identifierDatas = []
+            self.gotMsgId = 0                    
+        }
+    }
+
     /// Starts a service on standard input
-    public func start(messageHandler: @escaping XCBMessageHandler, context:
-        Any?) {
+    public func start(messageHandler: @escaping XCBMessageHandler, context: Any?) {
         let file = FileHandle.standardInput
         file.readabilityHandler = { [self]
             h in
@@ -99,8 +130,8 @@ public class BKBuildService {
             log("foo-buffer-6.0: \(data.readableString)")
 
 
-            let fooResult = Unpacker.unpackAll(aData)
-            var fooInput = XCBInputStream(result: fooResult, data: aData)
+            let fooResult = Unpacker.unpackAll(data)
+            var fooInput = XCBInputStream(result: fooResult, data: data)
             var justStartedCollecting: Bool = false
             var justStoppedCollecting: Bool = false
             let idxData = "INDEXING_INFO_REQUESTED".data(using: .utf8)!
@@ -137,25 +168,32 @@ public class BKBuildService {
 
                 if justStartedCollecting {
                     // let xFactor: Int = 0
-                    let xFactor: Int = 13
+                    
                     // var xFactor = serializerToken - (data.count - idxRange!.lowerBound)
 
-                    if xFactor > 13 {
-                        log("foo-ccc-2.1.1 will:")
-                        log("foo-ccc-2.1.1 data: \(data.readableString)")
-                        let xxFactor = 13
-                        let fooPrefixData = data[0..<idxRange!.lowerBound-xxFactor]
-                        log("foo-ccc-2.1.1 fooPrefixData: \(fooPrefixData.readableString)")
-                    }
-                    log("foo-ccc-2 xFactor : \(xFactor)")
-                    
-                    prefixData = data[0..<idxRange!.lowerBound-xFactor]
-                    log("foo-ccc-2 prefixData : \(prefixData.readableString)")
-                    log("foo-ccc-2 prefixData size: \(prefixData.count)")
+                    // if xFactor > 13 {
+                    //     log("foo-ccc-2.1.1 will:")
+                    //     log("foo-ccc-2.1.1 data: \(data.count)")
+                    //     let xxFactor = 13
+                    //     let fooPrefixData = data[0..<idxRange!.lowerBound-xxFactor]
+                    //     log("foo-ccc-2.1.1 fooPrefixData: \(fooPrefixData.count)")
+                    // }
 
-                    idxJSONData = data[idxRange!.lowerBound-xFactor..<data.count]
-                    log("foo-ccc-3 idxJSONData : \(idxJSONData.readableString)")
-                    log("foo-ccc-3 idxJSONData size: \(idxJSONData.count)")
+                    let xFactor: Int = 13
+
+                    if idxRange!.lowerBound > 13 {
+                        log("foo-ccc-2 xFactor : \(xFactor)")
+                        log("foo-ccc-2.2.2 idxRange!.lowerBound : \(idxRange!.lowerBound)")
+                        log("foo-ccc-2.2.2 idxRange!.lowerBound-xFactor : \(idxRange!.lowerBound-xFactor)")
+                        
+                        prefixData = data[0..<idxRange!.lowerBound-xFactor]
+                        log("foo-ccc-2 prefixData : \(prefixData.readableString)")
+                        log("foo-ccc-2 prefixData size: \(prefixData.count)")
+
+                        idxJSONData = data[idxRange!.lowerBound-xFactor..<data.count]
+                        log("foo-ccc-3 idxJSONData : \(idxJSONData.readableString)")
+                        log("foo-ccc-3 idxJSONData size: \(idxJSONData.count)")
+                    }                    
 
                     // var foo = idxJSONData
                     // log("foo-aaa-0 idxJSONData unpacked: \(Unpacker.unpackAll(foo))")
@@ -164,12 +202,14 @@ public class BKBuildService {
 
                     let readSizeFirst = MemoryLayout<UInt64>.size
                     log("foo-aaa-9.0.1: readSizeFirst \(readSizeFirst)")
-                    log("foo-aaa-9.0.1.2: idxJSONData \(idxJSONData.prefix(10))")
+                    log("foo-aaa-9.0.1.2: idxJSONData \(idxJSONData.prefix(readSizeFirst))")
                     log("foo-aaa-9.0.1.3: idxJSONData \(idxJSONData.readableString)")
                     // let msgIdData = idxJSONData[0 ..< readSizeFirst]
                     let msgIdData = idxJSONData.prefix(readSizeFirst)
-                    log("foo-aaa-9.0.2")
+                    log("foo-aaa-9.0.2: \(msgIdData.count)")
+                    log("foo-aaa-9.0.2: \(msgIdData.readableString)")
                     let msgId = msgIdData.withUnsafeBytes { $0.load(as: UInt64.self) }
+                    // let msgId = UInt64(0)
                     log("foo-aaa-9.0.3")
 
                     // data = data.advanced(by: readSizeFirst)
@@ -189,6 +229,7 @@ public class BKBuildService {
                     dd.append(d)
                 }
                 log("foo-aaa-1 self.identifierDatas: \(dd.readableString)")
+                sendIdxMsgIfExists(messageHandler: messageHandler, context: context)
                 if prefixData.count == 0 {
                     log("foo-aaa-9.3")
                     return
@@ -198,40 +239,41 @@ public class BKBuildService {
             }
 
             log("foo-aaa-9.4")
-            if !isCollecting && self.identifier != nil && self.identifierDatas.count > 0 {
-                log("foo-aaa-9.5")
-                var allData: Data = Data()
-                for d in self.identifierDatas {
-                    allData.append(d)
-                }
+            // if !isCollecting && self.identifier != nil && self.identifierDatas.count > 0 {
+            //     sendIdxMsgIfExists(messageHandler: messageHandler, context: context)
+            //     log("foo-aaa-9.5")
+            //     // var allData: Data = Data()
+                // for d in self.identifierDatas {
+                //     allData.append(d)
+                // }
 
-                log("foo-aaa-2 allData: \(allData.readableString)")
-                let idxResult = Unpacker.unpackAll(allData)
-                let idxInput = XCBInputStream(result: idxResult, data: allData)
-                let decoder = XCBDecoder(input: idxInput)
-                let msg = decoder.decodeMessage()
+                // log("foo-aaa-2 allData: \(allData.count)")
+                // let idxResult = Unpacker.unpackAll(allData)
+                // let idxInput = XCBInputStream(result: idxResult, data: allData)
+                // let decoder = XCBDecoder(input: idxInput)
+                // let msg = decoder.decodeMessage()
 
-                log("foo-aaa-3")
-                if msg is IndexingInfoRequested {
-                    log("foo-aaa-4 PING: self.gotMsgId \(self.gotMsgId)")
-                    log("foo-aaa-4.1: \(aData.count)")
+                // log("foo-aaa-3")
+                // if msg is IndexingInfoRequested {
+                //     log("foo-aaa-4 PING: self.gotMsgId \(self.gotMsgId)")
+                //     log("foo-aaa-4.1: \(data.count)")
                     
-                    write([
-                        XCBRawValue.string("PING"),
-                        XCBRawValue.nil,
-                    ], msgId: self.gotMsgId)
+                //     write([
+                //         XCBRawValue.string("PING"),
+                //         XCBRawValue.nil,
+                //     ], msgId: self.gotMsgId)
 
-                    // log("foo-buffer-6.1: \(msg)")
-                    log("foo-buffer-6.1: \(allData.readableString)")
-                    messageHandler(idxInput, allData, context)
+                //     // log("foo-buffer-6.1: \(msg)")
+                //     log("foo-buffer-6.1: \(allData.count)")
+                //     messageHandler(idxInput, allData, context)
 
-                    self.identifier = nil
-                    self.identifierDatas = []
-                    self.gotMsgId = 0                    
-                }
-            } else {
-                log("foo-aaa-9.5.1 nope 2")
-            }
+                //     self.identifier = nil
+                //     self.identifierDatas = []
+                //     self.gotMsgId = 0                    
+                // }
+            // } else {
+            //     log("foo-aaa-9.5.1 nope 2")
+            // }
 
             // guard data.count >= MemoryLayout<UInt64>.size + MemoryLayout<UInt32>.size else {
             //    self.buffer.append(data)
@@ -241,7 +283,7 @@ public class BKBuildService {
             // // The buffering code is still WIP - short circuit for now
             // guard self.indexingEnabled else {
             //     let result = Unpacker.unpackAll(aData)
-            //     log("foo-buffer-6.1: \(aData.readableString)")
+            //     log("foo-buffer-6.1: \(aData.count)")
             //     messageHandler(XCBInputStream(result: result, data: data), aData, context)
             //     return
             // }
@@ -287,7 +329,7 @@ public class BKBuildService {
             //         ], msgId: gotMsgId)
             //         return
             //     }
-            //     log("foo-buffer-6.2: \(aData.readableString)")
+            //     log("foo-buffer-6.2: \(aData.count)")
             //     // log("foo-buffer-6.2.1: \(Unpacker.unpackAll(aData))")
             //     messageHandler(XCBInputStream(result: [], data: data), aData, context)
             //     return
@@ -296,7 +338,7 @@ public class BKBuildService {
             //     self.readLen = 0
             //     self.buffer = Data()
 
-            //     // let subStr = String(data.readableString.prefix(25))
+            //     // let subStr = String(data.count.prefix(25))
             //     // if subStr.contains("INDEXING_INFO_REQUESTED") {
             //     //     var unpacked = Unpacker.unpackAll(data)
             //     //     // unpacked.remove(at: 0)
@@ -304,7 +346,7 @@ public class BKBuildService {
             //     //     var fooData = data
             //     //     let decoder = XCBDecoder(input: XCBInputStream(result: unpacked, data: fooData))
             //     //     let msg = decoder.decodeMessage()
-            //     //     // log("foo-buffer-1.1: \(data.readableString)")
+            //     //     // log("foo-buffer-1.1: \(data.count)")
             //     //     // log("foo-buffer-1.2: \(unpacked)")
             //     //     // log("foo-buffer-1.3: \(msg)")
             //     //     return
