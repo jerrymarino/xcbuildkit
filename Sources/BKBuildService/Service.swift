@@ -68,6 +68,7 @@ public class BKBuildService {
     }
 
     var identifier: String?
+    var unsupportedIdentifier: String?
     var identifierDatas: [Data] = []
     var isCollecting: Bool = false
     var gotMsgId: UInt64 = 0
@@ -136,7 +137,9 @@ public class BKBuildService {
             var justStoppedCollecting: Bool = false
             let idxData = "INDEXING_INFO_REQUESTED".data(using: .utf8)!
             var idxRange: Range<Int>?
+            var unsupportedIdxRange: Range<Int>?
             var prefixData: Data = Data()
+            var containsUnsupportedIdentifier: Bool = false
 
             while let next = fooInput.next() {
                 // log("foo-aaa-10.1: \(next.description)")
@@ -144,15 +147,23 @@ public class BKBuildService {
                     case let .string(str):
                         if supportedIdentifiers.contains(str) {
                             log("foo-aaa-10.1.1")
-                            isCollecting = true
+                            self.isCollecting = true
                             justStartedCollecting = true
                             self.identifier = str
                             idxRange = data.range(of: idxData)
                             log("foo-ccc-1: \(idxRange)")
                         } else if unsupportedIdentifiers.contains(str) {
-                            log("foo-aaa-10.1.2")
-                            isCollecting = false
-                            justStoppedCollecting = true
+                            containsUnsupportedIdentifier = true
+                            self.unsupportedIdentifier = str
+                            let unsupportedIdxData = str.data(using: .utf8)!
+                            unsupportedIdxRange = data.range(of: unsupportedIdxData)
+                            if unsupportedIdxRange!.lowerBound > 13 {
+                                self.isCollecting = true
+                            } else {
+                                self.isCollecting = false
+                                justStoppedCollecting = true
+                            }
+                            log("foo-aaa-10.1.2: \(unsupportedIdxRange)")
                         } else {
                             log("foo-aaa-10.1.3")
                             continue
@@ -163,7 +174,7 @@ public class BKBuildService {
                 }
             }
 
-            if isCollecting && self.identifier != nil {
+            if self.isCollecting && self.identifier != nil {
                 var idxJSONData = data
 
                 if justStartedCollecting {
@@ -220,7 +231,23 @@ public class BKBuildService {
                         aData = data
                     }
                     self.gotMsgId = msgId
-                }                
+                } else if containsUnsupportedIdentifier {
+                    log("foo-mmm-1")
+                    if self.unsupportedIdentifier != nil && unsupportedIdxRange != nil {
+                        log("foo-mmm-2")
+                        log("foo-mmm-2.1 unsupportedIdxRange \(unsupportedIdxRange)")
+                        log("foo-mmm-2.2 unsupportedIdentifier \(self.unsupportedIdentifier)")
+                        if unsupportedIdxRange!.lowerBound > 13 {
+                            log("foo-mmm-3")
+                            let yFactor: Int = 13
+                            idxJSONData = data[0..<unsupportedIdxRange!.lowerBound-yFactor]
+                            log("foo-mmm-3.1 idxJSONData \(idxJSONData.readableString)")
+                            prefixData = Data()
+                            data = data[unsupportedIdxRange!.lowerBound-yFactor..<data.count]
+                            log("foo-mmm-3.2 data \(data.readableString)")
+                        }
+                    }
+                }
                 self.identifierDatas.append(idxJSONData)
                 log("foo-aaa-1")
                 log("foo-aaa-1 self.identifier: \(self.identifier)")

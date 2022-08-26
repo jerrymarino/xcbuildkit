@@ -74,6 +74,7 @@ test: build
 # Random development commands
 # Opens Xcode with the build service selected
 open_xcode_with_sk_logging: build
+	rm /tmp/xcbuild.* && \
 	/usr/bin/env - TERM="$(TERM)"; \
 			SOURCEKIT_LOGGING=3 \
 	    export SHELL="$(SHELL)"; \
