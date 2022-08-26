@@ -76,7 +76,7 @@ public extension Data {
         return BPlistConverter(binaryData: self)?.convertToXML()
     }
 
-    private var bytes: [UInt8] {
+    public var bytes: [UInt8] {
         return [UInt8](self)
     }
 }

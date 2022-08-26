@@ -74,7 +74,9 @@ public class BKBuildService {
     var gotMsgId: UInt64 = 0
 
     var supportedIdentifiers: [String] = [
-        "INDEXING_INFO_REQUESTED",        
+        "INDEXING_INFO_REQUESTED",
+        "INDEXING_INFO_REQU",
+        "INDEXING_INFO_REQUE",
     ]
 
     var unsupportedIdentifiers: [String] = [
@@ -84,6 +86,8 @@ public class BKBuildService {
         "SET_SESSION_USER_INFO",
         "BUILD_START",
         "BUILD_DESCRIPTION_TARGET_INFO",
+        "TRANSFER_SESSION_PIF_REQUEST",
+        "SET_S",
     ]
 
     func sendIdxMsgIfExists(messageHandler: @escaping XCBMessageHandler, context: Any?) {
@@ -136,22 +140,32 @@ public class BKBuildService {
             var justStartedCollecting: Bool = false
             var justStoppedCollecting: Bool = false
             let idxData = "INDEXING_INFO_REQUESTED".data(using: .utf8)!
+            let idxData2 = "INDEXING_INFO_REQU".data(using: .utf8)!
+            let idxData3 = "INDEXING_INFO_REQUE".data(using: .utf8)!
             var idxRange: Range<Int>?
+            var idxRange2: Range<Int>?
+            var idxRange3: Range<Int>?
             var unsupportedIdxRange: Range<Int>?
             var prefixData: Data = Data()
             var containsUnsupportedIdentifier: Bool = false
 
+            log("foo-mmm-4 fooResult \(fooResult)")
             while let next = fooInput.next() {
-                // log("foo-aaa-10.1: \(next.description)")
+                // log("foo-aaa-10.1: \(next.description)")                
                 switch next {
                     case let .string(str):
+                        log("foo-mmm-4.1 str \(str)")
                         if supportedIdentifiers.contains(str) {
                             log("foo-aaa-10.1.1")
                             self.isCollecting = true
                             justStartedCollecting = true
                             self.identifier = str
                             idxRange = data.range(of: idxData)
+                            idxRange2 = data.range(of: idxData2)
+                            idxRange3 = data.range(of: idxData3)
                             log("foo-ccc-1: \(idxRange)")
+                            log("foo-ccc-1.1: \(idxRange2)")
+                            log("foo-ccc-1.2: \(idxRange3)")
                         } else if unsupportedIdentifiers.contains(str) {
                             containsUnsupportedIdentifier = true
                             self.unsupportedIdentifier = str
@@ -192,19 +206,49 @@ public class BKBuildService {
 
                     let xFactor: Int = 13
 
-                    if idxRange!.lowerBound > 13 {
-                        log("foo-ccc-2 xFactor : \(xFactor)")
-                        log("foo-ccc-2.2.2 idxRange!.lowerBound : \(idxRange!.lowerBound)")
-                        log("foo-ccc-2.2.2 idxRange!.lowerBound-xFactor : \(idxRange!.lowerBound-xFactor)")
-                        
-                        prefixData = data[0..<idxRange!.lowerBound-xFactor]
-                        log("foo-ccc-2 prefixData : \(prefixData.readableString)")
-                        log("foo-ccc-2 prefixData size: \(prefixData.count)")
+                    if idxRange != nil {
+                        if idxRange!.lowerBound > 13 {
+                            log("foo-ccc-2 xFactor : \(xFactor)")
+                            log("foo-ccc-2.2.2 idxRange!.lowerBound : \(idxRange!.lowerBound)")
+                            log("foo-ccc-2.2.2 idxRange!.lowerBound-xFactor : \(idxRange!.lowerBound-xFactor)")
+                            
+                            prefixData = data[0..<idxRange!.lowerBound-xFactor]
+                            log("foo-ccc-2 prefixData : \(prefixData.readableString)")
+                            log("foo-ccc-2 prefixData size: \(prefixData.count)")
 
-                        idxJSONData = data[idxRange!.lowerBound-xFactor..<data.count]
-                        log("foo-ccc-3 idxJSONData : \(idxJSONData.readableString)")
-                        log("foo-ccc-3 idxJSONData size: \(idxJSONData.count)")
-                    }                    
+                            idxJSONData = data[idxRange!.lowerBound-xFactor..<data.count]
+                            log("foo-ccc-3 idxJSONData : \(idxJSONData.readableString)")
+                            log("foo-ccc-3 idxJSONData size: \(idxJSONData.count)")
+                        }                        
+                    } else if idxRange2 != nil {
+                        if idxRange2!.lowerBound > 13 {
+                            log("foo-ccc-2 xFactor : \(xFactor)")
+                            log("foo-ccc-2.2.2 idxRange2!.lowerBound : \(idxRange2!.lowerBound)")
+                            log("foo-ccc-2.2.2 idxRange2!.lowerBound-xFactor : \(idxRange2!.lowerBound-xFactor)")
+                            
+                            prefixData = data[0..<idxRange2!.lowerBound-xFactor]
+                            log("foo-ccc-2 prefixData : \(prefixData.readableString)")
+                            log("foo-ccc-2 prefixData size: \(prefixData.count)")
+
+                            idxJSONData = data[idxRange2!.lowerBound-xFactor..<data.count]
+                            log("foo-ccc-3 idxJSONData : \(idxJSONData.readableString)")
+                            log("foo-ccc-3 idxJSONData size: \(idxJSONData.count)")
+                        }                        
+                    } else if idxRange3 != nil {
+                        if idxRange3!.lowerBound > 13 {
+                            log("foo-ccc-2 xFactor : \(xFactor)")
+                            log("foo-ccc-2.2.2 idxRange3!.lowerBound : \(idxRange3!.lowerBound)")
+                            log("foo-ccc-2.2.2 idxRange3!.lowerBound-xFactor : \(idxRange3!.lowerBound-xFactor)")
+                            
+                            prefixData = data[0..<idxRange3!.lowerBound-xFactor]
+                            log("foo-ccc-2 prefixData : \(prefixData.readableString)")
+                            log("foo-ccc-2 prefixData size: \(prefixData.count)")
+
+                            idxJSONData = data[idxRange3!.lowerBound-xFactor..<data.count]
+                            log("foo-ccc-3 idxJSONData : \(idxJSONData.readableString)")
+                            log("foo-ccc-3 idxJSONData size: \(idxJSONData.count)")
+                        }
+                    }
 
                     // var foo = idxJSONData
                     // log("foo-aaa-0 idxJSONData unpacked: \(Unpacker.unpackAll(foo))")
@@ -215,13 +259,35 @@ public class BKBuildService {
                     log("foo-aaa-9.0.1: readSizeFirst \(readSizeFirst)")
                     log("foo-aaa-9.0.1.2: idxJSONData \(idxJSONData.prefix(readSizeFirst))")
                     log("foo-aaa-9.0.1.3: idxJSONData \(idxJSONData.readableString)")
+                    log("foo-aaa-9.0.1.3.1: idxJSONData count \(idxJSONData.count)")
+                    log("foo-aaa-9.0.1.3.2: idxJSONData prefix \(idxJSONData.prefix(0))")
+                    log("foo-aaa-9.0.1.3.2: idxJSONData prefix \(idxJSONData.prefix(1))")
+                    log("foo-aaa-9.0.1.3.2: idxJSONData prefix \(idxJSONData.prefix(2))")
+                    log("foo-aaa-9.0.1.3.2: idxJSONData prefix \(idxJSONData.prefix(3))")
+                    log("foo-aaa-9.0.1.3.2: idxJSONData prefix \(idxJSONData.prefix(4))")
+                    log("foo-aaa-9.0.1.3.2: idxJSONData prefix \(idxJSONData.prefix(5))")
+                    log("foo-aaa-9.0.1.3.2: idxJSONData prefix \(idxJSONData.prefix(6))")
+                    log("foo-aaa-9.0.1.3.2: idxJSONData prefix \(idxJSONData.prefix(7))")
+                    log("foo-aaa-9.0.1.3.2: idxJSONData prefix \(idxJSONData.prefix(8))")
                     // let msgIdData = idxJSONData[0 ..< readSizeFirst]
-                    let msgIdData = idxJSONData.prefix(readSizeFirst)
+                    let msgIdData = idxJSONData.prefix(8)
+
+                    // log("foo-aaa-9.0.2.0: \(Unpacker.unpackAll(msgIdData))")
                     log("foo-aaa-9.0.2: \(msgIdData.count)")
                     log("foo-aaa-9.0.2: \(msgIdData.readableString)")
-                    let msgId = msgIdData.withUnsafeBytes { $0.load(as: UInt64.self) }
+                    log("foo-aaa-9.0.2: \(msgIdData.bytes)")
+                    
+                    var msgId: UInt64 = UInt64(msgIdData.bytes.first!)
+                    // do {
+                    //     log("foo-aaa-9.0.2.1")
+                    //     msgId = msgIdData.withUnsafeBytes { $0.load(as: UInt64.self) }
+                    // } catch let e {
+                    //     log("foo-aaa-9.0.2.2 e \(e)")
+                    //     msgId = UInt64(17)
+                    // }
                     // let msgId = UInt64(0)
                     log("foo-aaa-9.0.3")
+                    log("foo-aaa-9.0.3.1 msgId \(msgId)")
 
                     // data = data.advanced(by: readSizeFirst)
                     log("foo-aaa-9.1")

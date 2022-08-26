@@ -25,11 +25,46 @@ func unpackInteger(_ data: Subdata, count: Int) throws -> (value: UInt64, remain
     return (value, data[count ..< data.count])
 }
 
+public extension Data {
+    public var readableString: String {
+        return self.bytes.readableString
+    }
+
+    private var bytes: [UInt8] {
+        return [UInt8](self)
+    }
+}
+
+extension Array where Element == UInt8 {
+    var readableString: String {        
+        do {
+            guard let bytesAsString = self.asciiString ?? self.utf8String else {
+                fatalError("Failed to encode bytes")
+            }
+            return bytesAsString
+        } catch let e {
+            log2("foo-aaa-ext-data-1: \(e)")
+        }
+    }
+
+    private var utf8String: String? {
+        return String(bytes: self, encoding: .utf8)
+    }
+
+    private var asciiString: String? {
+        return String(bytes: self, encoding: .ascii)
+    }
+}
+
 func clean(data: inout Data) -> String {
     data.append(0)
-    let s = data.withUnsafeBytes { p in
-        String(cString: p.bindMemory(to: CChar.self).baseAddress!)
+    let s: String = data.withUnsafeBytes { p -> String in
+        log2("foo-mmm-xxx-8 p \(p)")
+        log2("foo-mmm-xxx-8 p bind \(p.bindMemory(to: CChar.self))")
+        log2("foo-mmm-xxx-8 base \(p.bindMemory(to: CChar.self).baseAddress)")
+        return String(cString: p.bindMemory(to: CChar.self).baseAddress!)
     }
+    log2("foo-mmm-xxx-8 s \(s)")
     let clean = s.replacingOccurrences(of: "\u{FFFD}", with: "")
     return clean
 }
@@ -41,19 +76,46 @@ func clean(data: inout Data) -> String {
 ///
 /// - returns: A string representation of `size` bytes of data and the not-unpacked remaining data.
 func unpackString(_ data: Subdata, count: Int) throws -> (value: String, remainder: Subdata) {
+    log2("foo-mmm-xxx-1")
     guard count > 0 else {
+        log2("foo-mmm-xxx-2")
         return ("", data)
     }
 
+    log2("foo-mmm-xxx-3")
     guard data.count >= count else {
-        log2("foo-xxx-2")
+        log2("foo-mmm-xxx-4")
         throw MessagePackError.insufficientData
     }
 
+    log2("foo-mmm-xxx-5")
     let subdata = data[0 ..< count]
     var dataToEncode = subdata.data
     // var decoded: String? = nil
+    log2("foo-mmm-xxx-6.0 \(subdata.data.readableString)")
+
+    // var result2 = String(data: subdata.data, encoding: .ascii)
+    // log2("foo-mmm-xxx-6.0.1 \(result2)")
+
     var result: String = clean(data: &dataToEncode)
+    log2("foo-mmm-xxx-6.0.1 \(result.count)")
+    if result.count <= 1 {
+        let fooResult = String(data: subdata.data, encoding: .ascii)
+        log2("foo-mmm-xxx-6.0.2 \(fooResult)")
+        if fooResult != nil {
+            // if fooResult!.contains("INDEXING_INFO") {
+                log2("foo-mmm-xxx-6.0.2 \(fooResult!)")
+                result = fooResult!.replacingOccurrences(of: "\u{12}", with: "").replacingOccurrences(of: "\0", with: "")
+                result = result.replacingOccurrences(of: "µ", with: "")
+                result = result.replacingOccurrences(of: "\u{13}", with: "")
+                if result.contains("INDEXING_INFO") {
+                    result.removeFirst()
+                }
+            // }
+        }
+    }
+    log2("foo-mmm-xxx-6")
+    log2("foo-mmm-xxx-6.1 result \(result)")
         
     // guard let result = String(data: subdata.data, encoding: .utf8) else {
     //     throw MessagePackError.invalidData
@@ -77,6 +139,7 @@ func unpackString(_ data: Subdata, count: Int) throws -> (value: String, remaind
     //     throw MessagePackError.invalidData
     // }
 
+    log2("foo-mmm-xxx-7")
     return (result, data[count ..< data.count])
 }
 

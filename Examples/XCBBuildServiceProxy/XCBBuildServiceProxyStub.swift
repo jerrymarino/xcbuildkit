@@ -45,13 +45,13 @@ let clangXMLT: String = """
                 <key>LanguageDialect</key>
                 <string>objective-c</string>
                 <key>clangASTBuiltProductsDir</key>
-                <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Products/Debug</string>
+                <string>__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Products/Debug</string>
                 <key>clangASTCommandArguments</key>
                 <array>
                         <string>-x</string>
                         <string>objective-c</string>
                         <string>-target</string>
-                        <string>x86_64-apple-macos10.14</string>
+                        <string>x86_64-apple-ios10.0-simulator</string>
                         <string>-fmessage-length=0</string>
                         <string>-fdiagnostics-show-note-include-stack</string>
                         <string>-fmacro-backtrace-limit=0</string>
@@ -129,16 +129,16 @@ let clangXMLT: String = """
                         <string>-index-store-path</string>
                         <string>__INDEX_STORE_PATH__</string>
                         <string>-iquote</string>
-                        <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-generated-files.hmap</string>
-                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-own-target-headers.hmap</string>
-                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-all-target-headers.hmap</string>
+                        <string>__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/App-generated-files.hmap</string>
+                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/App-own-target-headers.hmap</string>
+                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/App-all-target-headers.hmap</string>
                         <string>-iquote</string>
-                        <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/CLI-project-headers.hmap</string>
-                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Products/Debug/include</string>
-                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources-normal/x86_64</string>
-                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources/x86_64</string>
-                        <string>-I__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/iOSApp.build/Debug/CLI.build/DerivedSources</string>
-                        <string>-F__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Products/Debug</string>
+                        <string>__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/App-project-headers.hmap</string>
+                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Products/Debug-iphonesimulator/include</string>
+                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/DerivedSources-normal/x86_64</string>
+                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/DerivedSources/x86_64</string>
+                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/DerivedSources</string>
+                        <string>-F__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Products/Debug</string>
                         <string>-fsyntax-only</string>
                         <string>__SOURCE_FILE__</string>
                         <string>-o</string>
@@ -146,9 +146,9 @@ let clangXMLT: String = """
                         <string>-Xclang</string>
                         <string>-fallow-pcm-with-compiler-errors</string>
                         <string>-ivfsoverlay</string>
-                        <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/regular-to-index-overlay.yaml</string>
+                        <string>__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/regular-to-index-overlay.yaml</string>
                         <string>-ivfsoverlay</string>
-                        <string>__DERIVED_DATA_PATH__/iOSApp-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/index-to-regular-overlay.yaml</string>
+                        <string>__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/index-to-regular-overlay.yaml</string>
                         <string>-fretain-comments-from-system-headers</string>
                         <string>-ferror-limit=10</string>
                         <string>-working-directory=__WORKING_DIR__</string>

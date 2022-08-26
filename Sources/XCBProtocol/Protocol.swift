@@ -104,8 +104,9 @@ public struct CreateSessionRequest: XCBProtocolMessage {
         //
         var components = self.xcbuildDataPath.components(separatedBy: "-")
         self.workspaceHash = components.last!.components(separatedBy: "/").first!
-        components.removeLast()
-        self.workspaceName = components.last!.components(separatedBy: "/").last!
+        // components.removeLast()
+        // self.workspaceName = components.last!.components(separatedBy: "/").last!
+        self.workspaceName = "Test-XCBuildKit"
 
         log("Found XCBuildData path: \(self.xcbuildDataPath)")
         log("Parsed workspaceHash: \(self.workspaceHash)")
@@ -199,8 +200,22 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
 
     public init(input: XCBInputStream) throws {
         var minput = input
-        guard let next = minput.next(),
-        case let .binary(jsonData) = next else {
+        var jsonDataOg: Data?
+
+        while let fooNext = minput.next() {
+            if jsonDataOg != nil {
+                break
+            }
+
+            switch fooNext {
+                case let .binary(jsonDataFoo):
+                    jsonDataOg = jsonDataFoo
+                default:
+                    continue
+            }            
+        }
+
+        guard let jsonData = jsonDataOg else {
             // Hack - fix upstream code
             log("foo-buffer-5.1: \(input.data.readableString)")
             self.targetID = "_internal_stub_"
@@ -213,6 +228,21 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
             self.platform = ""
             return
         }
+
+        // guard let next = minput.next(),
+        // case let .binary(jsonData) = next else {
+        //     // Hack - fix upstream code
+        //     log("foo-buffer-5.1: \(input.data.readableString)")
+        //     self.targetID = "_internal_stub_"
+        //     self.filePath = "_internal_stub_"
+        //     self.outputPathOnly = false
+        //     self.responseChannel = -1
+        //     self.derivedDataPath = ""
+        //     self.workingDir = ""
+        //     self.sdk = ""
+        //     self.platform = ""
+        //     return
+        // }
         // // let foo = minput.next()
         // let next = minput.next()
 

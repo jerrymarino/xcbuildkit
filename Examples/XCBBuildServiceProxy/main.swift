@@ -42,7 +42,8 @@ let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice-bzl")
 // "source file" => "output file" map, hardcoded for now, will be part of the API in the future
 // Should match your local path and the values set in `Makefile > generate_custom_index_store`
 private let outputFileForSource: [String: String] = [
-    "iOSApp/CLI/main.m": "/tmp/xcbuild-out/main.o"
+    "iOSApp/CLI/main.m": "/tmp/xcbuild-out/main.o",
+    "Test-XCBuildKit/tests/ios/app/App/main.m": "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/sandbox/darwin-sandbox/14/execroot/build_bazel_rules_iosbazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/main.o",
 ]
 
 private var gChunkNumber = 0
@@ -127,6 +128,7 @@ enum BasicMessageHandler {
                 sdk = reqMsg.sdk
 
                 let outputFileKey = "\(workspaceName)\(reqMsg.filePath.replacingOccurrences(of: workingDir, with: ""))"
+                log("foo-mmm-5.1 outputFileKey \(outputFileKey)")
                 guard let outputFilePath = outputFileForSource[outputFileKey] else {
                     fatalError("Failed to find output file for source: \(reqMsg.filePath)")
                     return
