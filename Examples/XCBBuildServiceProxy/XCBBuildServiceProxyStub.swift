@@ -45,7 +45,7 @@ let clangXMLT: String = """
                 <key>LanguageDialect</key>
                 <string>objective-c</string>
                 <key>clangASTBuiltProductsDir</key>
-                <string>__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Products/Debug</string>
+                <string>__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Products/Debug-iphonesimulator</string>
                 <key>clangASTCommandArguments</key>
                 <array>
                         <string>-x</string>
@@ -129,16 +129,16 @@ let clangXMLT: String = """
                         <string>-index-store-path</string>
                         <string>__INDEX_STORE_PATH__</string>
                         <string>-iquote</string>
-                        <string>__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/App-generated-files.hmap</string>
-                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/App-own-target-headers.hmap</string>
-                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/App-all-target-headers.hmap</string>
+                        <string>__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.app/App-generated-files.hmap</string>
+                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.app/App-own-target-headers.hmap</string>
+                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.app/App-all-target-headers.hmap</string>
                         <string>-iquote</string>
-                        <string>__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/App-project-headers.hmap</string>
+                        <string>__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.app/App-project-headers.hmap</string>
                         <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Products/Debug-iphonesimulator/include</string>
-                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/DerivedSources-normal/x86_64</string>
-                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/DerivedSources/x86_64</string>
-                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.build/DerivedSources</string>
-                        <string>-F__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Products/Debug</string>
+                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.app/DerivedSources-normal/x86_64</string>
+                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.app/DerivedSources/x86_64</string>
+                        <string>-I__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/Test-XCBuildKit.build/Debug-iphonesimulator/App.app/DerivedSources</string>
+                        <string>-F__DERIVED_DATA_PATH__/Test-XCBuildKit-__WORSPACE_HASH__/Index/Build/Products/Debug-iphonesimulator</string>
                         <string>-fsyntax-only</string>
                         <string>__SOURCE_FILE__</string>
                         <string>-o</string>

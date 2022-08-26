@@ -107,7 +107,7 @@ extension XCBDecoder {
                 //     return try CreateBuildRequest(input: minput)
                 // } else if str == "BUILD_START" {
                 //     return try BuildStartRequest(input: minput)
-                } else if str == "INDEXING_INFO_REQUESTED" || str == "INDEXING_INFO_REQU" || str == "INDEXING_INFO_REQUE" {
+                } else if str == "INDEXING_INFO_REQUESTED" || str == "INDEXING_INFO_REQU" || str == "INDEXING_INFO_REQ" || str == "INDEXING_INFO_REQUE" {
                     log("foo-buffer-4.1")
                     return try IndexingInfoRequested(input: minput)
                 // } else if str == "BUILD_DESCRIPTION_TARGET_INFO" {

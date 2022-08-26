@@ -230,10 +230,13 @@ public func log2(_ str: String) {
 ///
 /// - returns: A `MessagePackValue`and the not-unpacked remaining data.
 public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (value: MessagePackValue, remainder: Subdata) {
+    log2("foo-ooo-1")
     guard !data.isEmpty else {
         log2("foo-xxx-5")
         throw MessagePackError.insufficientData
     }
+
+    log2("foo-ooo-2")
 
     let value = data[0]
     let data = data[1 ..< data.endIndex]
@@ -439,8 +442,14 @@ public func unpackAll(_ data: Data, compatibility: Bool = false) throws -> [Mess
     while !data.isEmpty {
         let value: MessagePackValue
         log2("foo-xxxx-4: data \(data.count)")
-        (value, data) = try unpack(data, compatibility: compatibility)
-        values.append(value)
+        do {
+            (value, data) = try unpack(data, compatibility: compatibility)
+            log2("foo-xxxx-4.1 value \(value)")
+            log2("foo-xxxx-4.1.1 data \(data.data.readableString)")
+            values.append(value)
+        } catch let e {
+            log2("foo-xxxx-4.2: err \(e)")
+        }
     }
 
     return values

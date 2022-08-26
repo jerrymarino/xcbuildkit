@@ -202,20 +202,27 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
         var minput = input
         var jsonDataOg: Data?
 
+        log("foo-nnn-1")
         while let fooNext = minput.next() {
+            log("foo-nnn-2")
             if jsonDataOg != nil {
+                log("foo-nnn-3")
                 break
             }
 
             switch fooNext {
                 case let .binary(jsonDataFoo):
+                    log("foo-nnn-4")
                     jsonDataOg = jsonDataFoo
                 default:
+                    log("foo-nnn-5")
                     continue
             }            
         }
 
+        log("foo-nnn-6")
         guard let jsonData = jsonDataOg else {
+            log("foo-nnn-7")
             // Hack - fix upstream code
             log("foo-buffer-5.1: \(input.data.readableString)")
             self.targetID = "_internal_stub_"
@@ -228,6 +235,7 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
             self.platform = ""
             return
         }
+        log("foo-nnn-8")
 
         // guard let next = minput.next(),
         // case let .binary(jsonData) = next else {

@@ -43,7 +43,8 @@ let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice-bzl")
 // Should match your local path and the values set in `Makefile > generate_custom_index_store`
 private let outputFileForSource: [String: String] = [
     "iOSApp/CLI/main.m": "/tmp/xcbuild-out/main.o",
-    "Test-XCBuildKit/tests/ios/app/App/main.m": "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/sandbox/darwin-sandbox/14/execroot/build_bazel_rules_iosbazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/main.o",
+    "Test-XCBuildKit/tests/ios/app/App/main.m": "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/sandbox/darwin-sandbox/217/execroot/build_bazel_rules_iosbazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/main.o",
+    "Test-XCBuildKit/tests/ios/app/App/Foo.m": "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/sandbox/darwin-sandbox/222/execroot/build_bazel_rules_iosbazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/Foo.o",
 ]
 
 private var gChunkNumber = 0
@@ -148,8 +149,10 @@ enum BasicMessageHandler {
                 let message = IndexingInfoReceivedResponse(
                     targetID: reqMsg.targetID,
                     data: reqMsg.outputPathOnly ? outputPathOnlyData(outputFilePath: outputFilePath, sourceFilePath: reqMsg.filePath) : nil,
+                    // data: reqMsg.outputPathOnly ? nil : outputPathOnlyData(outputFilePath: outputFilePath, sourceFilePath: reqMsg.filePath),
                     responseChannel: UInt64(reqMsg.responseChannel),
                     clangXMLData: reqMsg.outputPathOnly ? nil : clangXMLData)
+                    // clangXMLData: reqMsg.outputPathOnly ? clangXMLData : nil)
                 if let encoded: XCBResponse = try? message.encode(encoder) {
                     bkservice.write(encoded, msgId:message.responseChannel)
                     return

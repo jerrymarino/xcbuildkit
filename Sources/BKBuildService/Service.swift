@@ -76,6 +76,7 @@ public class BKBuildService {
     var supportedIdentifiers: [String] = [
         "INDEXING_INFO_REQUESTED",
         "INDEXING_INFO_REQU",
+        "INDEXING_INFO_REQ",
         "INDEXING_INFO_REQUE",
     ]
 
@@ -101,7 +102,9 @@ public class BKBuildService {
         let idxResult = Unpacker.unpackAll(allData)
         let idxInput = XCBInputStream(result: idxResult, data: allData)
         let decoder = XCBDecoder(input: idxInput)
+        log("foo-nnn-9")
         let msg = decoder.decodeMessage()
+        log("foo-nnn-10: \(msg)")
 
         log("foo-aaa-3")
         if msg is IndexingInfoRequested {
@@ -140,13 +143,10 @@ public class BKBuildService {
             var justStartedCollecting: Bool = false
             var justStoppedCollecting: Bool = false
             let idxData = "INDEXING_INFO_REQUESTED".data(using: .utf8)!
-            let idxData2 = "INDEXING_INFO_REQU".data(using: .utf8)!
-            let idxData3 = "INDEXING_INFO_REQUE".data(using: .utf8)!
             var idxRange: Range<Int>?
-            var idxRange2: Range<Int>?
-            var idxRange3: Range<Int>?
             var unsupportedIdxRange: Range<Int>?
             var prefixData: Data = Data()
+            var suffixData: Data = Data()
             var containsUnsupportedIdentifier: Bool = false
 
             log("foo-mmm-4 fooResult \(fooResult)")
@@ -161,11 +161,7 @@ public class BKBuildService {
                             justStartedCollecting = true
                             self.identifier = str
                             idxRange = data.range(of: idxData)
-                            idxRange2 = data.range(of: idxData2)
-                            idxRange3 = data.range(of: idxData3)
                             log("foo-ccc-1: \(idxRange)")
-                            log("foo-ccc-1.1: \(idxRange2)")
-                            log("foo-ccc-1.2: \(idxRange3)")
                         } else if unsupportedIdentifiers.contains(str) {
                             containsUnsupportedIdentifier = true
                             self.unsupportedIdentifier = str
@@ -220,34 +216,6 @@ public class BKBuildService {
                             log("foo-ccc-3 idxJSONData : \(idxJSONData.readableString)")
                             log("foo-ccc-3 idxJSONData size: \(idxJSONData.count)")
                         }                        
-                    } else if idxRange2 != nil {
-                        if idxRange2!.lowerBound > 13 {
-                            log("foo-ccc-2 xFactor : \(xFactor)")
-                            log("foo-ccc-2.2.2 idxRange2!.lowerBound : \(idxRange2!.lowerBound)")
-                            log("foo-ccc-2.2.2 idxRange2!.lowerBound-xFactor : \(idxRange2!.lowerBound-xFactor)")
-                            
-                            prefixData = data[0..<idxRange2!.lowerBound-xFactor]
-                            log("foo-ccc-2 prefixData : \(prefixData.readableString)")
-                            log("foo-ccc-2 prefixData size: \(prefixData.count)")
-
-                            idxJSONData = data[idxRange2!.lowerBound-xFactor..<data.count]
-                            log("foo-ccc-3 idxJSONData : \(idxJSONData.readableString)")
-                            log("foo-ccc-3 idxJSONData size: \(idxJSONData.count)")
-                        }                        
-                    } else if idxRange3 != nil {
-                        if idxRange3!.lowerBound > 13 {
-                            log("foo-ccc-2 xFactor : \(xFactor)")
-                            log("foo-ccc-2.2.2 idxRange3!.lowerBound : \(idxRange3!.lowerBound)")
-                            log("foo-ccc-2.2.2 idxRange3!.lowerBound-xFactor : \(idxRange3!.lowerBound-xFactor)")
-                            
-                            prefixData = data[0..<idxRange3!.lowerBound-xFactor]
-                            log("foo-ccc-2 prefixData : \(prefixData.readableString)")
-                            log("foo-ccc-2 prefixData size: \(prefixData.count)")
-
-                            idxJSONData = data[idxRange3!.lowerBound-xFactor..<data.count]
-                            log("foo-ccc-3 idxJSONData : \(idxJSONData.readableString)")
-                            log("foo-ccc-3 idxJSONData size: \(idxJSONData.count)")
-                        }
                     }
 
                     // var foo = idxJSONData
@@ -309,7 +277,9 @@ public class BKBuildService {
                             idxJSONData = data[0..<unsupportedIdxRange!.lowerBound-yFactor]
                             log("foo-mmm-3.1 idxJSONData \(idxJSONData.readableString)")
                             prefixData = Data()
-                            data = data[unsupportedIdxRange!.lowerBound-yFactor..<data.count]
+                            suffixData = data[unsupportedIdxRange!.lowerBound-yFactor..<data.count]
+                            data = suffixData
+                            aData = suffixData
                             log("foo-mmm-3.2 data \(data.readableString)")
                         }
                     }
@@ -323,7 +293,7 @@ public class BKBuildService {
                 }
                 log("foo-aaa-1 self.identifierDatas: \(dd.readableString)")
                 sendIdxMsgIfExists(messageHandler: messageHandler, context: context)
-                if prefixData.count == 0 {
+                if prefixData.count == 0 && suffixData.count == 0 {
                     log("foo-aaa-9.3")
                     return
                 } 
@@ -447,19 +417,27 @@ public class BKBuildService {
             // }
             // log("Header.Parse \(data)")
             // log("Header.Size \(self.readLen) - \(startSize) ")
-            let result = Unpacker.unpackAll(data)
-            if let first = result.first, case let .uint(id) = first {
-                let msgId = id + 1
-                log("respond.msgId" + String(describing: msgId))
-            } else {
-                log("missing id")
+            // log("foo-aaa-9.4.1 data \(data.bytes)")
+            // log("foo-aaa-9.4.2 data \(data.readableString)")
+            // log("foo-aaa-9.4.3 unpacked og \(try? unpackAll(data))")
+            // log("foo-aaa-9.4.4 unpacked \(Unpacker.unpackAll(data))")
+
+            var result: [MessagePackValue] = []
+            if data.readableString.contains("CREATE_SESSION") {
+                result = Unpacker.unpackAll(data)
+                if let first = result.first, case let .uint(id) = first {
+                    let msgId = id + 1
+                    log("respond.msgId" + String(describing: msgId))
+                } else {
+                    log("missing id")
+                }
             }
 
             if self.shouldDump {
                 // Dumps out the protocol
                 // useful for debuging, code gen'ing protocol messages, and
                 // upgrading Xcode versions
-                result.forEach{ $0.prettyPrint() }
+                // result.forEach{ $0.prettyPrint() }
             } else if self.shouldDumpHumanReadable {
                 // Same as above but dumps out the protocol in human readable format
                 PrettyPrinter.prettyPrintRecursively(result)
