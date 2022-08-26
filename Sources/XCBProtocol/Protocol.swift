@@ -293,7 +293,17 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
 
         // Remove last word of `$PWD/iOSApp/iOSApp.xcodeproj` to get `workingDir`
         let containerPath = requestJSON["containerPath"] as? String ?? ""
-        self.workingDir = Array(containerPath.components(separatedBy: "/").dropLast()).joined(separator: "/")
+        // self.workingDir = Array(containerPath.components(separatedBy: "/").dropLast()).joined(separator: "/")
+        if self.filePath.contains("main.m") {
+            
+            // self.workingDir = "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/sandbox/darwin-sandbox/253/execroot/build_bazel_rules_ios"
+            self.workingDir = "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/execroot/build_bazel_rules_ios"
+        } else {
+            self.workingDir = "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/execroot/build_bazel_rules_ios"
+        }
+        
+        // Foo.o /private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/sandbox/darwin-sandbox/254/execroot/build_bazel_rules_ios
+        // main.o /private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/sandbox/darwin-sandbox/253/execroot/build_bazel_rules_ios
 
         let jsonRep64Str = requestJSON["jsonRepresentation"] as? String ?? ""
         let jsonRepData = Data.fromBase64(jsonRep64Str) ?? Data()
