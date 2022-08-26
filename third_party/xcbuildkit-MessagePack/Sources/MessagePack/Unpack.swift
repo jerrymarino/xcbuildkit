@@ -25,36 +25,36 @@ func unpackInteger(_ data: Subdata, count: Int) throws -> (value: UInt64, remain
     return (value, data[count ..< data.count])
 }
 
-public extension Data {
-    public var readableString: String {
-        return self.bytes.readableString
-    }
+// public extension Data {
+//     public var readableString: String {
+//         return self.bytes.readableString
+//     }
 
-    private var bytes: [UInt8] {
-        return [UInt8](self)
-    }
-}
+//     private var bytes: [UInt8] {
+//         return [UInt8](self)
+//     }
+// }
 
-extension Array where Element == UInt8 {
-    var readableString: String {        
-        do {
-            guard let bytesAsString = self.asciiString ?? self.utf8String else {
-                fatalError("Failed to encode bytes")
-            }
-            return bytesAsString
-        } catch let e {
-            log2("foo-aaa-ext-data-1: \(e)")
-        }
-    }
+// extension Array where Element == UInt8 {
+//     var readableString: String {        
+//         do {
+//             guard let bytesAsString = self.asciiString ?? self.utf8String else {
+//                 fatalError("Failed to encode bytes")
+//             }
+//             return bytesAsString
+//         } catch let e {
+//             log2("foo-aaa-ext-data-1: \(e)")
+//         }
+//     }
 
-    private var utf8String: String? {
-        return String(bytes: self, encoding: .utf8)
-    }
+//     private var utf8String: String? {
+//         return String(bytes: self, encoding: .utf8)
+//     }
 
-    private var asciiString: String? {
-        return String(bytes: self, encoding: .ascii)
-    }
-}
+//     private var asciiString: String? {
+//         return String(bytes: self, encoding: .ascii)
+//     }
+// }
 
 func clean(data: inout Data) -> String {
     data.append(0)
@@ -92,7 +92,7 @@ func unpackString(_ data: Subdata, count: Int) throws -> (value: String, remaind
     let subdata = data[0 ..< count]
     var dataToEncode = subdata.data
     // var decoded: String? = nil
-    log2("foo-mmm-xxx-6.0 \(subdata.data.readableString)")
+    // log2("foo-mmm-xxx-6.0 \(subdata.data.readableString)")
 
     // var result2 = String(data: subdata.data, encoding: .ascii)
     // log2("foo-mmm-xxx-6.0.1 \(result2)")
@@ -445,7 +445,7 @@ public func unpackAll(_ data: Data, compatibility: Bool = false) throws -> [Mess
         do {
             (value, data) = try unpack(data, compatibility: compatibility)
             log2("foo-xxxx-4.1 value \(value)")
-            log2("foo-xxxx-4.1.1 data \(data.data.readableString)")
+            // log2("foo-xxxx-4.1.1 data \(data.data.readableString)")
             values.append(value)
         } catch let e {
             log2("foo-xxxx-4.2: err \(e)")
