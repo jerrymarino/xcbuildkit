@@ -105,9 +105,12 @@ func unpackString(_ data: Subdata, count: Int) throws -> (value: String, remaind
         if fooResult != nil {
             // if fooResult!.contains("INDEXING_INFO") {
                 log2("foo-mmm-xxx-6.0.2 \(fooResult!)")
-                result = fooResult!.replacingOccurrences(of: "\u{12}", with: "").replacingOccurrences(of: "\0", with: "")
+                result = fooResult!.replacingOccurrences(of: "\u{12}", with: "")
+                result = result.replacingOccurrences(of: "\0", with: "")
                 result = result.replacingOccurrences(of: "µ", with: "")
                 result = result.replacingOccurrences(of: "\u{13}", with: "")
+                result = result.replacingOccurrences(of: "\u{11}", with: "")
+                result = result.replacingOccurrences(of: "{\\\"onlyCrea\"", with: "")
                 if result.contains("INDEXING_INFO") {
                     result.removeFirst()
                 }

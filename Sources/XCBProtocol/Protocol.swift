@@ -102,11 +102,17 @@ public struct CreateSessionRequest: XCBProtocolMessage {
         //
         // /path/to/DerivedData/iOSApp-frhmkkebaragakhdzyysbrsvbgtc/Build/Intermediates.noindex/XCBuildData
         //
-        var components = self.xcbuildDataPath.components(separatedBy: "-")
-        self.workspaceHash = components.last!.components(separatedBy: "/").first!
-        // components.removeLast()
-        // self.workspaceName = components.last!.components(separatedBy: "/").last!
-        self.workspaceName = "Test-XCBuildKit"
+        var componentsByDash = self.xcbuildDataPath.components(separatedBy: "-")
+        let wHash = componentsByDash.last!.components(separatedBy: "/").first!
+        self.workspaceHash = wHash
+        var componentsByForwardSlash = self.xcbuildDataPath.components(separatedBy: "/")
+        var workspaceNameComponent = componentsByForwardSlash.filter { $0.contains(wHash) }.first as! String
+        var workspaceNameComponentsByDash = workspaceNameComponent.components(separatedBy: "-")
+        workspaceNameComponentsByDash.removeLast()
+        log("foo-qqq-1: workspaceNameComponentsByDash \(workspaceNameComponentsByDash)")
+        self.workspaceName = String(workspaceNameComponentsByDash.joined(separator: "-"))
+        log("foo-qqq-10: self.workspaceName \(self.workspaceName)")
+        // self.workspaceName = "Test-XCBuildKit"
 
         log("Found XCBuildData path: \(self.xcbuildDataPath)")
         log("Parsed workspaceHash: \(self.workspaceHash)")

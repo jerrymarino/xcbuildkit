@@ -89,6 +89,7 @@ public class BKBuildService {
         "BUILD_DESCRIPTION_TARGET_INFO",
         "TRANSFER_SESSION_PIF_REQUEST",
         "SET_S",
+        "BUILD_CANCEL",
     ]
 
     func sendIdxMsgIfExists(messageHandler: @escaping XCBMessageHandler, context: Any?) {
