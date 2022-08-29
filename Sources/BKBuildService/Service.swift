@@ -109,6 +109,8 @@ public class BKBuildService {
         log("foo-aaa-3")
         if msg is IndexingInfoRequested {
             log("foo-aaa-4 PING: self.gotMsgId \(self.gotMsgId)")
+            log("demo-3 INDEXING_INFO_REQUESTED complete")
+            log("demo-4 sending PING and INDEXING_INFO_RESPONSE msg")
             
             write([
                 XCBRawValue.string("PING"),
@@ -157,6 +159,7 @@ public class BKBuildService {
                         log("foo-mmm-4.1 str \(str)")
                         if supportedIdentifiers.contains(str) {
                             log("foo-aaa-10.1.1")
+                            log("demo-1 started collecting INDEXING_INFO_REQUESTED")
                             self.isCollecting = true
                             justStartedCollecting = true
                             self.identifier = str
@@ -284,6 +287,7 @@ public class BKBuildService {
                         }
                     }
                 }
+                log("demo-2 appended INDEXING_INFO_REQUESTED data")
                 self.identifierDatas.append(idxJSONData)
                 log("foo-aaa-1")
                 log("foo-aaa-1 self.identifier: \(self.identifier)")
