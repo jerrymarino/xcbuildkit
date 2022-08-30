@@ -553,14 +553,17 @@ public enum Unpacker {
         var unpacked = [XCBRawValue]()
 
         var sdata = Subdata(data: data)
+        log("foo-rrr data \(data.readableString)")
         while !sdata.isEmpty {
             let value: XCBRawValue
             do {
                 let res = try unpack(sdata)
                 let (value, remainder) = res
+                log("foo-rrr remainder \(remainder.data.readableString)")
                 unpacked.append(value)
                 sdata = remainder
             } catch let e {
+                log("foo-rrr err \(e)")
                 log("Failed to unpack with err: \(e)")
                 // Note: likely an error condition, but deal with what we can
                 return unpacked

@@ -99,6 +99,7 @@ func unpackString(_ data: Subdata, count: Int) throws -> (value: String, remaind
 
     var result: String = clean(data: &dataToEncode)
     log2("foo-mmm-xxx-6.0.1 \(result.count)")
+    log2("foo-mmm-xxx-6.0.12 \(String(data: subdata.data, encoding: .ascii))")
     if result.count <= 1 {
         let fooResult = String(data: subdata.data, encoding: .ascii)
         log2("foo-mmm-xxx-6.0.2 \(fooResult)")
@@ -292,8 +293,9 @@ public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (valu
         let (dataCount, remainder1) = try unpackInteger(data, count: intCount)
         log2("foo-buffer-thirdparty-1: dataCount: \(Int(dataCount))")
         log2("foo-buffer-thirdparty-1: actual dataCount: \(Int(remainder1.count))")
-        // let (subdata, remainder2) = try unpackData(remainder1, count: Int(dataCount))
-        let (subdata, remainder2) = try unpackData(remainder1, count: Int(remainder1.count))
+        let fooCount = min(Int(dataCount), Int(remainder1.count))
+        let (subdata, remainder2) = try unpackData(remainder1, count: fooCount)
+        // let (subdata, remainder2) = try unpackData(remainder1, count: Int(remainder1.count))
         // let (subdata, remainder2) = try unpackData(remainder1, count: Int(value - 0xc4))
         return (.binary(subdata.data), remainder2)
 
