@@ -294,9 +294,9 @@ public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (valu
         log2("foo-buffer-thirdparty-1: dataCount: \(Int(dataCount))")
         log2("foo-buffer-thirdparty-1: actual dataCount: \(Int(remainder1.count))")
         let fooCount = min(Int(dataCount), Int(remainder1.count))
-        let (subdata, remainder2) = try unpackData(remainder1, count: fooCount)
         // let (subdata, remainder2) = try unpackData(remainder1, count: Int(remainder1.count))
-        // let (subdata, remainder2) = try unpackData(remainder1, count: Int(value - 0xc4))
+        // let (subdata, remainder2) = try unpackData(remainder1, count: Int(dataCount))
+        let (subdata, remainder2) = try unpackData(remainder1, count: Int(fooCount))
         return (.binary(subdata.data), remainder2)
 
     // ext 8, 16, 32

@@ -138,8 +138,7 @@ public class BKBuildService {
                 exit(0)
             }
             var data = aData
-            log("foo-buffer-6.0: \(data.readableString)")
-
+            log("foo-buffer-6.0: \(data.readableString)\nfoo-buffer-6.0:unpacked \(Unpacker.unpackAll(data))")
 
             let fooResult = Unpacker.unpackAll(data)
             var fooInput = XCBInputStream(result: fooResult, data: data)
@@ -389,7 +388,7 @@ public class BKBuildService {
             //     //     return
             //     // }
 
-            //     let msg = decoder.decodeMessage() 
+            //     let msg = decoder.decodeMessage()
             //     if msg is IndexingInfoRequested {
             //         write([
             //             XCBRawValue.string("PING"),
