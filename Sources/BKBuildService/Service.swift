@@ -55,6 +55,10 @@ public class BKBuildService {
     private var readLen: Int32 = -1
     private var buffer = Data()
 
+    private var buffer2 = Data()
+    private var buffer2Next = Data()
+    private var readLen2: Int32 = 0
+
     // This is highly experimental
     private var indexingEnabled: Bool
 
@@ -139,6 +143,140 @@ public class BKBuildService {
             }
             var data = aData
             log("foo-buffer-6.0: \(data.readableString)\nfoo-buffer-6.0:unpacked \(Unpacker.unpackAll(data))")
+            
+            // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ START
+            log("foo-noway-1: \(data.readableString)")
+            var readyToProcess = false
+
+            if self.buffer2.count == 0 {
+                log("foo-noway-2")
+                var tmpData = data
+                let readSizeFirst2 = MemoryLayout<UInt64>.size
+                let msgIdData2 = tmpData[0 ..< readSizeFirst2]
+                let msgId2 = msgIdData2.withUnsafeBytes { $0.load(as: UInt64.self) }
+                tmpData = tmpData.advanced(by: readSizeFirst2)
+
+                let readSizeSecond2 = MemoryLayout<UInt32>.size
+                let sizeD2 = tmpData[0 ..< readSizeSecond2]
+                let sizeB2 = sizeD2.withUnsafeBytes { $0.load(as: UInt32.self) }
+                let size2 = Int32(sizeB2)
+                tmpData = tmpData.advanced(by: readSizeSecond2)
+
+                log("foo-noway-2.1 size2 \(size2)")
+                log("foo-noway-2.1 Int32(tmpData.count) \(Int32(tmpData.count))")
+                if size2 <= Int32(tmpData.count) {
+                    log("foo-noway-3")
+                    self.buffer2 = tmpData
+                    self.readLen2 = 0
+                    readyToProcess = true
+                }
+                else {
+                    log("foo-noway-4")
+                    self.buffer2.append(tmpData)
+                    self.readLen2 = min(max(size2 - Int32(tmpData.count), 0), Int32(tmpData.count))
+                    readyToProcess = false
+                }
+            } else {
+                log("foo-noway-5")
+                log("foo-noway-5.1 self.readLen2 \(self.readLen2)")
+                if self.readLen2 > 4096 {
+                    log("foo-noway-6")
+                    self.buffer2.append(data)
+                    self.readLen2 = self.readLen2 - Int32(data.count)
+                    readyToProcess = false
+                } else if self.readLen2 > 0 {
+                    log("foo-noway-7")
+                    log("foo-noway-7.1 self.readLen2 \(self.readLen2)")
+                    var tmpData = data
+
+                    log("foo-noway-7.2 tmpData.count \(tmpData.count)")
+                    var finalData = tmpData[0 ..< Int(self.readLen2)]
+                    self.buffer2.append(finalData)
+                    
+                    tmpData = tmpData.advanced(by: Int(self.readLen2))
+
+                    if tmpData.count > 0 {
+                        log("foo-noway-7.3 finalData \(finalData.count)")
+                        log("foo-noway-7.3 finalData readable \(finalData.readableString)")
+                        log("foo-noway-7.4 tmpData \(tmpData.count)")
+                        log("foo-noway-7.5 tmpData readable \(tmpData.readableString)")
+                        self.buffer2Next = tmpData
+                    }                    
+                    self.readLen2 = 0
+                    readyToProcess = true
+                }
+            }
+
+            log("foo-noway-6 readyToProcess \(readyToProcess)")
+            if readyToProcess {
+                let buffer2Unpacked = Unpacker.unpackAll(self.buffer2)
+                var buffer2UnpackedDebug: [MessagePackValue] = []
+                for x in buffer2Unpacked {
+                    switch x {
+                        case let .string(xStr): buffer2UnpackedDebug.append(x)
+                        case let .binary(xData): buffer2UnpackedDebug.append(x)
+                        default: continue
+                    }
+                }
+                buffer2UnpackedDebug = buffer2Unpacked
+                
+                log("foo-noway-0 processing unpacked \(buffer2UnpackedDebug)")
+
+                self.buffer2 = Data()
+                self.readLen2 = 0
+
+                log("foo-noway-8")
+                if self.buffer2Next.count > 0 {
+                    log("foo-noway-8.1")
+                    var tmpData = self.buffer2Next
+                    let readSizeFirst2 = MemoryLayout<UInt64>.size
+                    let msgIdData2 = tmpData[0 ..< readSizeFirst2]
+                    let msgId2 = msgIdData2.withUnsafeBytes { $0.load(as: UInt64.self) }
+                    tmpData = tmpData.advanced(by: readSizeFirst2)
+
+                    let readSizeSecond2 = MemoryLayout<UInt32>.size
+                    let sizeD2 = tmpData[0 ..< readSizeSecond2]
+                    let sizeB2 = sizeD2.withUnsafeBytes { $0.load(as: UInt32.self) }
+                    let size2 = Int32(sizeB2)
+                    tmpData = tmpData.advanced(by: readSizeSecond2)
+
+                    log("foo-noway-8.2 size2 \(size2)")
+                    log("foo-noway-8.2 Int32(tmpData.count) \(Int32(tmpData.count))")
+                    if size2 <= Int32(tmpData.count) {
+                        log("foo-noway-9")
+                        self.buffer2 = tmpData
+                        self.readLen2 = 0
+                        readyToProcess = true
+                    }
+                    else {
+                        log("foo-noway-10")
+                        self.buffer2.append(tmpData)
+                        self.readLen2 = min(max(size2 - Int32(tmpData.count), 0), Int32(tmpData.count))
+                        readyToProcess = false
+                    }
+
+                    if readyToProcess {
+                        let buffer2Unpacked = Unpacker.unpackAll(self.buffer2)
+                        var buffer2UnpackedDebug: [MessagePackValue] = []
+                        for x in buffer2Unpacked {
+                            switch x {
+                                case let .string(xStr): buffer2UnpackedDebug.append(x)
+                                case let .binary(xData): buffer2UnpackedDebug.append(x)
+                                default: continue
+                            }
+                        }
+                        buffer2UnpackedDebug = buffer2Unpacked
+                        
+                        log("foo-noway-0 processing unpacked \(buffer2UnpackedDebug)")
+
+                        self.buffer2 = Data()
+                        self.readLen2 = 0
+                    }
+                }
+
+                self.buffer2Next = Data()
+            }
+            // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ END
 
             let fooResult = Unpacker.unpackAll(data)
             var fooInput = XCBInputStream(result: fooResult, data: data)

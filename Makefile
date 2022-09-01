@@ -86,6 +86,7 @@ open_xcode_with_sk_logging: build
 			$(XCODE)/Contents/MacOS/Xcode
 
 open_xcode: build
+	rm /tmp/xcbuild.* && \
 	/usr/bin/env - TERM="$(TERM)"; \
 	    export SHELL="$(SHELL)"; \
 	    export PATH="$(PATH)"; \
