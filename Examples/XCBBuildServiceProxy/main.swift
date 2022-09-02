@@ -47,6 +47,8 @@ private let outputFileForSource: [String: String] = [
     "Test-XCBuildKit/Users/thiago/Development/rules_ios/tests/ios/app/App/Foo.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/Foo.o",
 ]
 
+private let externalWorkingDir = "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/execroot/build_bazel_rules_ios"
+
 private var gChunkNumber = 0
 // FIXME: get this from the other paths
 private var gXcode = ""
@@ -172,7 +174,7 @@ enum BasicMessageHandler {
 }
 
 let xcbbuildService = XCBBuildServiceProcess()
-let bkservice = BKBuildService(indexingEnabled: true)
+let bkservice = BKBuildService(indexingEnabled: true, workingDir: externalWorkingDir)
 
 let context = BasicMessageContext(
     xcbbuildService: xcbbuildService,

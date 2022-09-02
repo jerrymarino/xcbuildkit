@@ -206,22 +206,8 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
 
     public init(input: XCBInputStream) throws {
         var minput = input
-        var jsonDataOg: Data?
-
-        while let fooNext = minput.next() {
-            if jsonDataOg != nil {
-                break
-            }
-
-            switch fooNext {
-                case let .binary(jsonDataFoo):
-                    jsonDataOg = jsonDataFoo
-                default:
-                    continue
-            }            
-        }
-
-        guard let jsonData = jsonDataOg else {
+        guard let next = minput.next(),
+        case let .binary(jsonData) = next else {
             // Hack - fix upstream code
             self.targetID = "_internal_stub_"
             self.filePath = "_internal_stub_"
@@ -234,7 +220,7 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
             return
         }
 
-        guard let json = try? JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
+        guard let json = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
             throw XCBProtocolError.unexpectedInput(for: input)
         }
         guard let targetID = json["targetID"] else {
@@ -250,13 +236,8 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
 
         // Remove last word of `$PWD/iOSApp/iOSApp.xcodeproj` to get `workingDir`
         let containerPath = requestJSON["containerPath"] as? String ?? ""
-        // self.workingDir = Array(containerPath.components(separatedBy: "/").dropLast()).joined(separator: "/")
-        if self.filePath.contains("main.m") {
-            self.workingDir = "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/execroot/build_bazel_rules_ios"
-        } else {
-            self.workingDir = "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/execroot/build_bazel_rules_ios"
-        }
-        
+        self.workingDir = input.workingDir ?? Array(containerPath.components(separatedBy: "/").dropLast()).joined(separator: "/")
+
         let jsonRep64Str = requestJSON["jsonRepresentation"] as? String ?? ""
         let jsonRepData = Data.fromBase64(jsonRep64Str) ?? Data()
         guard let jsonJSON = try JSONSerialization.jsonObject(with: jsonRepData, options: []) as? [String: Any] else {

@@ -58,6 +58,7 @@ public class BKBuildService {
     private var buffer2Next = Data()
     private var readLen2: Int32 = 0
     private var gotMsgId: UInt64 = 0
+    private var workingDir: String?
 
     // This is highly experimental
     private var indexingEnabled: Bool
@@ -65,15 +66,16 @@ public class BKBuildService {
     // TODO: Move record mode out
     private var chunkId = 0
 
-    public init(indexingEnabled: Bool=false) {
+    public init(indexingEnabled: Bool=false, workingDir: String? = nil) {
         self.indexingEnabled = indexingEnabled
         self.shouldDump = CommandLine.arguments.contains("--dump")
         self.shouldDumpHumanReadable = CommandLine.arguments.contains("--dump_h")
+        self.workingDir = workingDir
     }
 
     func handleIdx(messageHandler: @escaping XCBMessageHandler, context: Any?) {
         let nowayResult = Unpacker.unpackAll(self.buffer2)
-        let nowayInput = XCBInputStream(result: nowayResult, data: self.buffer2)
+        let nowayInput = XCBInputStream(result: nowayResult, data: self.buffer2, workingDir: self.workingDir)
         let nowayDecoder = XCBDecoder(input: nowayInput)
         let nowayMsg = nowayDecoder.decodeMessage()
 
