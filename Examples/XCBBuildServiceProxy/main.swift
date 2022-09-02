@@ -115,13 +115,17 @@ enum BasicMessageHandler {
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
         let encoder = XCBEncoder(input: input)
+        log("foo-noway2-1")
         if let msg = decoder.decodeMessage() {
+            log("foo-noway2-2")
             if let createSessionRequest = msg as? CreateSessionRequest {
+                log("foo-noway2-3")
                 gXcode = createSessionRequest.xcode
                 workspaceHash = createSessionRequest.workspaceHash
                 workspaceName = createSessionRequest.workspaceName
                 xcbbuildService.startIfNecessary(xcode: gXcode)
             } else if !XCBBuildServiceProcess.MessageDebuggingEnabled() && msg is IndexingInfoRequested {
+                log("foo-noway2-4")
                 // Example of a custom indexing service
                 let reqMsg = msg as! IndexingInfoRequested
                 workingDir = reqMsg.workingDir
@@ -155,6 +159,7 @@ enum BasicMessageHandler {
                     // clangXMLData: reqMsg.outputPathOnly ? clangXMLData : nil)
                 if let encoded: XCBResponse = try? message.encode(encoder) {
                     log("foo-ppp-1: \(String.init(data: data, encoding: .ascii))")
+                    log("foo-noway2-5")
                     bkservice.write(encoded, msgId:message.responseChannel)
                     return
                 }
@@ -172,6 +177,7 @@ enum BasicMessageHandler {
         }
         // writes input data to original service
         log("foo-ppp-2: \(String.init(data: data, encoding: .ascii))")
+        log("foo-noway2-6")
         xcbbuildService.write(data)
     }
 }
