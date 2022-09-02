@@ -52,14 +52,12 @@ public class BKBuildService {
     // crossing streams.
     internal static let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice")
 
-    private var readLen: Int32 = -1
-    private var buffer = Data()
-
     private var buffer2 = Data()
     private var bufferHeader1 = Data()
     private var bufferHeader2 = Data()
     private var buffer2Next = Data()
     private var readLen2: Int32 = 0
+    private var gotMsgId: UInt64 = 0
 
     // This is highly experimental
     private var indexingEnabled: Bool
@@ -73,68 +71,7 @@ public class BKBuildService {
         self.shouldDumpHumanReadable = CommandLine.arguments.contains("--dump_h")
     }
 
-    var identifier: String?
-    var unsupportedIdentifier: String?
-    var identifierDatas: [Data] = []
-    var isCollecting: Bool = false
-    var gotMsgId: UInt64 = 0
-
-    var supportedIdentifiers: [String] = [
-        "INDEXING_INFO_REQUESTED",
-        "INDEXING_INFO_REQU",
-        "INDEXING_INFO_REQ",
-        "INDEXING_INFO_REQUE",
-    ]
-
-    var unsupportedIdentifiers: [String] = [
-        "CREATE_SESSION",
-        "CREATE_BUILD",
-        "SET_SESSION_SYSTEM_INFO",
-        "SET_SESSION_USER_INFO",
-        "BUILD_START",
-        "BUILD_DESCRIPTION_TARGET_INFO",
-        "TRANSFER_SESSION_PIF_REQUEST",
-        "SET_S",
-        "BUILD_CANCEL",
-    ]
-
-    func sendIdxMsgIfExists(messageHandler: @escaping XCBMessageHandler, context: Any?) {
-        log("foo-aaa-9.5")
-        var allData: Data = Data()
-        for d in self.identifierDatas {
-            allData.append(d)
-        }
-
-        log("foo-aaa-2 allData: \(allData.readableString)")
-        let idxResult = Unpacker.unpackAll(allData)
-        let idxInput = XCBInputStream(result: idxResult, data: allData)
-        let decoder = XCBDecoder(input: idxInput)
-        log("foo-nnn-9")
-        let msg = decoder.decodeMessage()
-        log("foo-nnn-10: \(msg)")
-
-        log("foo-aaa-3")
-        if msg is IndexingInfoRequested {
-            log("foo-aaa-4 PING: self.gotMsgId \(self.gotMsgId)")
-            log("demo-3 INDEXING_INFO_REQUESTED complete")
-            log("demo-4 sending PING and INDEXING_INFO_RESPONSE msg")
-            
-            write([
-                XCBRawValue.string("PING"),
-                XCBRawValue.nil,
-            ], msgId: self.gotMsgId)
-
-            // log("foo-buffer-6.1: \(msg)")
-            log("foo-buffer-6.1: \(allData.readableString)")
-            messageHandler(idxInput, allData, context)
-
-            self.identifier = nil
-            self.identifierDatas = []
-            self.gotMsgId = 0                    
-        }
-    }
-
-    func handleIdx(messageHandler: @escaping XCBMessageHandler, context: Any?, emptyNextBuffer: Bool = false) {
+    func handleIdx(messageHandler: @escaping XCBMessageHandler, context: Any?) {
         let nowayResult = Unpacker.unpackAll(self.buffer2)
         let nowayInput = XCBInputStream(result: nowayResult, data: self.buffer2)
         let nowayDecoder = XCBDecoder(input: nowayInput)
@@ -145,7 +82,6 @@ public class BKBuildService {
                 XCBRawValue.string("PING"),
                 XCBRawValue.nil,
             ], msgId: self.gotMsgId)
-            log("foo-noway-processing msg \(nowayMsg)")
             messageHandler(nowayInput, self.buffer2, context)
         } else {
             var ogData = Data()
@@ -160,7 +96,6 @@ public class BKBuildService {
                 fooData = self.buffer2
             }
 
-            log("foo-noway-processing data \(fooData.readableString)")
             messageHandler(XCBInputStream(result: fooResult, data: fooData), ogData, context)
         }
 
@@ -169,10 +104,6 @@ public class BKBuildService {
         self.bufferHeader2 = Data()
         self.readLen2 = 0
         self.gotMsgId = 0
-
-        if emptyNextBuffer {
-            self.buffer2Next = Data()
-        }
     }
 
     func collectHeaderInfo(data: Data) -> (Int32, Data) {
@@ -237,12 +168,10 @@ public class BKBuildService {
         let file = FileHandle.standardInput
         file.readabilityHandler = { [self]
             h in
-            var aData = h.availableData
-            guard aData.count > 0 else {
+            var data = h.availableData
+            guard data.count > 0 else {
                 exit(0)
             }
-            var data = aData
-            log("foo-buffer-6.0: \(data.readableString)\nfoo-buffer-6.0:unpacked \(Unpacker.unpackAll(data))")
             
             // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ START
             var readyToProcess = false
@@ -262,7 +191,8 @@ public class BKBuildService {
                     readyToProcess = initializeBuffer(size: size2, data: tmpData)
 
                     if readyToProcess {
-                        handleIdx(messageHandler: messageHandler, context: context, emptyNextBuffer: true)
+                        handleIdx(messageHandler: messageHandler, context: context)
+                        self.buffer2Next = Data()
                     }
                 }
             }
@@ -290,7 +220,6 @@ public class BKBuildService {
             //     // Same as above but dumps out the protocol in human readable format
             //     PrettyPrinter.prettyPrintRecursively(result)
             // } else {
-            //     log("foo-buffer-6.2: \(aData.readableString)")
             //     messageHandler(XCBInputStream(result: result, data: data), aData, context)
             // }
         }
@@ -396,18 +325,15 @@ public enum Unpacker {
         var unpacked = [XCBRawValue]()
 
         var sdata = Subdata(data: data)
-        log("foo-rrr data \(data.readableString)")
         while !sdata.isEmpty {
             let value: XCBRawValue
             do {
                 let res = try unpack(sdata)
                 let (value, remainder) = res
-                log("foo-rrr remainder \(remainder.data.readableString)")
                 unpacked.append(value)
                 sdata = remainder
             } catch let e {
-                log("foo-rrr err \(e)")
-                log("Failed to unpack with err: \(e)")
+                log("Unpacker has failed to unpack with err: \(e)")
                 // Note: likely an error condition, but deal with what we can
                 return unpacked
             }

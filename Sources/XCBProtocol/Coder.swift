@@ -76,14 +76,11 @@ extension Array where Element == UInt8 {
 extension XCBDecoder {
     /// Decodes a message
     public func decodeMessage() -> XCBProtocolMessage? {
-        // log("foo-buffer-3.0: \(self.input.data.readableString)")
         do {
             let msg = try decodeMessageImpl()
-            log("foo-buffer-3.1: decoded \(String(describing: msg))")
-            // log("foo-buffer-3.1.1: msg \(msg)")
             return msg
-        } catch {
-            log("foo-buffer-3.2: decoding failed \(error)\nfoo-buffer-3.2.data: \(self.input.data.readableString)")
+        } catch let e {
+            log("Failed to decode message with error: \(e)")
             return nil
         }
     }
@@ -107,8 +104,7 @@ extension XCBDecoder {
                 //     return try CreateBuildRequest(input: minput)
                 // } else if str == "BUILD_START" {
                 //     return try BuildStartRequest(input: minput)
-                } else if str == "INDEXING_INFO_REQUESTED" || str == "INDEXING_INFO_REQU" || str == "INDEXING_INFO_REQ" || str == "INDEXING_INFO_REQUE" {
-                    log("foo-buffer-4.1")
+                } else if str == "INDEXING_INFO_REQUESTED" {
                     return try IndexingInfoRequested(input: minput)
                 // } else if str == "BUILD_DESCRIPTION_TARGET_INFO" {
                 //     return try BuildDescriptionTargetInfo(input: minput)

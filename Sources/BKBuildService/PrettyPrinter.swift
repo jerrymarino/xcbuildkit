@@ -89,7 +89,7 @@ extension Array where Element == UInt8 {
             }
             return bytesAsString
         } catch let e {
-            log("foo-aaa-ext-data-1: \(e)")
+            log("Failed to encode bytes as readableString with error: \(e)")
         }
     }
 

@@ -109,10 +109,7 @@ public struct CreateSessionRequest: XCBProtocolMessage {
         var workspaceNameComponent = componentsByForwardSlash.filter { $0.contains(wHash) }.first as! String
         var workspaceNameComponentsByDash = workspaceNameComponent.components(separatedBy: "-")
         workspaceNameComponentsByDash.removeLast()
-        log("foo-qqq-1: workspaceNameComponentsByDash \(workspaceNameComponentsByDash)")
         self.workspaceName = String(workspaceNameComponentsByDash.joined(separator: "-"))
-        log("foo-qqq-10: self.workspaceName \(self.workspaceName)")
-        // self.workspaceName = "Test-XCBuildKit"
 
         log("Found XCBuildData path: \(self.xcbuildDataPath)")
         log("Parsed workspaceHash: \(self.workspaceHash)")
@@ -208,29 +205,21 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
         var minput = input
         var jsonDataOg: Data?
 
-        log("foo-nnn-1")
         while let fooNext = minput.next() {
-            log("foo-nnn-2")
             if jsonDataOg != nil {
-                log("foo-nnn-3")
                 break
             }
 
             switch fooNext {
                 case let .binary(jsonDataFoo):
-                    log("foo-nnn-4")
                     jsonDataOg = jsonDataFoo
                 default:
-                    log("foo-nnn-5")
                     continue
             }            
         }
 
-        log("foo-nnn-6")
         guard let jsonData = jsonDataOg else {
-            log("foo-nnn-7")
             // Hack - fix upstream code
-            log("foo-buffer-5.1: \(input.data.readableString)")
             self.targetID = "_internal_stub_"
             self.filePath = "_internal_stub_"
             self.outputPathOnly = false
@@ -241,51 +230,10 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
             self.platform = ""
             return
         }
-        log("foo-nnn-8")
 
-        // guard let next = minput.next(),
-        // case let .binary(jsonData) = next else {
-        //     // Hack - fix upstream code
-        //     log("foo-buffer-5.1: \(input.data.readableString)")
-        //     self.targetID = "_internal_stub_"
-        //     self.filePath = "_internal_stub_"
-        //     self.outputPathOnly = false
-        //     self.responseChannel = -1
-        //     self.derivedDataPath = ""
-        //     self.workingDir = ""
-        //     self.sdk = ""
-        //     self.platform = ""
-        //     return
-        // }
-        // // let foo = minput.next()
-        // let next = minput.next()
-
-        // var jsonData: Data = Data()
-
-        // switch next {
-        //     case let .binary(jsonDataFoo):
-        //         jsonData = jsonDataFoo
-        //     default:
-        //         log("foo-buffer-5.1: \(next?.description)")
-        //         // Hack - fix upstream code
-        //         self.targetID = "_internal_stub_"
-        //         self.filePath = "_internal_stub_"
-        //         self.outputPathOnly = false
-        //         self.responseChannel = -1
-        //         self.derivedDataPath = ""
-        //         self.workingDir = ""
-        //         self.sdk = ""
-        //         self.platform = ""
-        //         log("foo-buffer-4.2")
-        //         return        
-        // }
-
-        log("foo-buffer-4.3: jsonData: \(jsonData.readableString)")
         guard let json = try? JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
-            log("foo-buffer-4.4")
             throw XCBProtocolError.unexpectedInput(for: input)
         }
-        log("foo-buffer-4.5")
         guard let targetID = json["targetID"] else {
            throw XCBProtocolError.unexpectedInput(for: input)
         }
@@ -301,16 +249,11 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
         let containerPath = requestJSON["containerPath"] as? String ?? ""
         // self.workingDir = Array(containerPath.components(separatedBy: "/").dropLast()).joined(separator: "/")
         if self.filePath.contains("main.m") {
-            
-            // self.workingDir = "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/sandbox/darwin-sandbox/253/execroot/build_bazel_rules_ios"
             self.workingDir = "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/execroot/build_bazel_rules_ios"
         } else {
             self.workingDir = "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/execroot/build_bazel_rules_ios"
         }
         
-        // Foo.o /private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/sandbox/darwin-sandbox/254/execroot/build_bazel_rules_ios
-        // main.o /private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/sandbox/darwin-sandbox/253/execroot/build_bazel_rules_ios
-
         let jsonRep64Str = requestJSON["jsonRepresentation"] as? String ?? ""
         let jsonRepData = Data.fromBase64(jsonRep64Str) ?? Data()
         guard let jsonJSON = try JSONSerialization.jsonObject(with: jsonRepData, options: []) as? [String: Any] else {
