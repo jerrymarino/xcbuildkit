@@ -81,6 +81,8 @@ public class BKBuildService {
         let msg = decoder.decodeMessage()
 
         if msg is IndexingInfoRequested {
+            // Indexing msgs require a PING on the msgId before passing the payload
+            // doing this here so proxy writers don't have to worry about this impl detail
             write([
                 XCBRawValue.string("PING"),
                 XCBRawValue.nil,
@@ -107,13 +109,29 @@ public class BKBuildService {
             messageHandler(XCBInputStream(result: inputResult, data: inputData), ogData, context)
         }
 
+        // Reset all the things
         self.buffer = Data()
         self.bufferMsgId = Data()
         self.bufferContentSize = Data()
         self.readLen = 0
         self.msgId = 0
+
+        // See `appendToBuffer`. If the end of a message and the beginning of the next
+        // come in the same package we need to handle it and initilize the buffer with the
+        // new data before the next cycle so things continue to be processed continuously
+        //
+        // This is done below, if the leftover is a complete message just handle it right away
+        // otherwise return so the buffer continue to be populated in the next cycle
+        if self.bufferNext.count > 0 {
+            let readyToProcess = initializeBuffer(data: self.bufferNext)
+            self.bufferNext = Data()
+
+            guard readyToProcess else { return }
+            handleRequest(messageHandler: messageHandler, context: context)
+        }
     }
 
+    // Collect msgId and size of content to be collected at the beginning of a stream
     func collectHeaderInfo(data: Data) -> (Int32, Data) {
         var tmpData = data
         let readSizeFirst2 = MemoryLayout<UInt64>.size
@@ -128,39 +146,59 @@ public class BKBuildService {
         self.bufferContentSize = sizeD2
         let sizeB2 = sizeD2.withUnsafeBytes { $0.load(as: UInt32.self) }
         let size2 = Int32(sizeB2)
-        tmpData = tmpData.advanced(by: readSizeSecond2)        
+        tmpData = tmpData.advanced(by: readSizeSecond2)
 
         return (size2, tmpData)
     }
 
-    func initializeBuffer(size: Int32, data: Data) -> Bool {
-        if size <= Int32(data.count) {
-            self.buffer = data
+    // Initialize the buffer, if it's a small message and all content comes in one packet it
+    // can be processed instantly in the call site
+    func initializeBuffer(data: Data) -> Bool {
+        // Collect msgId and size to be collected first, then initialize the buffer
+        var (size, bufferData) = collectHeaderInfo(data: data)
+
+        // If all data for this message is in `data` just store that and return
+        // a 'buffer is ready to be processed' response
+        if size <= Int32(bufferData.count) {
+            self.buffer = bufferData
             self.readLen = 0
+
             return true
         }
-        else {
-            self.buffer.append(data)
-            self.readLen = min(max(size - Int32(data.count), 0), Int32(data.count))
-            return false
-        }        
+
+        // If data needs to be accumulated append to buffer and calculate the length
+        // of the message to be collected in the next messages
+        //
+        // Returns `false` meaning that the buffer is still not ready to be processed
+        self.buffer.append(bufferData)
+        self.readLen = min(max(size - Int32(bufferData.count), 0), Int32(bufferData.count))
+
+        return false
     }
 
-    func appendBuffer(data: Data) -> Bool {
+    // If `initializeBuffer` detects that a buffer is not ready yet and more info needs to be collected
+    // do this work here and append to the buffer until the message is complete.
+    //
+    // More often than not the end of a message is going to come with the beginning of another message
+    // in that case the data will be partitioned and store in `self.bufferNext` to be picked up in the next cycle
+    //
+    // Returns the state of 'buffer is ready to be processed'
+    func appendToBuffer(data: Data) -> Bool {
         if self.readLen > serializerToken {
             self.buffer.append(data)
+            // Remaining length left after appending
             self.readLen = self.readLen - Int32(data.count)
             return false
         } else if self.readLen > 0 {
-            var tmpData = data
+            var nextData = data
 
-            var finalData = tmpData[0 ..< Int(self.readLen)]
+            var finalData = nextData[0 ..< Int(self.readLen)]
             self.buffer.append(finalData)
 
-            tmpData = tmpData.advanced(by: Int(self.readLen))
+            nextData = nextData.advanced(by: Int(self.readLen))
 
-            if tmpData.count > 0 {
-                self.bufferNext = tmpData
+            if nextData.count > 0 {
+                self.bufferNext = nextData
             } else {
                 self.bufferNext = Data()
             }
@@ -181,55 +219,22 @@ public class BKBuildService {
                 exit(0)
             }
             
-            // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ START
-            var readyToProcess = false
+            // Initialize or append to buffer, return value is the state of 'buffer is ready to be processed or not'
+            let readyToProcess = self.buffer.count == 0 ? initializeBuffer(data: data) : appendToBuffer(data: data)            
+            guard readyToProcess else { return }
 
-            if self.buffer.count == 0 {
-                var (size2, tmpData) = collectHeaderInfo(data: data)
-                readyToProcess = initializeBuffer(size: size2, data: tmpData)
+            if self.shouldDump {
+                // Dumps out the protocol
+                // useful for debuging, code gen'ing protocol messages, and
+                // upgrading Xcode versions
+                Unpacker.unpackAll(self.buffer).forEach{ $0.prettyPrint() }
+            } else if self.shouldDumpHumanReadable {
+                // Same as above but dumps out the protocol in human readable format
+                PrettyPrinter.prettyPrintRecursively(Unpacker.unpackAll(self.buffer))
             } else {
-                readyToProcess = appendBuffer(data: data)
-            }
-
-            if readyToProcess {
+                // Buffer is ready, just handle it
                 handleRequest(messageHandler: messageHandler, context: context)
-
-                if self.bufferNext.count > 0 {
-                    var (size2, tmpData) = collectHeaderInfo(data: self.bufferNext)
-                    readyToProcess = initializeBuffer(size: size2, data: tmpData)
-
-                    if readyToProcess {
-                        handleRequest(messageHandler: messageHandler, context: context)
-                        self.bufferNext = Data()
-                    }
-                }
-            }
-
-            return
-            // ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ END
-
-            // var result: [MessagePackValue] = []
-            // if data.readableString.contains("CREATE_SESSION") {
-            //     result = Unpacker.unpackAll(data)
-            //     if let first = result.first, case let .uint(id) = first {
-            //         let msgId = id + 1
-            //         log("respond.msgId" + String(describing: msgId))
-            //     } else {
-            //         log("missing id")
-            //     }
-            // }
-
-            // if self.shouldDump {
-            //     // Dumps out the protocol
-            //     // useful for debuging, code gen'ing protocol messages, and
-            //     // upgrading Xcode versions
-            //     result.forEach{ $0.prettyPrint() }
-            // } else if self.shouldDumpHumanReadable {
-            //     // Same as above but dumps out the protocol in human readable format
-            //     PrettyPrinter.prettyPrintRecursively(result)
-            // } else {
-            //     messageHandler(XCBInputStream(result: result, data: data), aData, context)
-            // }
+            }            
         }
         repeat {
             sleep(1)
