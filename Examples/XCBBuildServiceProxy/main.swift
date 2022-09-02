@@ -148,10 +148,8 @@ enum BasicMessageHandler {
                 let message = IndexingInfoReceivedResponse(
                     targetID: reqMsg.targetID,
                     data: reqMsg.outputPathOnly ? outputPathOnlyData(outputFilePath: outputFilePath, sourceFilePath: reqMsg.filePath) : nil,
-                    // data: reqMsg.outputPathOnly ? nil : outputPathOnlyData(outputFilePath: outputFilePath, sourceFilePath: reqMsg.filePath),
                     responseChannel: UInt64(reqMsg.responseChannel),
                     clangXMLData: reqMsg.outputPathOnly ? nil : clangXMLData)
-                    // clangXMLData: reqMsg.outputPathOnly ? clangXMLData : nil)
                 if let encoded: XCBResponse = try? message.encode(encoder) {
                     bkservice.write(encoded, msgId:message.responseChannel)
                     return
