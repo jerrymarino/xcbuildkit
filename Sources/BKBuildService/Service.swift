@@ -207,6 +207,31 @@ public class BKBuildService {
         }        
     }
 
+    func appendBuffer(data: Data) -> Bool {
+        if self.readLen2 > serializerToken {
+            self.buffer2.append(data)
+            self.readLen2 = self.readLen2 - Int32(data.count)
+            return false
+        } else if self.readLen2 > 0 {
+            var tmpData = data
+
+            var finalData = tmpData[0 ..< Int(self.readLen2)]
+            self.buffer2.append(finalData)
+
+            tmpData = tmpData.advanced(by: Int(self.readLen2))
+
+            if tmpData.count > 0 {
+                self.buffer2Next = tmpData
+            } else {
+                self.buffer2Next = Data()
+            }
+            self.readLen2 = 0
+            return true
+        }
+
+        return false
+    }
+
     /// Starts a service on standard input
     public func start(messageHandler: @escaping XCBMessageHandler, context: Any?) {
         let file = FileHandle.standardInput
@@ -226,26 +251,7 @@ public class BKBuildService {
                 var (size2, tmpData) = collectHeaderInfo(data: data)
                 readyToProcess = initializeBuffer(size: size2, data: tmpData)
             } else {
-                if self.readLen2 > 4096 {
-                    self.buffer2.append(data)
-                    self.readLen2 = self.readLen2 - Int32(data.count)
-                    readyToProcess = false
-                } else if self.readLen2 > 0 {
-                    var tmpData = data
-
-                    var finalData = tmpData[0 ..< Int(self.readLen2)]
-                    self.buffer2.append(finalData)
-                    
-                    tmpData = tmpData.advanced(by: Int(self.readLen2))
-
-                    if tmpData.count > 0 {
-                        self.buffer2Next = tmpData
-                    } else {
-                        self.buffer2Next = Data()
-                    }
-                    self.readLen2 = 0
-                    readyToProcess = true
-                }
+                readyToProcess = appendBuffer(data: data)
             }
 
             if readyToProcess {
