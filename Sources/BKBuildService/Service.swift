@@ -219,22 +219,26 @@ public class BKBuildService {
                 exit(0)
             }
 
+            guard !self.shouldDump else {
+                // Dumps out the protocol
+                // useful for debuging, code gen'ing protocol messages, and
+                // upgrading Xcode versions
+                Unpacker.unpackAll(data).forEach{ $0.prettyPrint() }
+                return
+            }
+
+            guard !self.shouldDumpHumanReadable else {
+                // Same as above but dumps out the protocol in human readable format
+                PrettyPrinter.prettyPrintRecursively(Unpacker.unpackAll(data))
+                return
+            }
+
             // Initialize or append to buffer, return value is the state of 'buffer is ready to be processed or not'
             let readyToProcess = self.buffer.count == 0 ? initializeBuffer(data: data) : appendToBuffer(data: data)
             guard readyToProcess else { return }
 
-            if self.shouldDump {
-                // Dumps out the protocol
-                // useful for debuging, code gen'ing protocol messages, and
-                // upgrading Xcode versions
-                Unpacker.unpackAll(self.buffer).forEach{ $0.prettyPrint() }
-            } else if self.shouldDumpHumanReadable {
-                // Same as above but dumps out the protocol in human readable format
-                PrettyPrinter.prettyPrintRecursively(Unpacker.unpackAll(self.buffer))
-            } else {
-                // Buffer is ready, just handle it
-                handleRequest(messageHandler: messageHandler, context: context)
-            }
+            // Buffer is ready, just handle it
+            handleRequest(messageHandler: messageHandler, context: context)
         }
         repeat {
             sleep(1)

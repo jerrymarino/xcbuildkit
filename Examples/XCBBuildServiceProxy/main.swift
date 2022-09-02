@@ -42,7 +42,8 @@ let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice-bzl")
 // "source file" => "output file" map, hardcoded for now, will be part of the API in the future
 // Should match your local path and the values set in `Makefile > generate_custom_index_store`
 private let outputFileForSource: [String: String] = [
-    "/Users/thiago/Development/thiagohmcruz/xcbuildkit/iOSApp/CLI/main.m": "/tmp/xcbuild-out/main.o",
+    "/Users/thiago/Development/thiagohmcruz/xcbuildkit/iOSApp/CLI/main.m": "/tmp/xcbuild-out/CLI/main.o",
+    "/Users/thiago/Development/thiagohmcruz/xcbuildkit/iOSApp/iOSApp/main.m": "/tmp/xcbuild-out/iOSApp/main.o",
 
     // TODO: Should come from an aspect in Bazel
     // Examples of what Bazel mappings would look like
