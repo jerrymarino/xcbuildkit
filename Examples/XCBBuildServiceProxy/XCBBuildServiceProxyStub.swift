@@ -51,7 +51,7 @@ let clangXMLT: String = """
                         <string>-x</string>
                         <string>objective-c</string>
                         <string>-target</string>
-                        <string>x86_64-apple-ios10.0-simulator</string>
+                        <string>x86_64-apple-__SDK_NAME__-simulator</string>
                         <string>-fmessage-length=0</string>
                         <string>-fdiagnostics-show-note-include-stack</string>
                         <string>-fmacro-backtrace-limit=0</string>
@@ -162,6 +162,7 @@ public enum XCBBuildServiceProxyStub {
                                       workspaceHash: String,
                                       workspaceName: String,
                                       sdkPath: String,
+                                      sdkName: String,
                                       workingDir: String) -> Data {
                 let clangXML = clangXMLT.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
                 .replacingOccurrences(of:"__OUTPUT_FILE_PATH__", with: outputFilePath)
@@ -170,6 +171,7 @@ public enum XCBBuildServiceProxyStub {
                 .replacingOccurrences(of:"__DERIVED_DATA_PATH__", with: derivedDataPath)
                 .replacingOccurrences(of:"__WORSPACE_HASH__", with: workspaceHash)
                 .replacingOccurrences(of:"__SDK_PATH__", with: sdkPath)
+                .replacingOccurrences(of:"__SDK_NAME__", with: sdkName)
                 .replacingOccurrences(of:"__WORKING_DIR__", with: workingDir)
 
                 return BPlistConverter(xml: clangXML)?.convertToBinary() ?? Data()

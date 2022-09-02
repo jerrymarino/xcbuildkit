@@ -155,6 +155,7 @@ enum BasicMessageHandler {
                     workspaceHash: workspaceHash,
                     workspaceName: workspaceName,
                     sdkPath: sdkPath,
+                    sdkName: sdk,
                     workingDir: workingDir)
 
                 let message = IndexingInfoReceivedResponse(
