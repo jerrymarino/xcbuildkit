@@ -96,20 +96,23 @@ public struct CreateSessionRequest: XCBProtocolMessage {
             self.xcbuildDataPath = ""
         }
 
-        // TODO: This is hacky, just an initial approach for better DX for now. Find a better way.
-        //
-        // `self.xcbuildDataPath` looks something like this (not that `/path/to/DerivedData` can also be a custom path):
+        // `self.xcbuildDataPath` looks something like this (note that `/path/to/DerivedData` can also be a custom path):
         //
         // /path/to/DerivedData/iOSApp-frhmkkebaragakhdzyysbrsvbgtc/Build/Intermediates.noindex/XCBuildData
         //
-        var componentsByDash = self.xcbuildDataPath.components(separatedBy: "-")
-        let wHash = componentsByDash.last!.components(separatedBy: "/").first!
-        self.workspaceHash = wHash
-        var componentsByForwardSlash = self.xcbuildDataPath.components(separatedBy: "/")
-        var workspaceNameComponent = componentsByForwardSlash.filter { $0.contains(wHash) }.first as! String
-        var workspaceNameComponentsByDash = workspaceNameComponent.components(separatedBy: "-")
-        workspaceNameComponentsByDash.removeLast()
-        self.workspaceName = String(workspaceNameComponentsByDash.joined(separator: "-"))
+        let componentsByDash = self.xcbuildDataPath.components(separatedBy: "-")
+        let parsedWorkspaceHash = componentsByDash.last!.components(separatedBy: "/").first ?? ""
+        self.workspaceHash = parsedWorkspaceHash
+
+        // Workspace names can contain `-` characters too
+        let componentsByForwardSlash = self.xcbuildDataPath.components(separatedBy: "/")
+        if let workspaceNameComponent = componentsByForwardSlash.filter { $0.contains(parsedWorkspaceHash) }.first as? String {
+            var workspaceNameComponentsByDash = workspaceNameComponent.components(separatedBy: "-")
+            workspaceNameComponentsByDash.removeLast()
+            self.workspaceName = String(workspaceNameComponentsByDash.joined(separator: "-"))
+        } else {
+            self.workspaceName = ""
+        }
 
         log("Found XCBuildData path: \(self.xcbuildDataPath)")
         log("Parsed workspaceHash: \(self.workspaceHash)")
