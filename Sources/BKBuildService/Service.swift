@@ -73,32 +73,38 @@ public class BKBuildService {
         self.workingDir = workingDir
     }
 
-    func handleIdx(messageHandler: @escaping XCBMessageHandler, context: Any?) {
-        let nowayResult = Unpacker.unpackAll(self.buffer)
-        let nowayInput = XCBInputStream(result: nowayResult, data: self.buffer, workingDir: self.workingDir)
-        let nowayDecoder = XCBDecoder(input: nowayInput)
-        let nowayMsg = nowayDecoder.decodeMessage()
+    // Once a buffer is ready to write to stdout and respond to Xcode invoke this
+    func handleRequest(messageHandler: @escaping XCBMessageHandler, context: Any?) {
+        let result = Unpacker.unpackAll(self.buffer)
+        let input = XCBInputStream(result: result, data: self.buffer, workingDir: self.workingDir)
+        let decoder = XCBDecoder(input: input)
+        let msg = decoder.decodeMessage()
 
-        if nowayMsg is IndexingInfoRequested {
+        if msg is IndexingInfoRequested {
             write([
                 XCBRawValue.string("PING"),
                 XCBRawValue.nil,
             ], msgId: self.msgId)
-            messageHandler(nowayInput, self.buffer, context)
+            messageHandler(input, self.buffer, context)
         } else {
             var ogData = Data()
             ogData.append(self.bufferMsgId)
             ogData.append(self.bufferContentSize)
             ogData.append(self.buffer)
 
-            var fooResult = [MessagePackValue]()
-            var fooData = ogData
-            if nowayMsg is CreateSessionRequest {
-                fooResult = nowayResult
-                fooData = self.buffer
+            // `CreateSessionRequest` is being special cased until we start writing the correct response to it in one of the examples
+            // for now if this is detected change the input to be the one from the buffer instead of from the original stream
+            //
+            // Important: Note that `ogData` still needs to be passed below so the original build service can parse `CREATE_SESSION` and
+            // write the correct response to stdout for us for now
+            var inputResult = [MessagePackValue]()
+            var inputData = ogData
+            if msg is CreateSessionRequest {
+                inputResult = result
+                inputData = self.buffer
             }
 
-            messageHandler(XCBInputStream(result: fooResult, data: fooData), ogData, context)
+            messageHandler(XCBInputStream(result: inputResult, data: inputData), ogData, context)
         }
 
         self.buffer = Data()
@@ -186,14 +192,14 @@ public class BKBuildService {
             }
 
             if readyToProcess {
-                handleIdx(messageHandler: messageHandler, context: context)
+                handleRequest(messageHandler: messageHandler, context: context)
 
                 if self.bufferNext.count > 0 {
                     var (size2, tmpData) = collectHeaderInfo(data: self.bufferNext)
                     readyToProcess = initializeBuffer(size: size2, data: tmpData)
 
                     if readyToProcess {
-                        handleIdx(messageHandler: messageHandler, context: context)
+                        handleRequest(messageHandler: messageHandler, context: context)
                         self.bufferNext = Data()
                     }
                 }
