@@ -145,10 +145,6 @@ let clangXMLT: String = """
                         <string>__OUTPUT_FILE_PATH__</string>
                         <string>-Xclang</string>
                         <string>-fallow-pcm-with-compiler-errors</string>
-                        <string>-ivfsoverlay</string>
-                        <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/regular-to-index-overlay.yaml</string>
-                        <string>-ivfsoverlay</string>
-                        <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORSPACE_HASH__/Index/Build/Intermediates.noindex/index-to-regular-overlay.yaml</string>
                         <string>-fretain-comments-from-system-headers</string>
                         <string>-ferror-limit=10</string>
                         <string>-working-directory=__WORKING_DIR__</string>

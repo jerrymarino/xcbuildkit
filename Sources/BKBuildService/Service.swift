@@ -219,12 +219,15 @@ public class BKBuildService {
                     self.readLen2 = min(max(size2 - Int32(tmpData.count), 0), Int32(tmpData.count))
                     readyToProcess = false
                 }
+
+                log("foo-noway-11.1 self.buffer2 \(self.buffer2.readableString)")
             } else {
                 log("foo-noway-5")
                 log("foo-noway-5.1 self.readLen2 \(self.readLen2)")
                 if self.readLen2 > 4096 {
                     log("foo-noway-6")
                     self.buffer2.append(data)
+                    log("foo-noway-11.11 self.buffer2 append \(data.readableString)")
                     self.readLen2 = self.readLen2 - Int32(data.count)
                     readyToProcess = false
                 } else if self.readLen2 > 0 {
@@ -235,6 +238,7 @@ public class BKBuildService {
                     log("foo-noway-7.2 tmpData.count \(tmpData.count)")
                     var finalData = tmpData[0 ..< Int(self.readLen2)]
                     self.buffer2.append(finalData)
+                    log("foo-noway-11.12 self.buffer2 append final \(finalData.readableString)")
                     
                     tmpData = tmpData.advanced(by: Int(self.readLen2))
 
@@ -243,11 +247,16 @@ public class BKBuildService {
                         log("foo-noway-7.3 finalData readable \(finalData.readableString)")
                         log("foo-noway-7.4 tmpData \(tmpData.count)")
                         log("foo-noway-7.5 tmpData readable \(tmpData.readableString)")
+                        log("foo-noway-11.13 self.buffer2Next \(tmpData.readableString)")
                         self.buffer2Next = tmpData
-                    }                    
+                    } else {
+                        self.buffer2Next = Data()
+                    }
                     self.readLen2 = 0
                     readyToProcess = true
                 }
+
+                log("foo-noway-11.2 self.buffer2 \(self.buffer2.readableString)")
             }
 
             log("foo-noway-6 readyToProcess \(readyToProcess)")
@@ -264,9 +273,11 @@ public class BKBuildService {
                 buffer2UnpackedDebug = buffer2Unpacked
                 
                 log("foo-noway-0 processing unpacked \(buffer2UnpackedDebug)")
+                log("foo-noway-11.21 will process self.buffer2 \(self.buffer2.readableString)")
                 handleIdx(messageHandler: messageHandler, context: context)
 
-                log("foo-noway-8")
+                log("foo-noway-8 self.buffer2Next.count \(self.buffer2Next.count)")
+                log("foo-noway-8 self.buffer2Next \(self.buffer2Next.readableString)")
                 if self.buffer2Next.count > 0 {
                     log("foo-noway-8.1")
                     var tmpData = self.buffer2Next
@@ -295,7 +306,11 @@ public class BKBuildService {
                     else {
                         log("foo-noway-10")
                         self.buffer2.append(tmpData)
-                        self.readLen2 = min(max(size2 - Int32(tmpData.count), 0), Int32(tmpData.count))
+                        if size2 > 2*4096 {
+                            self.readLen2
+                        } else {
+                            self.readLen2 = min(max(size2 - Int32(tmpData.count), 0), Int32(tmpData.count))
+                        }                        
                         readyToProcess = false
                     }
 
@@ -312,6 +327,7 @@ public class BKBuildService {
                         buffer2UnpackedDebug = buffer2Unpacked
                         
                         log("foo-noway-0 processing unpacked \(buffer2UnpackedDebug)")
+                        log("foo-noway-11.22 will process self.buffer2 \(self.buffer2.readableString)")
                         handleIdx(messageHandler: messageHandler, context: context, emptyNextBuffer: true)
                     }
                 }
