@@ -125,7 +125,7 @@ public struct XCBInputStream  {
         self.first = result.first ?? .uint(0)
     }
 
-    public mutating func next() -> MessagePackValue? {
+    mutating func next() -> MessagePackValue? {
         return self.stream.next()
     }
 }

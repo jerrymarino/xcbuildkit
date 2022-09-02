@@ -46,41 +46,15 @@ public class XCBDecoder {
     }
 }
 
-public extension Data {
-    public var readableString: String {
-        return self.bytes.readableString
-    }
-
-    private var bytes: [UInt8] {
-        return [UInt8](self)
-    }
-}
-
-extension Array where Element == UInt8 {
-    var readableString: String {
-        guard let bytesAsString = self.utf8String ?? self.asciiString else {
-            fatalError("Failed to encode bytes")
-        }
-        return bytesAsString
-    }
-
-    private var utf8String: String? {
-        return String(bytes: self, encoding: .utf8)
-    }
-
-    private var asciiString: String? {
-        return String(bytes: self, encoding: .ascii)
-    }
-}
-
 extension XCBDecoder {
     /// Decodes a message
     public func decodeMessage() -> XCBProtocolMessage? {
         do {
             let msg = try decodeMessageImpl()
+            log("decoded" + String(describing: msg))
             return msg
-        } catch let e {
-            log("Failed to decode message with error: \(e)")
+        } catch {
+            log("decoding failed \(error)")
             return nil
         }
     }

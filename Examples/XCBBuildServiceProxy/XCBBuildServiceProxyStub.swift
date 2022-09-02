@@ -175,8 +175,7 @@ public enum XCBBuildServiceProxyStub {
                                       sdkPath: String,
                                       workingDir: String) -> Data {
                 let clangXML = clangXMLT.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
-                // .replacingOccurrences(of:"__OUTPUT_FILE_PATH__", with: "\(workingDir)\(outputFilePath)")
-                .replacingOccurrences(of:"__OUTPUT_FILE_PATH__", with: "\(outputFilePath)")
+                .replacingOccurrences(of:"__OUTPUT_FILE_PATH__", with: outputFilePath)
                 .replacingOccurrences(of:"__INDEX_STORE_PATH__", with: "\(derivedDataPath)/\(workspaceName)-\(workspaceHash)/Index/DataStore")
                 .replacingOccurrences(of:"__WORKSPACE_NAME__", with: workspaceName)
                 .replacingOccurrences(of:"__DERIVED_DATA_PATH__", with: derivedDataPath)
