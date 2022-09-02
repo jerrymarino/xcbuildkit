@@ -164,8 +164,7 @@ public func unpack(_ data: Subdata, compatibility: Bool = false) throws -> (valu
     case 0xc4 ... 0xc6:
         let intCount = 1 << Int(value - 0xc4)
         let (dataCount, remainder1) = try unpackInteger(data, count: intCount)
-        let fooCount = min(Int(dataCount), Int(remainder1.count))
-        let (subdata, remainder2) = try unpackData(remainder1, count: Int(fooCount))
+        let (subdata, remainder2) = try unpackData(remainder1, count: Int(dataCount))
         return (.binary(subdata.data), remainder2)
 
     // ext 8, 16, 32
