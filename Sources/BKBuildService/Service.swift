@@ -218,9 +218,9 @@ public class BKBuildService {
             guard data.count > 0 else {
                 exit(0)
             }
-            
+
             // Initialize or append to buffer, return value is the state of 'buffer is ready to be processed or not'
-            let readyToProcess = self.buffer.count == 0 ? initializeBuffer(data: data) : appendToBuffer(data: data)            
+            let readyToProcess = self.buffer.count == 0 ? initializeBuffer(data: data) : appendToBuffer(data: data)
             guard readyToProcess else { return }
 
             if self.shouldDump {
@@ -234,7 +234,7 @@ public class BKBuildService {
             } else {
                 // Buffer is ready, just handle it
                 handleRequest(messageHandler: messageHandler, context: context)
-            }            
+            }
         }
         repeat {
             sleep(1)
