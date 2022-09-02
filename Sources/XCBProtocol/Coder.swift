@@ -92,24 +92,24 @@ extension XCBDecoder {
             case let XCBRawValue.string(str):
                 if str == "CREATE_SESSION" {
                     return try CreateSessionRequest(input: minput)
-                // } else if str == "TRANSFER_SESSION_PIF_REQUEST" {
-                //     return try TransferSessionPIFRequest(input: minput)
-                // } else if str == "TRANSFER_SESSION_PIF_OBJECTS_LEGACY_REQUEST" {
-                //     return try TransferSessionPIFObjectsLegacyRequest(input: minput)
-                // } else if str == "SET_SESSION_SYSTEM_INFO" {
-                //     return try SetSessionSystemInfoRequest(input: minput)
-                // } else if str == "SET_SESSION_USER_INFO" {
-                //     return try SetSessionUserInfoRequest(input: minput)
-                // } else if str == "CREATE_BUILD" {
-                //     return try CreateBuildRequest(input: minput)
-                // } else if str == "BUILD_START" {
-                //     return try BuildStartRequest(input: minput)
+                } else if str == "TRANSFER_SESSION_PIF_REQUEST" {
+                    return try TransferSessionPIFRequest(input: minput)
+                } else if str == "TRANSFER_SESSION_PIF_OBJECTS_LEGACY_REQUEST" {
+                    return try TransferSessionPIFObjectsLegacyRequest(input: minput)
+                } else if str == "SET_SESSION_SYSTEM_INFO" {
+                    return try SetSessionSystemInfoRequest(input: minput)
+                } else if str == "SET_SESSION_USER_INFO" {
+                    return try SetSessionUserInfoRequest(input: minput)
+                } else if str == "CREATE_BUILD" {
+                    return try CreateBuildRequest(input: minput)
+                } else if str == "BUILD_START" {
+                    return try BuildStartRequest(input: minput)
                 } else if str == "INDEXING_INFO_REQUESTED" {
                     return try IndexingInfoRequested(input: minput)
-                // } else if str == "BUILD_DESCRIPTION_TARGET_INFO" {
-                //     return try BuildDescriptionTargetInfo(input: minput)
-                // } else if str == "DOCUMENTATION_INFO_REQUESTED" {
-                //     return try DocumentationInfoRequested(input: minput)
+                } else if str == "BUILD_DESCRIPTION_TARGET_INFO" {
+                    return try BuildDescriptionTargetInfo(input: minput)
+                } else if str == "DOCUMENTATION_INFO_REQUESTED" {
+                    return try DocumentationInfoRequested(input: minput)
                 }
             default:
                 continue
