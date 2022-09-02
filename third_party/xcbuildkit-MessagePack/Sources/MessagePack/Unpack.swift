@@ -24,15 +24,6 @@ func unpackInteger(_ data: Subdata, count: Int) throws -> (value: UInt64, remain
     return (value, data[count ..< data.count])
 }
 
-func clean(data: inout Data) -> String {
-    data.append(0)
-    let s: String = data.withUnsafeBytes { p -> String in
-        return String(cString: p.bindMemory(to: CChar.self).baseAddress!)
-    }
-    let clean = s.replacingOccurrences(of: "\u{FFFD}", with: "")
-    return clean
-}
-
 /// Joins bytes to form a string.
 ///
 /// - parameter data: The input data to unpack.
@@ -49,22 +40,8 @@ func unpackString(_ data: Subdata, count: Int) throws -> (value: String, remaind
     }
 
     let subdata = data[0 ..< count]
-    var dataToEncode = subdata.data
-
-    var result: String = clean(data: &dataToEncode)
-    if result.count <= 1 {
-        let fooResult = String(data: subdata.data, encoding: .ascii)
-        if fooResult != nil {
-            result = fooResult!.replacingOccurrences(of: "\u{12}", with: "")
-            result = result.replacingOccurrences(of: "\0", with: "")
-            result = result.replacingOccurrences(of: "µ", with: "")
-            result = result.replacingOccurrences(of: "\u{13}", with: "")
-            result = result.replacingOccurrences(of: "\u{11}", with: "")
-            result = result.replacingOccurrences(of: "{\\\"onlyCrea\"", with: "")
-            if result.contains("INDEXING_INFO") {
-                result.removeFirst()
-            }
-        }
+    guard let result = String(data: subdata.data, encoding: .utf8) else {
+        throw MessagePackError.invalidData
     }
 
     return (result, data[count ..< data.count])
@@ -97,9 +74,6 @@ func unpackArray(_ data: Subdata, count: Int, compatibility: Bool) throws -> (va
     var newValue: MessagePackValue
 
     for _ in 0 ..< count {
-        if remainder.count == 0 {
-            continue
-        }
         (newValue, remainder) = try unpack(remainder, compatibility: compatibility)
         values.append(newValue)
     }
