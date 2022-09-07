@@ -80,6 +80,15 @@ public class BKBuildService {
         let decoder = XCBDecoder(input: input)
         let msg = decoder.decodeMessage()
 
+        // The original complete message received should be passed to `messageHandler`
+        // in case the proxy implementation does not handle a particular message, in that case
+        // we need the complete original message to be written to stdin so Xcode's build service can
+        // pick it up and process it
+        var ogData = Data()
+        ogData.append(self.bufferMsgId)
+        ogData.append(self.bufferContentSize)
+        ogData.append(self.buffer)
+
         if msg is IndexingInfoRequested {
             // Indexing msgs require a PING on the msgId before passing the payload
             // doing this here so proxy writers don't have to worry about this impl detail
@@ -87,13 +96,8 @@ public class BKBuildService {
                 XCBRawValue.string("PING"),
                 XCBRawValue.nil,
             ], msgId: self.msgId)
-            messageHandler(input, self.buffer, context)
+            messageHandler(input, ogData, context)
         } else {
-            var ogData = Data()
-            ogData.append(self.bufferMsgId)
-            ogData.append(self.bufferContentSize)
-            ogData.append(self.buffer)
-
             // `CreateSessionRequest` is being special cased until we start writing the correct response to it in one of the examples
             // for now if this is detected change the input to be the one from the buffer instead of from the original stream
             //
