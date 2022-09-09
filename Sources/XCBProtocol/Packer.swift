@@ -117,14 +117,12 @@ public struct XCBInputStream  {
     public let data: Data
     public var stream: IndexingIterator<[MessagePackValue]>
     public let first: MessagePackValue
-    public let workingDir: String?
 
     // This thing reads in a result - maybe it will not do this.
-    public init (result: [MessagePackValue], data: Data, workingDir: String? = nil) {
+    public init (result: [MessagePackValue], data: Data) {
         self.stream = result.makeIterator()
         self.data = data
         self.first = result.first ?? .uint(0)
-        self.workingDir = workingDir
     }
 
     mutating func next() -> MessagePackValue? {

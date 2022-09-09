@@ -41,9 +41,11 @@ let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice-bzl")
 //
 // "source file" => "output file" map, hardcoded for now, will be part of the API in the future
 // Should match your local path and the values set in `Makefile > generate_custom_index_store`
-private let outputFileForSource: [String: String] = [
-    "/Users/thiago/Development/thiagohmcruz/xcbuildkit/iOSApp/CLI/main.m": "/tmp/xcbuild-out/CLI/main.o",
-    "/Users/thiago/Development/thiagohmcruz/xcbuildkit/iOSApp/iOSApp/main.m": "/tmp/xcbuild-out/iOSApp/main.o",
+private let outputFileForSource: [String: [String: String]] = [
+    "iOSApp-frhmkkebaragakhdzyysbrsvbgtc": [
+        "/CLI/main.m": "/tmp/xcbuild-out/CLI/main.o",
+        "/iOSApp/main.m": "/tmp/xcbuild-out/iOSApp/main.o",
+    ],
 
     // TODO: Should come from an aspect in Bazel
     // Examples of what Bazel mappings would look like
@@ -51,14 +53,6 @@ private let outputFileForSource: [String: String] = [
     // "Test-XCBuildKit/Users/thiago/Development/rules_ios/tests/ios/app/App/main.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/main.o",
     // "Test-XCBuildKit/Users/thiago/Development/rules_ios/tests/ios/app/App/Foo.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/Foo.o",
 ]
-
-// TODO: In Bazel land shoud come from an aspect of from the BEP
-// For now, `nil` simply means to allow the service to parse fron the input stream in vanilla Xcode
-// Example of what the bazel path would look like:
-//
-// private let externalWorkingDir: String = "/private/var/tmp/_bazel_thiago/122885c1fe4a2c6ed7635584956dfc9d/execroot/build_bazel_rules_ios"
-//
-let externalWorkingDir: String? = nil
 
 private var gChunkNumber = 0
 // FIXME: get this from the other paths
@@ -141,7 +135,9 @@ enum BasicMessageHandler {
                 platform = reqMsg.platform
                 sdk = reqMsg.sdk
 
-                guard let outputFilePath = outputFileForSource[reqMsg.filePath] else {
+                let workspaceKey = "\(workspaceName)-\(workspaceHash)"
+                let sourceKey = reqMsg.filePath.replacingOccurrences(of: workingDir, with: "")
+                guard let outputFilePath = outputFileForSource[workspaceKey]?[sourceKey] else {
                     fatalError("Failed to find output file for source: \(reqMsg.filePath)")
                     return
                 }
@@ -185,7 +181,7 @@ enum BasicMessageHandler {
 }
 
 let xcbbuildService = XCBBuildServiceProcess()
-let bkservice = BKBuildService(indexingEnabled: true, workingDir: externalWorkingDir)
+let bkservice = BKBuildService(indexingEnabled: true)
 
 let context = BasicMessageContext(
     xcbbuildService: xcbbuildService,

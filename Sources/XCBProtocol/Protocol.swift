@@ -236,7 +236,7 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
 
         // Remove last word of `$PWD/iOSApp/iOSApp.xcodeproj` to get `workingDir`
         let containerPath = requestJSON["containerPath"] as? String ?? ""
-        self.workingDir = input.workingDir ?? Array(containerPath.components(separatedBy: "/").dropLast()).joined(separator: "/")
+        self.workingDir = Array(containerPath.components(separatedBy: "/").dropLast()).joined(separator: "/")
 
         let jsonRep64Str = requestJSON["jsonRepresentation"] as? String ?? ""
         let jsonRepData = Data.fromBase64(jsonRep64Str) ?? Data()

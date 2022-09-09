@@ -58,7 +58,6 @@ public class BKBuildService {
     private var bufferNext = Data()
     private var readLen: Int32 = 0
     private var msgId: UInt64 = 0
-    private var workingDir: String?
 
     // This is highly experimental
     private var indexingEnabled: Bool
@@ -66,17 +65,16 @@ public class BKBuildService {
     // TODO: Move record mode out
     private var chunkId = 0
 
-    public init(indexingEnabled: Bool=false, workingDir: String? = nil) {
+    public init(indexingEnabled: Bool=false) {
         self.indexingEnabled = indexingEnabled
         self.shouldDump = CommandLine.arguments.contains("--dump")
         self.shouldDumpHumanReadable = CommandLine.arguments.contains("--dump_h")
-        self.workingDir = workingDir
     }
 
     // Once a buffer is ready to write to stdout and respond to Xcode invoke this
     func handleRequest(messageHandler: @escaping XCBMessageHandler, context: Any?) {
         let result = Unpacker.unpackAll(self.buffer)
-        let input = XCBInputStream(result: result, data: self.buffer, workingDir: self.workingDir)
+        let input = XCBInputStream(result: result, data: self.buffer)
         let decoder = XCBDecoder(input: input)
         let msg = decoder.decodeMessage()
 
