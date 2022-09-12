@@ -41,8 +41,17 @@ let writeQueue = DispatchQueue(label: "com.xcbuildkit.bkbuildservice-bzl")
 //
 // "source file" => "output file" map, hardcoded for now, will be part of the API in the future
 // Should match your local path and the values set in `Makefile > generate_custom_index_store`
-private let outputFileForSource: [String: String] = [
-    "iOSApp/CLI/main.m": "/tmp/xcbuild-out/main.o"
+private let outputFileForSource: [String: [String: String]] = [
+    "iOSApp-frhmkkebaragakhdzyysbrsvbgtc": [
+        "/CLI/main.m": "/tmp/xcbuild-out/CLI/main.o",
+        "/iOSApp/main.m": "/tmp/xcbuild-out/iOSApp/main.o",
+    ],
+
+    // TODO: Should come from an aspect in Bazel
+    // Examples of what Bazel mappings would look like
+    //
+    // "Test-XCBuildKit/Users/thiago/Development/rules_ios/tests/ios/app/App/main.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/main.o",
+    // "Test-XCBuildKit/Users/thiago/Development/rules_ios/tests/ios/app/App/Foo.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/Foo.o",
 ]
 
 private var gChunkNumber = 0
@@ -126,8 +135,9 @@ enum BasicMessageHandler {
                 platform = reqMsg.platform
                 sdk = reqMsg.sdk
 
-                let outputFileKey = "\(workspaceName)\(reqMsg.filePath.replacingOccurrences(of: workingDir, with: ""))"
-                guard let outputFilePath = outputFileForSource[outputFileKey] else {
+                let workspaceKey = "\(workspaceName)-\(workspaceHash)"
+                let sourceKey = reqMsg.filePath.replacingOccurrences(of: workingDir, with: "")
+                guard let outputFilePath = outputFileForSource[workspaceKey]?[sourceKey] else {
                     fatalError("Failed to find output file for source: \(reqMsg.filePath)")
                     return
                 }
@@ -141,6 +151,7 @@ enum BasicMessageHandler {
                     workspaceHash: workspaceHash,
                     workspaceName: workspaceName,
                     sdkPath: sdkPath,
+                    sdkName: sdk,
                     workingDir: workingDir)
 
                 let message = IndexingInfoReceivedResponse(
