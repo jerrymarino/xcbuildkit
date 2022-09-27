@@ -136,21 +136,21 @@ public class BKBuildService {
     // Collect msgId and size of content to be collected at the beginning of a stream
     func collectHeaderInfo(data: Data) -> (Int32, Data) {
         var tmpData = data
-        let readSizeFirst2 = MemoryLayout<UInt64>.size
-        let msgIdData2 = tmpData[0 ..< readSizeFirst2]
-        self.bufferMsgId = msgIdData2
-        let msgId2 = msgIdData2.withUnsafeBytes { $0.load(as: UInt64.self) }
-        tmpData = tmpData.advanced(by: readSizeFirst2)
-        self.msgId = msgId2
+        let readSizeFirst = MemoryLayout<UInt64>.size
+        let msgIdData = tmpData[0 ..< readSizeFirst]
+        self.bufferMsgId = msgIdData
+        let msgId = msgIdData.withUnsafeBytes { $0.load(as: UInt64.self) }
+        tmpData = tmpData.advanced(by: readSizeFirst)
+        self.msgId = msgId
 
-        let readSizeSecond2 = MemoryLayout<UInt32>.size
-        let sizeD2 = tmpData[0 ..< readSizeSecond2]
-        self.bufferContentSize = sizeD2
-        let sizeB2 = sizeD2.withUnsafeBytes { $0.load(as: UInt32.self) }
-        let size2 = Int32(sizeB2)
-        tmpData = tmpData.advanced(by: readSizeSecond2)
+        let readSizeSecond = MemoryLayout<UInt32>.size
+        let sizeD = tmpData[0 ..< readSizeSecond]
+        self.bufferContentSize = sizeD
+        let sizeB = sizeD.withUnsafeBytes { $0.load(as: UInt32.self) }
+        let size = Int32(sizeB)
+        tmpData = tmpData.advanced(by: readSizeSecond)
 
-        return (size2, tmpData)
+        return (size, tmpData)
     }
 
     // Initialize the buffer, if it's a small message and all content comes in one packet it
