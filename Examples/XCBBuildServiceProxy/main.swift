@@ -54,6 +54,10 @@ private let outputFileForSource: [String: [String: String]] = [
     // "Test-XCBuildKit/Users/thiago/Development/rules_ios/tests/ios/app/App/Foo.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/Foo.o",
 ]
 
+// Experimental, enables indexing buffering logic
+// Make sure indexing is enabled first, i.e., run `make enable_indexing`
+private let indexingEnabled: Bool = true
+// Used when debugging msgs are enabled, see `XCBBuildServiceProcess.MessageDebuggingEnabled()`
 private var gChunkNumber = 0
 // FIXME: get this from the other paths
 private var gXcode = ""
@@ -128,7 +132,7 @@ enum BasicMessageHandler {
                 workspaceHash = createSessionRequest.workspaceHash
                 workspaceName = createSessionRequest.workspaceName
                 xcbbuildService.startIfNecessary(xcode: gXcode)
-            } else if !XCBBuildServiceProcess.MessageDebuggingEnabled() && msg is IndexingInfoRequested {
+            } else if !XCBBuildServiceProcess.MessageDebuggingEnabled() && indexingEnabled && msg is IndexingInfoRequested {
                 // Example of a custom indexing service
                 let reqMsg = msg as! IndexingInfoRequested
                 workingDir = reqMsg.workingDir
@@ -181,7 +185,7 @@ enum BasicMessageHandler {
 }
 
 let xcbbuildService = XCBBuildServiceProcess()
-let bkservice = BKBuildService(indexingEnabled: true)
+let bkservice = BKBuildService(indexingEnabled: indexingEnabled)
 
 let context = BasicMessageContext(
     xcbbuildService: xcbbuildService,

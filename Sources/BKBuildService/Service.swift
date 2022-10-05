@@ -60,7 +60,7 @@ public class BKBuildService {
     private var msgId: UInt64 = 0
 
     // This is highly experimental
-    private var indexingEnabled: Bool
+    private var indexingEnabled: Bool = false
 
     // TODO: Move record mode out
     private var chunkId = 0
@@ -87,7 +87,7 @@ public class BKBuildService {
         ogData.append(self.bufferContentSize)
         ogData.append(self.buffer)
 
-        if msg is IndexingInfoRequested {
+        if msg is IndexingInfoRequested && self.indexingEnabled {
             // Indexing msgs require a PING on the msgId before passing the payload
             // doing this here so proxy writers don't have to worry about this impl detail
             write([
