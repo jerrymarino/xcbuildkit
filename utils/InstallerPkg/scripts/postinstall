@@ -4,7 +4,7 @@ set -e
 SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}"  )" && pwd  )"
 pushd "$SCRIPTPATH/.." > /dev/null
 
-SUPPORTED_VERSIONS=(11 12)
+SUPPORTED_VERSIONS=(11 12 13)
 
 function install_for_xcode() {
     echo "Installing for Xcode $1"

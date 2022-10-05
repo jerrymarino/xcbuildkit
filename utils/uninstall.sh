@@ -3,7 +3,7 @@ set -e
 SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}"  )" && pwd  )"
 pushd "$SCRIPTPATH/.." > /dev/null
 
-SUPPORTED_VERSIONS=(11 12)
+SUPPORTED_VERSIONS=(11 12 13)
 
 function uninstall_for_xcode() {
   echo "Checking install for Xcode $1"
