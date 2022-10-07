@@ -14,7 +14,7 @@ var gStream: BEPStream?
 //
 // In `BazelBuildService` keep as `false` by default until this is ready to be enabled in all scenarios mostly to try to keep
 // this backwards compatible with others installing this build service to get the progress bar.
-private let indexingEnabled: Bool = false
+private let indexingEnabled: Bool = true
 
 // TODO: Make this part of an API to be consumed from callers
 //
@@ -28,11 +28,13 @@ private let indexingEnabled: Bool = false
 //     "/tests/ios/app/App/main.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/main.o",
 //     "/tests/ios/app/App/Foo.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/Foo.o",
 // ],
-private let outputFileForSource: [String: [String: String]] = [
+private var outputFileForSource: [String: [String: [String: String]]] = [
     // Vanilla Xcode mapping for debug/testing purposes
     "iOSApp-frhmkkebaragakhdzyysbrsvbgtc": [
-        "/CLI/main.m": "/tmp/xcbuild-out/CLI/main.o",
-        "/iOSApp/main.m": "/tmp/xcbuild-out/iOSApp/main.o",
+        "foo_source_output_file_map.json": [
+            "/CLI/main.m": "/tmp/xcbuild-out/CLI/main.o",
+            "/iOSApp/main.m": "/tmp/xcbuild-out/iOSApp/main.o",
+        ]
     ],
 ]
 
@@ -44,6 +46,15 @@ private var gXcode = ""
 private var workspaceHash = ""
 // TODO: parsed in `CreateSessionRequest`, consider a more stable approach instead of parsing `xcbuildDataPath` path there
 private var workspaceName = ""
+// Key to identify a workspace and find its mapping of source to object files in `outputFileForSource`
+private var workspaceKey: String? {
+    guard workspaceName.count > 0 && workspaceHash.count > 0 else {
+        return nil
+    }
+    return "\(workspaceName)-\(workspaceHash)"
+}
+// Bazel external working directory, base path used in unit files during indexing
+private var bazelWorkingDir: String?
 // TODO: parsed in `IndexingInfoRequested`, there's probably a less hacky way to get this.
 // Effectively `$PWD/iOSApp`
 private var workingDir = ""
@@ -77,6 +88,61 @@ enum BasicMessageHandler {
         var progressView: ProgressView?
         try stream.read {
             event in
+
+            // XCHammer generates JSON files containing source => output file mappings.
+            //
+            // This loop looks for JSON files with a known name pattern '_source_output_file_map.json' and extracts the mapping
+            // information from it decoding the JSON and storing in-memory. We might want to find a way to pass this in instead.
+            //
+            // Read about the 'namedSetOfFiles' key here: https://bazel.build/remote/bep-examples#consuming-namedsetoffiles
+            if let json = try? JSONSerialization.jsonObject(with: event.jsonUTF8Data(), options: []) as? [String: Any] {
+                if let namedSetOfFiles = json["namedSetOfFiles"] as? [String: Any] {
+                    if namedSetOfFiles.count > 0 {
+                        if let allPairs = namedSetOfFiles["files"] as? [[String: Any]] {
+                            for pair in allPairs {
+                                guard let theName = pair["name"] as? String else {
+                                    continue
+                                }
+                                guard var jsonURI = pair["uri"] as? String else {
+                                    continue
+                                }
+                                guard jsonURI.hasSuffix(".json") else {
+                                    continue
+                                }
+
+                                jsonURI = jsonURI.replacingOccurrences(of: "file://", with: "")
+
+                                // The Bazel working directory is necessary for indexing, first time we see it in the BEP
+                                // storing in 'bazelWorkingDir'
+                                if bazelWorkingDir == nil {
+                                    bazelWorkingDir = jsonURI.components(separatedBy: "/bazel-out").first
+                                }
+
+                                guard let jsonData = try? Data(contentsOf: URL(fileURLWithPath:jsonURI)) else {
+                                    continue
+                                }
+                                guard jsonData.count > 0 else {
+                                    continue
+                                }
+                                guard let jsonDecoded = try? JSONSerialization.jsonObject(with: jsonData, options: [.allowFragments]) as? [String: String] else {
+                                    continue
+                                }
+
+                                if let workspaceKey = workspaceKey, theName.contains("_source_output_file_map.json") {
+                                    if outputFileForSource[workspaceKey] == nil {
+                                        outputFileForSource[workspaceKey] = [:]
+                                    }
+                                    if outputFileForSource[workspaceKey]?[theName] == nil {
+                                        outputFileForSource[workspaceKey]?[theName] = [:]
+                                    }
+                                    outputFileForSource[workspaceKey]?[theName] = jsonDecoded
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if let updatedView = ProgressView(event: event, last: progressView) {
                 let encoder = XCBEncoder(input: startBuildInput)
                 let response = BuildProgressUpdatedResponse(progress:
@@ -115,6 +181,47 @@ enum BasicMessageHandler {
         return bplistData
     }
 
+    static func canHandleIndexing(msg: XCBProtocolMessage) -> Bool {
+        guard msg is IndexingInfoRequested else {
+            return false
+        }
+        guard let workspaceKey = workspaceKey else {
+            return false
+        }
+        guard indexingEnabled else {
+            return false
+        }
+        guard bazelWorkingDir != nil else {
+            return false
+        }
+
+        if outputFileForSource[workspaceKey] == nil {
+            outputFileForSource[workspaceKey] = [:]
+        }
+
+        guard (outputFileForSource[workspaceKey]?.count ?? 0) > 0 else {
+            return false
+        }
+
+        return true
+    }
+
+    static func findOutputFileForSource(filePath: String, workingDir: String) -> String? {
+        let sourceKey = filePath.replacingOccurrences(of: workingDir, with: "").replacingOccurrences(of: (bazelWorkingDir ?? ""), with: "")
+        guard let workspaceKey = workspaceKey else {
+            return nil
+        }
+        guard let workspaceMappings = outputFileForSource[workspaceKey] else {
+            return nil
+        }
+        for (_, json) in workspaceMappings {
+            if let objFilePath = json[sourceKey] {
+                return objFilePath
+            }
+        }
+        return nil
+    }
+
     /// Proxying response handler
     /// Every message is written to the XCBBuildService
     /// This simply injects Progress messages from the BEP
@@ -142,16 +249,14 @@ enum BasicMessageHandler {
                 if let responseData = try? message.encode(encoder) {
                      bkservice.write(responseData)
                 }
-            } else if indexingEnabled && msg is IndexingInfoRequested {
+            } else if canHandleIndexing(msg: msg) {
                 // Example of a custom indexing service
                 let reqMsg = msg as! IndexingInfoRequested
-                workingDir = reqMsg.workingDir
+                workingDir = bazelWorkingDir ?? reqMsg.workingDir
                 platform = reqMsg.platform
                 sdk = reqMsg.sdk
 
-                let workspaceKey = "\(workspaceName)-\(workspaceHash)"
-                let sourceKey = reqMsg.filePath.replacingOccurrences(of: workingDir, with: "")
-                guard let outputFilePath = outputFileForSource[workspaceKey]?[sourceKey] else {
+                guard let outputFilePath = findOutputFileForSource(filePath: reqMsg.filePath, workingDir: reqMsg.workingDir) else {
                     fatalError("Failed to find output file for source: \(reqMsg.filePath)")
                     return
                 }

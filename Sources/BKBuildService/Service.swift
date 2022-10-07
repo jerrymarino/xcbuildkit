@@ -101,14 +101,9 @@ public class BKBuildService {
             //
             // Important: Note that `ogData` still needs to be passed below so the original build service can parse `CREATE_SESSION` and
             // write the correct response to stdout for us for now
-            var inputResult = [MessagePackValue]()
-            var inputData = ogData
-            if msg is CreateSessionRequest {
-                inputResult = result
-                inputData = self.buffer
-            }
-
-            messageHandler(XCBInputStream(result: inputResult, data: inputData), ogData, context)
+            let inputData = msg is CreateSessionRequest ? self.buffer : ogData
+            let ogResult = Unpacker.unpackAll(ogData)
+            messageHandler(XCBInputStream(result: ogResult, data: inputData), ogData, context)
         }
 
         // Reset all the things
