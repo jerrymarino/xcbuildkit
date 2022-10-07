@@ -45,7 +45,7 @@ let clangXMLT: String = """
                 <key>LanguageDialect</key>
                 <string>objective-c</string>
                 <key>clangASTBuiltProductsDir</key>
-                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORSPACE_HASH__/Index/Build/Products/Debug-iphonesimulator</string>
+                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/Debug-iphonesimulator</string>
                 <key>clangASTCommandArguments</key>
                 <array>
                         <string>-x</string>
@@ -169,7 +169,7 @@ public enum XCBBuildServiceProxyStub {
                 .replacingOccurrences(of:"__INDEX_STORE_PATH__", with: "\(derivedDataPath)/\(workspaceName)-\(workspaceHash)/Index/DataStore")
                 .replacingOccurrences(of:"__WORKSPACE_NAME__", with: workspaceName)
                 .replacingOccurrences(of:"__DERIVED_DATA_PATH__", with: derivedDataPath)
-                .replacingOccurrences(of:"__WORSPACE_HASH__", with: workspaceHash)
+                .replacingOccurrences(of:"__WORKSPACE_HASH__", with: workspaceHash)
                 .replacingOccurrences(of:"__SDK_PATH__", with: sdkPath)
                 .replacingOccurrences(of:"__SDK_NAME__", with: sdkName)
                 .replacingOccurrences(of:"__WORKING_DIR__", with: workingDir)
