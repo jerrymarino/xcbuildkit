@@ -173,7 +173,7 @@ public class BKBuildService {
         //
         // Returns `false` meaning that the buffer is still not ready to be processed
         self.buffer.append(bufferData)
-        self.readLen = min(max(size - Int32(bufferData.count), 0), Int32(bufferData.count))
+        self.readLen = size - Int32(bufferData.count)
 
         return false
     }
