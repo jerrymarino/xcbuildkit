@@ -34,7 +34,7 @@ XCB=$(XCODE)/Contents/Developer/usr/bin/xcodebuild
 XCBBUILDSERVICE_PATH=$(PWD)/bazel-bin/BuildServiceShim/BuildServiceShim
 
 # Build service to use when running `test` and `debug_*` actions below
-BUILD_SERVICE=XCBBuildServiceProxy
+BUILD_SERVICE=BazelBuildService
 
 # See below comment - Bazel is not making a symlink.
 # This is of course just riddled with problems
