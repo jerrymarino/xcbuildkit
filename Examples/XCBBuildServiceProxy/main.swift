@@ -75,13 +75,13 @@ private var platform = ""
 // TODO: parse the relative path to the SDK from somewhere
 var sdkPath: String {
     guard gXcode.count > 0 else {
-        fatalError("Failed to build SDK path, Xcode path is empty: \(gXcode)")
+        fatalError("Failed to build SDK path, Xcode path is empty.")
     }
     guard sdk.count > 0 else {
-        fatalError("Failed to build SDK path, sdk name is empty: \(sdk)")
+        fatalError("Failed to build SDK path, sdk name is empty.")
     }
     guard platform.count > 0 else {
-        fatalError("Failed to build SDK path, platform is empty: \(platform)")
+        fatalError("Failed to build SDK path, platform is empty.")
     }
 
     return "\(gXcode)/Contents/Developer/Platforms/\(platform).platform/Developer/SDKs/\(sdk).sdk"
