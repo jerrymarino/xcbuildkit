@@ -139,6 +139,8 @@ public struct SetSessionUserInfoRequest: XCBProtocolMessage {
 
 public struct CreateBuildRequest: XCBProtocolMessage {
     public let configuredTargets: [String]
+    public let containerPath: String
+
     public init(input: XCBInputStream) throws {
         var minput = input
         guard let next = minput.next(),
@@ -149,6 +151,8 @@ public struct CreateBuildRequest: XCBProtocolMessage {
             throw XCBProtocolError.unexpectedInput(for: input)
          }
          let requestJSON = json["request"] as? [String: Any] ?? [:]
+         self.containerPath = requestJSON["containerPath"] as? String ?? ""
+         log("info: got containerPath \(self.containerPath)")
          if let ct = requestJSON["configuredTargets"] as? [[String: Any]] { 
              self.configuredTargets = ct.compactMap { ctInfo in
                  return ctInfo["guid"] as? String
