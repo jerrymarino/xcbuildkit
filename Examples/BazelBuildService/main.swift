@@ -1,6 +1,7 @@
 import BKBuildService
 import Foundation
 import XCBProtocol
+import BEP
 
 struct BasicMessageContext {
     let xcbbuildService: XCBBuildServiceProcess
@@ -9,35 +10,15 @@ struct BasicMessageContext {
 
 /// FIXME: support multiple workspaces
 var gStream: BEPStream?
-// Experimental, enables indexing buffering logic
-// Make sure indexing is enabled first, i.e., run `make enable_indexing`
-//
-// In `BazelBuildService` keep as `false` by default until this is ready to be enabled in all scenarios mostly to try to keep
-// this backwards compatible with others installing this build service to get the progress bar.
-private let indexingEnabled: Bool = true
-
-// TODO: Make this part of an API to be consumed from callers
-//
-// "source file" => "output file" map, hardcoded for now, will be part of the API in the future
-// Should match your local path and the values set in `Makefile > generate_custom_index_store`
-//
-// TODO: Should come from an aspect in Bazel
-// Example of what source => object file under bazel-out mapping would look like:
+// Example of what source => object file under bazel-out mapping should look like:
 //
 // "Test-XCBuildKit-cdwbwzghpxmnfadvmmhsjcdnjygy": [
-//     "/tests/ios/app/App/main.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/main.o",
-//     "/tests/ios/app/App/Foo.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/Foo.o",
+//     "App_source_output_file_map.json": [
+//         "/tests/ios/app/App/main.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/main.o",
+//         "/tests/ios/app/App/Foo.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/Foo.o",
+//     ],
 // ],
-private var outputFileForSource: [String: [String: [String: String]]] = [
-    // Vanilla Xcode mapping for debug/testing purposes
-    "iOSApp-frhmkkebaragakhdzyysbrsvbgtc": [
-        "foo_source_output_file_map.json": [
-            "/CLI/main.m": "/tmp/xcbuild-out/CLI/main.o",
-            "/iOSApp/main.m": "/tmp/xcbuild-out/iOSApp/main.o",
-        ]
-    ],
-]
-
+private var outputFileForSource: [String: [String: [String: String]]] = [:]
 // Used when debugging msgs are enabled, see `XCBBuildServiceProcess.MessageDebuggingEnabled()`
 private var gChunkNumber = 0
 // FIXME: get this from the other paths
@@ -53,8 +34,6 @@ private var workspaceKey: String? {
     }
     return "\(workspaceName)-\(workspaceHash)"
 }
-// Bazel external working directory, base path used in unit files during indexing
-private var bazelWorkingDir: String?
 // TODO: parsed in `IndexingInfoRequested`, there's probably a less hacky way to get this.
 // Effectively `$PWD/iOSApp`
 private var workingDir = ""
@@ -76,86 +55,79 @@ var sdkPath: String {
 
     return "\(gXcode)/Contents/Developer/Platforms/\(platform).platform/Developer/SDKs/\(sdk).sdk"
 }
+// Path to .xcodeproj, used to load xcbuildkit config file from path/to/foo.xcodeproj/xcbuildkit.config
+private var xcodeprojPath: String = ""
+// Load configs from path/to/foo.xcodeproj/xcbuildkit.config
+private var configValues: [String: Any]? {
+    guard let data = try? String(contentsOfFile: xcbuildkitConfigPath, encoding: .utf8) else { return nil }
+
+    let lines = data.components(separatedBy: .newlines)
+    var dict: [String: Any] = [:]
+    for line in lines {
+        let split = line.components(separatedBy: "=")
+        guard split.count == 2 else { continue }
+        dict[split[0]] = split[1]
+    }
+    return dict
+}
+// Directory containing data used to fast load information when initializing BazelBuildService, e.g.,
+// .json files containing source => output file mappings generated during Xcode project generation
+private var xcbuildkitDataDir: String {
+    return "\(xcodeprojPath)/xcbuildkit.data"
+}
+// File containing config values that a consumer can set, see accepted keys below.
+// Format is KEY=VALUE and one config per line
+// TODO: Probably better to make this a separate struct with proper validation but will do that
+// once the list of accepted keys is stable
+private var xcbuildkitConfigPath: String {
+    return "\(xcodeprojPath)/xcbuildkit.config"
+}
+private var sourceOutputFileMapSuffix: String? {
+    return configValues?["BUILD_SERVICE_SOURE_OUTPUT_FILE_MAP_SUFFIX"] as? String
+}
+private var bazelWorkingDir: String? {
+    return configValues?["BUILD_SERVICE_BAZEL_EXEC_ROOT"] as? String
+}
+private var indexingEnabled: Bool {
+    return (configValues?["BUILD_SERVICE_INDEXING_ENABLED"] as? String ?? "") == "YES"
+}
+private var progressBarEnabled: Bool {
+    return (configValues?["BUILD_SERVICE_PROGRESS_BAR_ENABLED"] as? String ?? "") == "YES"
+}
+private var configBEPPath: String? {
+    return configValues?["BUILD_SERVICE_BEP_PATH"] as? String
+}
 
 /// This example listens to a BEP stream to display some output.
 ///
 /// All operations are delegated to XCBBuildService and we inject
 /// progress from BEP.
 enum BasicMessageHandler {
+    // Read info from BEP and optionally handle events
     static func startStream(bepPath: String, startBuildInput: XCBInputStream, bkservice: BKBuildService) throws {
         log("startStream " + String(describing: startBuildInput))
         let stream = try BEPStream(path: bepPath)
         var progressView: ProgressView?
         try stream.read {
             event in
-
-            // XCHammer generates JSON files containing source => output file mappings.
-            //
-            // This loop looks for JSON files with a known name pattern '_source_output_file_map.json' and extracts the mapping
-            // information from it decoding the JSON and storing in-memory. We might want to find a way to pass this in instead.
-            //
-            // Read about the 'namedSetOfFiles' key here: https://bazel.build/remote/bep-examples#consuming-namedsetoffiles
-            if let json = try? JSONSerialization.jsonObject(with: event.jsonUTF8Data(), options: []) as? [String: Any] {
-                if let namedSetOfFiles = json["namedSetOfFiles"] as? [String: Any] {
-                    if namedSetOfFiles.count > 0 {
-                        if let allPairs = namedSetOfFiles["files"] as? [[String: Any]] {
-                            for pair in allPairs {
-                                guard let theName = pair["name"] as? String else {
-                                    continue
-                                }
-                                guard var jsonURI = pair["uri"] as? String else {
-                                    continue
-                                }
-                                guard jsonURI.hasSuffix(".json") else {
-                                    continue
-                                }
-
-                                jsonURI = jsonURI.replacingOccurrences(of: "file://", with: "")
-
-                                // The Bazel working directory is necessary for indexing, first time we see it in the BEP
-                                // storing in 'bazelWorkingDir'
-                                if bazelWorkingDir == nil {
-                                    bazelWorkingDir = jsonURI.components(separatedBy: "/bazel-out").first
-                                }
-
-                                guard let jsonData = try? Data(contentsOf: URL(fileURLWithPath:jsonURI)) else {
-                                    continue
-                                }
-                                guard jsonData.count > 0 else {
-                                    continue
-                                }
-                                guard let jsonDecoded = try? JSONSerialization.jsonObject(with: jsonData, options: [.allowFragments]) as? [String: String] else {
-                                    continue
-                                }
-
-                                if let workspaceKey = workspaceKey, theName.contains("_source_output_file_map.json") {
-                                    if outputFileForSource[workspaceKey] == nil {
-                                        outputFileForSource[workspaceKey] = [:]
-                                    }
-                                    if outputFileForSource[workspaceKey]?[theName] == nil {
-                                        outputFileForSource[workspaceKey]?[theName] = [:]
-                                    }
-                                    outputFileForSource[workspaceKey]?[theName] = jsonDecoded
-                                }
-                            }
-                        }
-                    }
-                }
+            if indexingEnabled {
+                parseSourceOutputFileMappingsFromBEP(event: event)
             }
 
-            if let updatedView = ProgressView(event: event, last: progressView) {
-                let encoder = XCBEncoder(input: startBuildInput)
-                let response = BuildProgressUpdatedResponse(progress:
-                    updatedView.progressPercent, message: updatedView.message)
-                if let responseData = try? response.encode(encoder) {
-                     bkservice.write(responseData)
+            if progressBarEnabled {
+                if let updatedView = ProgressView(event: event, last: progressView) {
+                    let encoder = XCBEncoder(input: startBuildInput)
+                    let response = BuildProgressUpdatedResponse(progress:
+                        updatedView.progressPercent, message: updatedView.message)
+                    if let responseData = try? response.encode(encoder) {
+                        bkservice.write(responseData)
+                    }
+                    progressView = updatedView
                 }
-                progressView = updatedView
             }
         }
         gStream = stream
     }
-
     // Required if `outputPathOnly` is `true` in the indexing request
     static func outputPathOnlyData(outputFilePath: String, sourceFilePath: String) -> Data {
         let xml = """
@@ -180,40 +152,124 @@ enum BasicMessageHandler {
 
         return bplistData
     }
-
-    static func canHandleIndexing(msg: XCBProtocolMessage) -> Bool {
-        guard msg is IndexingInfoRequested else {
-            return false
+    // Check many conditions that need to be met in order to handle indexing and find the respect output file,
+    // the call site should abort and proxy the indexing request if this returns `nil`
+    static func outputFileForIndexingRequest(msg: XCBProtocolMessage) -> String? {
+        // Nothing to do for non-indexing request types
+        guard let reqMsg = msg as? IndexingInfoRequested else {
+            return nil
         }
-        guard let workspaceKey = workspaceKey else {
-            return false
+        // TODO: handle Swift
+        guard reqMsg.filePath.count > 0 && reqMsg.filePath != "<garbage>" && !reqMsg.filePath.hasSuffix(".swift") else {
+            return nil
         }
+        // Indexing needs to be enabled via config file
         guard indexingEnabled else {
-            return false
+            return nil
         }
+        // In `BazelBuildService` the path to the working directory (i.e. execution_root) should always
+        // exists
         guard bazelWorkingDir != nil else {
-            return false
+            fatalError("[ERROR] Path to Bazel working directory not provided. Check `BUILD_SERVICE_BAZEL_EXEC_ROOT` in your config file.")
         }
+
+        guard let outputFilePath = findOutputFileForSource(filePath: reqMsg.filePath, workingDir: reqMsg.workingDir) else {
+            log("[WARNING] Failed to find output file for source: \(reqMsg.filePath). Indexing requests will be proxied to default build service.")
+            return nil
+        }
+
+        return outputFilePath
+    }
+    // Initialize in memory mappings from xcbuildkitDataDir if .json mappings files exist
+    static func initializeOutputFileMappingFromCache() {
+        let fm = FileManager.default
+        do {
+            let jsons = try fm.contentsOfDirectory(atPath: xcbuildkitDataDir)
+
+            for jsonFilename in jsons {
+                let jsonData = try Data(contentsOf: URL(fileURLWithPath: "\(xcbuildkitDataDir)/\(jsonFilename)"))
+                loadSourceOutputFileMappingInfo(jsonFilename: jsonFilename, jsonData: jsonData)
+            }
+        } catch {
+            log("[ERROR] Failed to initialize from cache under \(xcbuildkitDataDir) with err: \(error.localizedDescription)")
+        }
+    }
+    // Loads information into memory and optionally update the cache under xcbuildkitDataDir
+    static func loadSourceOutputFileMappingInfo(jsonFilename: String, jsonData: Data, updateCache: Bool = false) {
+        // Ensure workspace info is ready and .json can be decoded
+        guard let workspaceKey = workspaceKey else { return }
+        guard let jsonValues = try? JSONSerialization.jsonObject(with: jsonData, options: [.allowFragments]) as? [String: String] else { return }
+
+        // Load .json contents into memory
+        initializeOutputFileForSourceIfNecessary(jsonFilename: jsonFilename)
+        outputFileForSource[workspaceKey]?[jsonFilename] = jsonValues
+        log("[INFO] Loaded mapping information into memory from: \(jsonFilename)")
+
+        // Update .json files cached under xcbuildkitDataDir for
+        // fast load next time we launch Xcode
+        do {
+            guard let jsonBasename = jsonFilename.components(separatedBy: "/").last else { return }
+            let jsonFilePath = "\(xcbuildkitDataDir)/\(jsonBasename)"
+            let json = URL(fileURLWithPath: jsonFilePath)
+            let fm = FileManager.default
+            if fm.fileExists(atPath: jsonFilePath) {
+                try fm.removeItem(atPath: jsonFilePath)
+            }
+            try jsonData.write(to: json)
+            log("[INFO] Updated cache in: \(jsonFilePath)")
+        } catch {
+            log("[ERROR] Failed to update cache under \(xcbuildkitDataDir) for file \(jsonFilename) with err: \(error.localizedDescription)")
+        }
+    }
+    // This loop looks for JSON files with a known suffix `BUILD_SERVICE_SOURE_OUTPUT_FILE_MAP_SUFFIX` and loads the mapping
+    // information from it decoding the JSON and storing in-memory.
+    //
+    // Read about the 'namedSetOfFiles' key here: https://bazel.build/remote/bep-examples#consuming-namedsetoffiles
+    static func parseSourceOutputFileMappingsFromBEP(event: BuildEventStream_BuildEvent) {
+        // Do work only if `namedSetOfFiles` is present and contain `files`
+        guard let json = try? JSONSerialization.jsonObject(with: event.jsonUTF8Data(), options: []) as? [String: Any] else { return }
+        guard let namedSetOfFiles = json["namedSetOfFiles"] as? [String: Any] else { return }
+        guard namedSetOfFiles.count > 0 else { return }
+        guard let allPairs = namedSetOfFiles["files"] as? [[String: Any]] else { return }
+
+        for pair in allPairs {
+            // Only proceed if top level keys exist and a .json to be decoded is found
+            guard let jsonFilename = pair["name"] as? String else { continue }
+            guard var jsonURI = pair["uri"] as? String else { continue }
+            guard jsonURI.hasSuffix(".json") else { continue }
+
+            jsonURI = jsonURI.replacingOccurrences(of: "file://", with: "")
+
+            // Only proceed for keys holding .json files with known pattern (i.e. `BUILD_SERVICE_SOURE_OUTPUT_FILE_MAP_SUFFIX`) in the name
+            guard let jsonData = try? Data(contentsOf: URL(fileURLWithPath:jsonURI)) else { continue }
+            guard jsonData.count > 0 else { continue }
+            guard let jsonDecoded = try? JSONSerialization.jsonObject(with: jsonData, options: [.allowFragments]) as? [String: String] else { continue }
+            guard let sourceOutputFileMapSuffix = sourceOutputFileMapSuffix else { continue }
+            guard let workspaceKey = workspaceKey, jsonFilename.hasSuffix(sourceOutputFileMapSuffix) else { continue }
+
+            // Load .json contents into memory
+            loadSourceOutputFileMappingInfo(jsonFilename: jsonFilename, jsonData: jsonData, updateCache: true)
+        }
+    }
+    // Helper to initialize in-memory mapping for workspace and give .json mappings file key
+    static func initializeOutputFileForSourceIfNecessary(jsonFilename: String) {
+        guard let workspaceKey = workspaceKey else { return }
 
         if outputFileForSource[workspaceKey] == nil {
             outputFileForSource[workspaceKey] = [:]
         }
-
-        guard (outputFileForSource[workspaceKey]?.count ?? 0) > 0 else {
-            return false
+        if outputFileForSource[workspaceKey]?[jsonFilename] == nil {
+            outputFileForSource[workspaceKey]?[jsonFilename] = [:]
         }
-
-        return true
     }
-
+    // Finds output file (i.e. path to `.o` under `bazel-out`) in in-memory mapping
     static func findOutputFileForSource(filePath: String, workingDir: String) -> String? {
+        // Create key
         let sourceKey = filePath.replacingOccurrences(of: workingDir, with: "").replacingOccurrences(of: (bazelWorkingDir ?? ""), with: "")
-        guard let workspaceKey = workspaceKey else {
-            return nil
-        }
-        guard let workspaceMappings = outputFileForSource[workspaceKey] else {
-            return nil
-        }
+        // Ensure workspace info is loaded and mapping exists
+        guard let workspaceKey = workspaceKey else { return nil }
+        guard let workspaceMappings = outputFileForSource[workspaceKey] else { return nil }
+        // Loops until found
         for (_, json) in workspaceMappings {
             if let objFilePath = json[sourceKey] {
                 return objFilePath
@@ -221,7 +277,6 @@ enum BasicMessageHandler {
         }
         return nil
     }
-
     /// Proxying response handler
     /// Every message is written to the XCBBuildService
     /// This simply injects Progress messages from the BEP
@@ -231,37 +286,42 @@ enum BasicMessageHandler {
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
         let encoder = XCBEncoder(input: input)
+
         if let msg = decoder.decodeMessage() {
             if let createSessionRequest = msg as? CreateSessionRequest {
+                // Load information from `CreateSessionRequest`
                 gXcode = createSessionRequest.xcode
                 workspaceHash = createSessionRequest.workspaceHash
                 workspaceName = createSessionRequest.workspaceName
+                xcodeprojPath = createSessionRequest.xcodeprojPath
+
+                // Initialize build service
                 xcbbuildService.startIfNecessary(xcode: gXcode)
-            } else if msg is BuildStartRequest {
+
+                // Start reading from BEP as early as possible
                 do {
-                    let bepPath = "/tmp/bep.bep"
+                    let bepPath = configBEPPath ?? "/tmp/bep.bep"
                     try startStream(bepPath: bepPath, startBuildInput: input, bkservice: bkservice)
                 } catch {
                     fatalError("Failed to init stream" + error.localizedDescription)
                 }
 
+                // Load output file mapping information from cache if it exists
+                initializeOutputFileMappingFromCache()
+            } else if msg is BuildStartRequest {
                 let message = BuildProgressUpdatedResponse()
                 if let responseData = try? message.encode(encoder) {
                      bkservice.write(responseData)
                 }
-            } else if canHandleIndexing(msg: msg) {
-                // Example of a custom indexing service
+            } else if let outputFilePath = outputFileForIndexingRequest(msg: msg) {
+                // Settings values needed to compose the payload below
                 let reqMsg = msg as! IndexingInfoRequested
                 workingDir = bazelWorkingDir ?? reqMsg.workingDir
                 platform = reqMsg.platform
                 sdk = reqMsg.sdk
+                log("[INFO] Handling indexing request for source \(reqMsg.filePath) and output file \(outputFilePath)")
 
-                guard let outputFilePath = findOutputFileForSource(filePath: reqMsg.filePath, workingDir: reqMsg.workingDir) else {
-                    fatalError("Failed to find output file for source: \(reqMsg.filePath)")
-                    return
-                }
-                log("Found output file \(outputFilePath) for source \(reqMsg.filePath)")
-
+                // Compose the indexing response payload and emit the response message
                 let clangXMLData = BazelBuildServiceStub.getASTArgs(
                     targetID: reqMsg.targetID,
                     sourceFilePath: reqMsg.filePath,
@@ -280,17 +340,18 @@ enum BasicMessageHandler {
                     clangXMLData: reqMsg.outputPathOnly ? nil : clangXMLData)
                 if let encoded: XCBResponse = try? message.encode(encoder) {
                     bkservice.write(encoded, msgId:message.responseChannel)
+                    log("[INFO] Indexing response sent")
                     return
                 }
             }
-
         }
+        log("[INFO] Proxying request")
         xcbbuildService.write(data)
     }
 }
 
 let xcbbuildService = XCBBuildServiceProcess()
-let bkservice = BKBuildService(indexingEnabled: indexingEnabled)
+let bkservice = BKBuildService()
 
 let context = BasicMessageContext(
     xcbbuildService: xcbbuildService,
