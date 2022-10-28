@@ -89,8 +89,14 @@ private var configValues: [String: Any]? {
     }
     return dict
 }
+private var mappingsCacheDir: String {
+    return "\(xcodeprojPath)/xcbuildkit.cache"
+}
 private var configPath: String {
     return "\(xcodeprojPath)/xcbuildkit.config"
+}
+private var sourceOutputFileMapSuffix: String? {
+    return configValues?["BUILD_SERVICE_SOURE_OUTPUT_FILE_MAP_SUFFIX"] as? String
 }
 private var bazelWorkingDir: String? {
     return configValues?["BUILD_SERVICE_BAZEL_EXEC_ROOT"] as? String
@@ -151,7 +157,11 @@ enum BasicMessageHandler {
                                         continue
                                     }
 
-                                    if let workspaceKey = workspaceKey, theName.contains("_source_output_file_map.json") {
+                                    guard let sourceOutputFileMapSuffix = sourceOutputFileMapSuffix else {
+                                        continue
+                                    }
+
+                                    if let workspaceKey = workspaceKey, theName.hasSuffix(sourceOutputFileMapSuffix) {
                                         if outputFileForSource[workspaceKey] == nil {
                                             outputFileForSource[workspaceKey] = [:]
                                         }
@@ -159,6 +169,23 @@ enum BasicMessageHandler {
                                             outputFileForSource[workspaceKey]?[theName] = [:]
                                         }
                                         outputFileForSource[workspaceKey]?[theName] = jsonDecoded
+                                        log("Found new map for key \(theName)")
+
+                                        do {
+                                            guard let jFileName = theName.components(separatedBy: "/").last else {
+                                                continue
+                                            }
+                                            let xFilePath = "\(mappingsCacheDir)/\(jFileName)"
+                                            let xFile = URL(fileURLWithPath: xFilePath)
+                                            let fm = FileManager.default
+                                            if fm.fileExists(atPath: xFilePath) {
+                                                try fm.removeItem(atPath: xFilePath)
+                                            }
+                                            
+                                            try jsonData.write(to: xFile)
+                                        } catch {
+                                            log("Failed to write json with err: \(error.localizedDescription)")
+                                        }
                                     }
                                 }
                             }
@@ -277,7 +304,7 @@ enum BasicMessageHandler {
                 workspaceName = createSessionRequest.workspaceName
                 xcodeprojPath = createSessionRequest.xcodeprojPath
                 xcbbuildService.startIfNecessary(xcode: gXcode)
-            } else if msg is BuildStartRequest {
+
                 do {
                     log("configBEPPath: \(configBEPPath)")
                     let bepPath = configBEPPath ?? "/tmp/bep.bep"
@@ -285,6 +312,37 @@ enum BasicMessageHandler {
                 } catch {
                     fatalError("Failed to init stream" + error.localizedDescription)
                 }
+
+                let fm = FileManager.default
+                do {
+                    let items = try fm.contentsOfDirectory(atPath: mappingsCacheDir)
+
+                    for item in items {
+                        let data = try Data(contentsOf: URL(fileURLWithPath: "\(mappingsCacheDir)/\(item)"))
+
+                        guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: String] else { continue }
+                        guard let workspaceKey = workspaceKey else { continue }
+
+                        if outputFileForSource[workspaceKey] == nil {
+                            outputFileForSource[workspaceKey] = [:]
+                        }
+                        if outputFileForSource[workspaceKey]?[item] == nil {
+                            outputFileForSource[workspaceKey]?[item] = [:]
+                        }
+                        outputFileForSource[workspaceKey]?[item] = json
+                    }
+                } catch {
+                    log("Failed to read json with err: \(error.localizedDescription)")
+                }
+                log("outputFileForSource-loaded: \(outputFileForSource)")
+            } else if msg is BuildStartRequest {
+                // do {
+                //     log("configBEPPath: \(configBEPPath)")
+                //     let bepPath = configBEPPath ?? "/tmp/bep.bep"
+                //     try startStream(bepPath: bepPath, startBuildInput: input, bkservice: bkservice)
+                // } catch {
+                //     fatalError("Failed to init stream" + error.localizedDescription)
+                // }
 
                 let message = BuildProgressUpdatedResponse()
                 if let responseData = try? message.encode(encoder) {
