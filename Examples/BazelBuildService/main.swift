@@ -123,7 +123,6 @@ enum BasicMessageHandler {
             // information from it decoding the JSON and storing in-memory. We might want to find a way to pass this in instead.
             //
             // Read about the 'namedSetOfFiles' key here: https://bazel.build/remote/bep-examples#consuming-namedsetoffiles
-            log("indexingEnabled: \(indexingEnabled)")
             if indexingEnabled {
                 if let json = try? JSONSerialization.jsonObject(with: event.jsonUTF8Data(), options: []) as? [String: Any] {
                     if let namedSetOfFiles = json["namedSetOfFiles"] as? [String: Any] {
@@ -168,7 +167,6 @@ enum BasicMessageHandler {
                 }
             }            
 
-            log("progressBarEnabled: \(progressBarEnabled)")
             if progressBarEnabled {
                 if let updatedView = ProgressView(event: event, last: progressView) {
                     let encoder = XCBEncoder(input: startBuildInput)
