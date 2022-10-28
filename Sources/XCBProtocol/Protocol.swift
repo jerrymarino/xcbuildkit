@@ -66,6 +66,7 @@ public struct CreateSessionRequest: XCBProtocolMessage {
     public let workspaceName: String
     public let workspaceHash: String
     public let xcode: String
+    public let xcodeprojPath: String
     public let xcbuildDataPath: String
 
     init(input: XCBInputStream) throws {
@@ -114,9 +115,13 @@ public struct CreateSessionRequest: XCBProtocolMessage {
             self.workspaceName = ""
         }
 
+        // Parse path to .xcodeproj used to load xcbuildkit config as early as possible
+        self.xcodeprojPath = self.workspace.components(separatedBy:"path:\'").last?.components(separatedBy:"/project.xcworkspace").first ?? ""
+
         log("Found XCBuildData path: \(self.xcbuildDataPath)")
         log("Parsed workspaceHash: \(self.workspaceHash)")
         log("Parsed workspaceName: \(self.workspaceName)")
+        log("Parsed xcodeprojPath: \(self.xcodeprojPath)")
     }
 }
 

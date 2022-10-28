@@ -53,8 +53,6 @@ private var workspaceKey: String? {
     }
     return "\(workspaceName)-\(workspaceHash)"
 }
-// Bazel external working directory, base path used in unit files during indexing
-private var bazelWorkingDir: String?
 // TODO: parsed in `IndexingInfoRequested`, there's probably a less hacky way to get this.
 // Effectively `$PWD/iOSApp`
 private var workingDir = ""
@@ -76,15 +74,12 @@ var sdkPath: String {
 
     return "\(gXcode)/Contents/Developer/Platforms/\(platform).platform/Developer/SDKs/\(sdk).sdk"
 }
-// Read info from config file
-private var xcodeprojPath = ""
-private var configPath: String {
-    return "\(xcodeprojPath)/xcbuildkit.config"
-}
+// Xcode project path
+private var xcodeprojPath: String = ""
+// Load configs
 private var configValues: [String: Any]? {
-    guard let data = try? String(contentsOfFile: configPath, encoding: .utf8) else {
-        return nil
-    }
+    guard let data = try? String(contentsOfFile: configPath, encoding: .utf8) else { return nil }
+
     let lines = data.components(separatedBy: .newlines)
     var dict: [String: Any] = [:]
     for line in lines {
@@ -93,6 +88,12 @@ private var configValues: [String: Any]? {
         dict[split[0]] = split[1]
     }
     return dict
+}
+private var configPath: String {
+    return "\(xcodeprojPath)/xcbuildkit.config"
+}
+private var bazelWorkingDir: String? {
+    return configValues?["BUILD_SERVICE_BAZEL_EXEC_ROOT"] as? String
 }
 private var indexingEnabled: Bool {
     return (configValues?["BUILD_SERVICE_INDEXING_ENABLED"] as? String ?? "") == "YES"
@@ -140,12 +141,6 @@ enum BasicMessageHandler {
                                     }
 
                                     jsonURI = jsonURI.replacingOccurrences(of: "file://", with: "")
-
-                                    // The Bazel working directory is necessary for indexing, first time we see it in the BEP
-                                    // storing in 'bazelWorkingDir'
-                                    if bazelWorkingDir == nil {
-                                        bazelWorkingDir = jsonURI.components(separatedBy: "/bazel-out").first
-                                    }
 
                                     guard let jsonData = try? Data(contentsOf: URL(fileURLWithPath:jsonURI)) else {
                                         continue
@@ -215,6 +210,7 @@ enum BasicMessageHandler {
     }
 
     static func shouldHandleIndexing(msg: XCBProtocolMessage) -> Bool {
+        log("outputFileForSource: \(outputFileForSource)")
         log("foo-1")
         guard msg is IndexingInfoRequested else {
             log("foo-2")
@@ -281,10 +277,8 @@ enum BasicMessageHandler {
                 gXcode = createSessionRequest.xcode
                 workspaceHash = createSessionRequest.workspaceHash
                 workspaceName = createSessionRequest.workspaceName
+                xcodeprojPath = createSessionRequest.xcodeprojPath
                 xcbbuildService.startIfNecessary(xcode: gXcode)
-            } else if let createBuildRequest = msg as? CreateBuildRequest {
-                xcodeprojPath = createBuildRequest.containerPath
-                log("Found Xcode project \(xcodeprojPath)")
             } else if msg is BuildStartRequest {
                 do {
                     log("configBEPPath: \(configBEPPath)")
@@ -299,14 +293,13 @@ enum BasicMessageHandler {
                      bkservice.write(responseData)
                 }
             } else if shouldHandleIndexing(msg: msg) {
-                log("[INFO] Handling indexing request")
+                log("[INFO] Will attempt to handle indexing request")
                 // Example of a custom indexing service
                 let reqMsg = msg as! IndexingInfoRequested
                 workingDir = bazelWorkingDir ?? reqMsg.workingDir
                 platform = reqMsg.platform
                 sdk = reqMsg.sdk
-
-                log("outputFileForSource: \(outputFileForSource)")
+                
                 guard let outputFilePath = findOutputFileForSource(filePath: reqMsg.filePath, workingDir: reqMsg.workingDir) else {
                     fatalError("Failed to find output file for source: \(reqMsg.filePath)")
                     return
@@ -331,6 +324,7 @@ enum BasicMessageHandler {
                     clangXMLData: reqMsg.outputPathOnly ? nil : clangXMLData)
                 if let encoded: XCBResponse = try? message.encode(encoder) {
                     bkservice.write(encoded, msgId:message.responseChannel)
+                    log("[INFO] Handle indexing request")
                     return
                 }
             }
