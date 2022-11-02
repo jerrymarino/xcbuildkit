@@ -317,6 +317,15 @@ enum BasicMessageHandler {
                 // Load output file mapping information from cache if it exists
                 initializeOutputFileMappingFromCache()
             } else if msg is BuildStartRequest {
+                // Attempt to initialize in-memory mapping if empty
+                // It's possible that indexing data is not ready yet in `CreateSessionRequest` above
+                // so retry to load info into memory at `BuildStartRequest` time
+                if let workspaceKey = workspaceKey {
+                    if (outputFileForSource[workspaceKey]?.count ?? 0) == 0 {
+                        initializeOutputFileMappingFromCache()
+                    }
+                }
+
                 let message = BuildProgressUpdatedResponse()
                 if let responseData = try? message.encode(encoder) {
                      bkservice.write(responseData)
@@ -355,6 +364,8 @@ enum BasicMessageHandler {
         log("[INFO] Proxying request with type: \(identifier)")
         if indexingEnabled && identifier == "INDEXING_INFO_REQUESTED" {
             log("[WARNING] BazelBuildService failed to handle indexing request, message will be proxied instead.")
+            // If we hit this means that something went wrong with indexing, logging this in-memory mapping is useful for troubleshooting
+            log("[INFO] outputFileForSource: \(outputFileForSource)")
         }
         xcbbuildService.write(data)
     }
