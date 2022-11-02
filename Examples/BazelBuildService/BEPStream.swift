@@ -18,9 +18,10 @@ public class BEPStream {
     deinit {
         // According to close should automatically happen, but it does't under a
         // few cases:
-        // https://developer.apple.com/documentation/foundation/filehandle/1413393-closefile
-        fileHandle?.closeFile()
+        // https://developer.apple.com/documentation/foundation/filehandle/3172525-close
+        try? fileHandle?.close()
         fileHandle?.readabilityHandler = nil
+        log("BEPStream: dealloc")
     }
     /// Reads data from a BEP stream
     /// @param eventAvailableHandler - this is called with _every_ BEP event
@@ -55,6 +56,7 @@ public class BEPStream {
             log("BEPStream: failed to allocate \(path)")
             return
         }
+
         self.fileHandle = fileHandle
         fileHandle.readabilityHandler = {
             handle in
@@ -83,5 +85,9 @@ public class BEPStream {
                 }
             }
         }
+
+        // The file handle works without this in debug mode (i.e. manually launching xcbuildkit),
+        // but when installed on a machine as a pkg this call is necessary to get events in the `readabilityHandler` block above.
+        fileHandle.waitForDataInBackgroundAndNotify()
     }
 }

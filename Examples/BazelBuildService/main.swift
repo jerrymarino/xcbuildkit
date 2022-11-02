@@ -105,7 +105,7 @@ private var bazelWorkingDir: String? {
 enum BasicMessageHandler {
     // Read info from BEP and optionally handle events
     static func startStream(bepPath: String, startBuildInput: XCBInputStream, bkservice: BKBuildService) throws {
-        log("startStream " + String(describing: startBuildInput))
+        log("[INFO] Will start BEP stream at path \(bepPath) with input" + String(describing: startBuildInput))
         let stream = try BEPStream(path: bepPath)
         var progressView: ProgressView?
         try stream.read {
@@ -249,9 +249,8 @@ enum BasicMessageHandler {
             // Only proceed for keys holding .json files with known pattern (i.e. `BUILD_SERVICE_SOURE_OUTPUT_FILE_MAP_SUFFIX`) in the name
             guard let jsonData = try? Data(contentsOf: URL(fileURLWithPath:jsonURI)) else { continue }
             guard jsonData.count > 0 else { continue }
-            guard let jsonDecoded = try? JSONSerialization.jsonObject(with: jsonData, options: [.allowFragments]) as? [String: String] else { continue }
             guard let sourceOutputFileMapSuffix = sourceOutputFileMapSuffix else { continue }
-            guard let workspaceKey = workspaceKey, jsonFilename.hasSuffix(sourceOutputFileMapSuffix) else { continue }
+            guard jsonFilename.hasSuffix(sourceOutputFileMapSuffix) else { continue }
 
             // Load .json contents into memory
             log("[INFO] Parsed \(jsonFilename) from BEP.")
@@ -306,17 +305,20 @@ enum BasicMessageHandler {
                 // Initialize build service
                 xcbbuildService.startIfNecessary(xcode: gXcode)
 
-                // Start reading from BEP as early as possible
-                do {
-                    let bepPath = configBEPPath ?? "/tmp/bep.bep"
-                    try startStream(bepPath: bepPath, startBuildInput: input, bkservice: bkservice)
-                } catch {
-                    fatalError("Failed to init stream" + error.localizedDescription)
-                }
-
                 // Load output file mapping information from cache if it exists
                 initializeOutputFileMappingFromCache()
             } else if msg is BuildStartRequest {
+                // Start reading from BEP as early as possible
+                if let bepPath = configBEPPath {
+                    do {
+                        try startStream(bepPath: bepPath, startBuildInput: input, bkservice: bkservice)
+                    } catch {
+                        // fatalError("[ERROR] Failed to start BEP stream with error: " + error.localizedDescription)
+                        log("[ERROR] Failed to start BEP stream with error: " + error.localizedDescription)
+                    }
+                } else {
+                    log("[WARNING] BEP string config key 'BUILD_SERVICE_BEP_PATH' empty. Bazel information won't be available during a build.")
+                }
                 // Attempt to initialize in-memory mapping if empty
                 // It's possible that indexing data is not ready yet in `CreateSessionRequest` above
                 // so retry to load info into memory at `BuildStartRequest` time
