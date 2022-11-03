@@ -176,5 +176,31 @@ public enum BazelBuildServiceStub {
 
                 return BPlistConverter(xml: clangXML)?.convertToBinary() ?? Data()
         }
+
+        // Required if `outputPathOnly` is `true` in the indexing request
+        public static func outputPathOnlyData(outputFilePath: String,
+                                              sourceFilePath: String) -> Data {
+                let xml = """
+                <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+                <plist version="1.0">
+                <array>
+                        <dict>
+                        <key>outputFilePath</key>
+                        <string>\(outputFilePath)</string>
+                        <key>sourceFilePath</key>
+                        <string>\(sourceFilePath)</string>
+                        </dict>
+                </array>
+                </plist>
+                """
+                guard let converter = BPlistConverter(xml: xml) else {
+                fatalError("Failed to allocate converter")
+                }
+                guard let bplistData = converter.convertToBinary() else {
+                fatalError("Failed to convert XML to binary plist data")
+                }
+
+                return bplistData
+        }
 }
 
