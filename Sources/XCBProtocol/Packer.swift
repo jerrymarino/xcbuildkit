@@ -117,6 +117,19 @@ public struct XCBInputStream  {
     public let data: Data
     public var stream: IndexingIterator<[MessagePackValue]>
     public let first: MessagePackValue
+    // Used for debugging only, assumes the first .string found is the identifier for this msg
+    public var identifier: String? {
+        var mutableSelf = self
+        while let value = mutableSelf.next() {
+            switch value {
+            case let XCBRawValue.string(str):
+                return str
+            default:
+                continue
+            }
+        }
+        return nil
+    }
 
     // This thing reads in a result - maybe it will not do this.
     public init (result: [MessagePackValue], data: Data) {

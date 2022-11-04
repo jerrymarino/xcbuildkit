@@ -68,6 +68,8 @@ private var workspaceName = ""
 // TODO: parsed in `IndexingInfoRequested`, there's probably a less hacky way to get this.
 // Effectively `$PWD/iOSApp`
 private var workingDir = ""
+// Path to derived data for the current workspace
+private var derivedDataPath = ""
 // TODO: parsed in `IndexingInfoRequested` and it's lowercased there, might not be stable in different OSes
 private var sdk = ""
 // TODO: parsed in `IndexingInfoRequested` and it's lowercased there, might not be stable in different OSes
@@ -132,10 +134,14 @@ enum BasicMessageHandler {
                 workspaceHash = createSessionRequest.workspaceHash
                 workspaceName = createSessionRequest.workspaceName
                 xcbbuildService.startIfNecessary(xcode: gXcode)
+            } else if let createBuildRequest = msg as? CreateBuildRequest {
+                // This information was not explicitly available in `CreateSessionRequest`, parse from `CreateBuildRequest` instead
+                // Necessary for indexing and potentially for other things in the future. This is effectively $SRCROOT.
+                workingDir = createBuildRequest.workingDir
+                derivedDataPath = createBuildRequest.derivedDataPath
             } else if !XCBBuildServiceProcess.MessageDebuggingEnabled() && indexingEnabled && msg is IndexingInfoRequested {
                 // Example of a custom indexing service
                 let reqMsg = msg as! IndexingInfoRequested
-                workingDir = reqMsg.workingDir
                 platform = reqMsg.platform
                 sdk = reqMsg.sdk
 
@@ -151,7 +157,7 @@ enum BasicMessageHandler {
                     targetID: reqMsg.targetID,
                     sourceFilePath: reqMsg.filePath,
                     outputFilePath: outputFilePath,
-                    derivedDataPath: reqMsg.derivedDataPath,
+                    derivedDataPath: derivedDataPath,
                     workspaceHash: workspaceHash,
                     workspaceName: workspaceName,
                     sdkPath: sdkPath,
@@ -185,7 +191,7 @@ enum BasicMessageHandler {
 }
 
 let xcbbuildService = XCBBuildServiceProcess()
-let bkservice = BKBuildService(indexingEnabled: indexingEnabled)
+let bkservice = BKBuildService()
 
 let context = BasicMessageContext(
     xcbbuildService: xcbbuildService,

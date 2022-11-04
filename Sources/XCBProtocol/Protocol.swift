@@ -60,12 +60,35 @@ private extension XCBEncoder {
         return id - offset
     }
 }
+// `path` should look something like this (note that `/path/to/DerivedData` can also be a custom path):
+//
+// path/to/DerivedData/App-<HASH>/any/other/path/here
+//
+private func workspaceInfoFromPath(path: String) -> (workspaceName: String, workspaceHash: String) {
+    var name: String = ""
+    var hash: String = ""
+
+    let componentsByDash = path.components(separatedBy: "-")
+    let parsedWorkspaceHash = componentsByDash.last!.components(separatedBy: "/").first ?? ""
+    hash = parsedWorkspaceHash
+
+    // Workspace names can contain `-` characters too
+    let componentsByForwardSlash = path.components(separatedBy: "/")
+    if let workspaceNameComponent = componentsByForwardSlash.filter({ $0.contains(parsedWorkspaceHash) }).first {
+        var workspaceNameComponentsByDash = workspaceNameComponent.components(separatedBy: "-")
+        workspaceNameComponentsByDash.removeLast()
+        name = String(workspaceNameComponentsByDash.joined(separator: "-"))
+    }
+
+    return (name, hash)
+}
 
 public struct CreateSessionRequest: XCBProtocolMessage {
     public let workspace: String
     public let workspaceName: String
     public let workspaceHash: String
     public let xcode: String
+    public let xcodeprojPath: String
     public let xcbuildDataPath: String
 
     init(input: XCBInputStream) throws {
@@ -96,27 +119,16 @@ public struct CreateSessionRequest: XCBProtocolMessage {
             self.xcbuildDataPath = ""
         }
 
-        // `self.xcbuildDataPath` looks something like this (note that `/path/to/DerivedData` can also be a custom path):
-        //
-        // /path/to/DerivedData/iOSApp-frhmkkebaragakhdzyysbrsvbgtc/Build/Intermediates.noindex/XCBuildData
-        //
-        let componentsByDash = self.xcbuildDataPath.components(separatedBy: "-")
-        let parsedWorkspaceHash = componentsByDash.last!.components(separatedBy: "/").first ?? ""
-        self.workspaceHash = parsedWorkspaceHash
+        // Use helper method to extract this from `/path/to/DerivedData/App-<HASH>/Build/Intermediates.noindex/XCBuildData`
+        (self.workspaceName, self.workspaceHash) = workspaceInfoFromPath(path: self.xcbuildDataPath)
 
-        // Workspace names can contain `-` characters too
-        let componentsByForwardSlash = self.xcbuildDataPath.components(separatedBy: "/")
-        if let workspaceNameComponent = componentsByForwardSlash.filter { $0.contains(parsedWorkspaceHash) }.first as? String {
-            var workspaceNameComponentsByDash = workspaceNameComponent.components(separatedBy: "-")
-            workspaceNameComponentsByDash.removeLast()
-            self.workspaceName = String(workspaceNameComponentsByDash.joined(separator: "-"))
-        } else {
-            self.workspaceName = ""
-        }
+        // Parse path to .xcodeproj used to load xcbuildkit config as early as possible
+        self.xcodeprojPath = self.workspace.components(separatedBy:"path:\'").last?.components(separatedBy:"/project.xcworkspace").first ?? ""
 
         log("Found XCBuildData path: \(self.xcbuildDataPath)")
         log("Parsed workspaceHash: \(self.workspaceHash)")
         log("Parsed workspaceName: \(self.workspaceName)")
+        log("Parsed xcodeprojPath: \(self.xcodeprojPath)")
     }
 }
 
@@ -139,25 +151,54 @@ public struct SetSessionUserInfoRequest: XCBProtocolMessage {
 
 public struct CreateBuildRequest: XCBProtocolMessage {
     public let configuredTargets: [String]
+    public let containerPath: String
+    public let workspaceName: String
+    public let workspaceHash: String
+    public let workingDir: String
+    public let derivedDataPath: String
+    public let indexDataStoreFolderPath: String
+
     public init(input: XCBInputStream) throws {
         var minput = input
         guard let next = minput.next(),
             case let .binary(jsonData) = next else {
             throw XCBProtocolError.unexpectedInput(for: input)
         }
-         guard let json = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
+        guard let json = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
             throw XCBProtocolError.unexpectedInput(for: input)
-         }
-         let requestJSON = json["request"] as? [String: Any] ?? [:]
-         if let ct = requestJSON["configuredTargets"] as? [[String: Any]] { 
-             self.configuredTargets = ct.compactMap { ctInfo in
-                 return ctInfo["guid"] as? String
-             }
-             log("info: got configured targets \(self.configuredTargets)")
-         } else {
-             log("warning: malformd configured targets\(json["configuredTargets"])")
-             self.configuredTargets = []
-         }
+        }
+        let requestJSON = json["request"] as? [String: Any] ?? [:]
+        // Remove last word of `$PWD/iOSApp/iOSApp.xcodeproj` to get `workingDir`
+        self.containerPath = requestJSON["containerPath"] as? String ?? ""
+        self.workingDir = Array(containerPath.components(separatedBy: "/").dropLast()).joined(separator: "/")
+        log("info: got workingDir \(self.workingDir)")
+
+        let parameters = requestJSON["parameters"] as? [String: Any] ?? [:]
+        let arenaInfo = parameters["arenaInfo"] as? [String: Any] ?? [:]
+        self.derivedDataPath = arenaInfo["derivedDataPath"] as? String ?? ""
+        self.indexDataStoreFolderPath = arenaInfo["indexDataStoreFolderPath"] as? String ?? ""
+        log("info: got derivedDataPath \(self.derivedDataPath)")
+        log("info: got indexDataStoreFolderPath \(self.indexDataStoreFolderPath)")
+
+        if let indexDataStoreFolderPath = arenaInfo["indexDataStoreFolderPath"] as? String {
+            (self.workspaceName, self.workspaceHash) = workspaceInfoFromPath(path: indexDataStoreFolderPath)
+        } else {
+            self.workspaceName = ""
+            self.workspaceHash = ""
+        }
+        log("info: got workspaceName \(self.workspaceName)")
+        log("info: got workspaceHash \(self.workspaceHash)")
+
+        log("info: got containerPath \(self.containerPath)")
+        if let ct = requestJSON["configuredTargets"] as? [[String: Any]] {
+            self.configuredTargets = ct.compactMap { ctInfo in
+                return ctInfo["guid"] as? String
+            }
+            log("info: got configured targets \(self.configuredTargets)")
+        } else {
+            log("warning: malformd configured targets\(json["configuredTargets"] ?? [])")
+            self.configuredTargets = []
+        }
     }
 }
 
@@ -199,10 +240,10 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
     public let targetID: String
     public let outputPathOnly: Bool
     public let filePath: String
-    public let derivedDataPath: String
-    public let workingDir: String
     public let sdk: String
     public let platform: String
+    public let workspaceName: String
+    public let workspaceHash: String
 
     public init(input: XCBInputStream) throws {
         var minput = input
@@ -213,10 +254,10 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
             self.filePath = "_internal_stub_"
             self.outputPathOnly = false
             self.responseChannel = -1
-            self.derivedDataPath = ""
-            self.workingDir = ""
             self.sdk = ""
             self.platform = ""
+            self.workspaceName = ""
+            self.workspaceHash = ""
             return
         }
 
@@ -233,18 +274,14 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
         self.outputPathOnly = json["outputPathOnly"] as? Bool ?? false
 
         let requestJSON = json["request"] as? [String: Any] ?? [:]
-
-        // Remove last word of `$PWD/iOSApp/iOSApp.xcodeproj` to get `workingDir`
-        let containerPath = requestJSON["containerPath"] as? String ?? ""
-        self.workingDir = Array(containerPath.components(separatedBy: "/").dropLast()).joined(separator: "/")
-
         let jsonRep64Str = requestJSON["jsonRepresentation"] as? String ?? ""
         let jsonRepData = Data.fromBase64(jsonRep64Str) ?? Data()
         guard let jsonJSON = try JSONSerialization.jsonObject(with: jsonRepData, options: []) as? [String: Any] else {
             log("warning: missing rep str")
-            self.derivedDataPath = ""
             self.sdk = ""
             self.platform = ""
+            self.workspaceName = ""
+            self.workspaceHash = ""
             log("RequestReceived \(self)")
             return
         }
@@ -252,16 +289,23 @@ public struct IndexingInfoRequested: XCBProtocolMessage {
 
         let parameters = jsonJSON["parameters"] as? [String: Any] ?? [:]
         let arenaInfo = parameters["arenaInfo"] as? [String: Any] ?? [:]
-        self.derivedDataPath = arenaInfo["derivedDataPath"] as? String ?? ""
-
         let activeRunDestination = parameters["activeRunDestination"] as? [String: Any] ?? [:]
         self.sdk = activeRunDestination["sdk"] as? String ?? ""
         self.platform = activeRunDestination["platform"] as? String ?? ""
 
+        // Use helper method to extract this from `/path/to/DerivedData/App-<HASH>/Build/Intermediates.noindex/Index/DataStore`
+        if let indexDataStoreFolderPath = arenaInfo["indexDataStoreFolderPath"] as? String {
+            (self.workspaceName, self.workspaceHash) = workspaceInfoFromPath(path: indexDataStoreFolderPath)
+        } else {
+            self.workspaceName = ""
+            self.workspaceHash = ""
+        }
+
         log("RequestReceived \(self)")
-        log("Parsed derivedDataPath \(self.derivedDataPath)")
-        log("Parsed sdk \(self.sdk)")
-        log("Parsed platform \(self.platform)")
+        log("Parsed(indexing) sdk \(self.sdk)")
+        log("Parsed(indexing) platform \(self.platform)")
+        log("Parsed(indexing) workspaceName \(self.workspaceName)")
+        log("Parsed(indexing) workspaceHash \(self.workspaceHash)")
     }
 }
 

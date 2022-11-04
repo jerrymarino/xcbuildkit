@@ -51,7 +51,7 @@ extension XCBDecoder {
     public func decodeMessage() -> XCBProtocolMessage? {
         do {
             let msg = try decodeMessageImpl()
-            log("decoded" + String(describing: msg))
+            log("decoded: " + String(describing: msg))
             return msg
         } catch {
             log("decoding failed \(error)")
