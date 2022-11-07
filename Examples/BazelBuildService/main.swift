@@ -18,14 +18,14 @@ enum BasicMessageHandler {
     /// Proxying response handler
     /// Every message is written to the XCBBuildService
     /// This simply injects Progress messages from the BEP
-    static func respond(input: XCBInputStream, data: Data, context: Any?) {
+    static func respond(input: XCBInputStream, data: Data, msgId: UInt64, context: Any?) {
         let ctx = context as! BasicMessageContext
         let xcbbuildService = ctx.xcbbuildService
         let bkservice = ctx.bkservice
         let indexingService = ctx.indexingService
         let bepService = ctx.bepService
         let decoder = XCBDecoder(input: input)
-        let encoder = XCBEncoder(input: input)
+        let encoder = XCBEncoder(input: input, msgId: msgId)
         let identifier = input.identifier ?? ""
 
         if let msg = decoder.decodeMessage() {
@@ -38,6 +38,7 @@ enum BasicMessageHandler {
                     xcodeprojPath: createSessionRequest.xcodeprojPath
                 )
                 indexingService.infos[createSessionRequest.workspaceKey] = workspaceInfo
+                log("[INFO] Loaded xcbuildkit config: \(workspaceInfo.config)")
 
                 // Initialize build service
                 xcbbuildService.startIfNecessary(xcode: workspaceInfo.xcode)
@@ -50,10 +51,12 @@ enum BasicMessageHandler {
                      bkservice.write(responseData)
                 }
             } else if let createBuildRequest = msg as? CreateBuildRequest, let workspaceInfo = indexingService.infos[createBuildRequest.workspaceKey] {
+                log("[INFO] Creating build with config: \(workspaceInfo.config)")
+
                 // Start streaming from the BEP
                 if let bepPath = workspaceInfo.config.configBEPPath {
                     do {
-                        try bepService.startStream(msg: createBuildRequest, bepPath: bepPath, startBuildInput: input, ctx: ctx)
+                        try bepService.startStream(msg: createBuildRequest, bepPath: bepPath, startBuildInput: input, msgId: msgId, ctx: ctx)
                     } catch {
                         log("[ERROR] Failed to start BEP stream with error: " + error.localizedDescription)
                     }

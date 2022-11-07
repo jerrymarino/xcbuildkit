@@ -8,7 +8,7 @@ import XCBProtocol
 // keep all logic here now for simplicity.
 class BEPService {
   // Read info from BEP and optionally handle events
-  func startStream(msg: WorkspaceInfoKeyable, bepPath: String, startBuildInput: XCBInputStream, ctx: BasicMessageContext) throws {
+  func startStream(msg: WorkspaceInfoKeyable, bepPath: String, startBuildInput: XCBInputStream, msgId: UInt64, ctx: BasicMessageContext) throws {
         guard let info = ctx.indexingService.infos[msg.workspaceKey] else { return }
 
         log("[INFO] Will start BEP stream at path \(bepPath) with input" + String(describing: startBuildInput))
@@ -23,7 +23,7 @@ class BEPService {
 
             if info.config.progressBarEnabled {
                 if let updatedView = ProgressView(event: event, last: progressView) {
-                    let encoder = XCBEncoder(input: startBuildInput)
+                    let encoder = XCBEncoder(input: startBuildInput, msgId: msgId)
                     let response = BuildProgressUpdatedResponse(progress:
                         updatedView.progressPercent, message: updatedView.message)
                     if let responseData = try? response.encode(encoder) {

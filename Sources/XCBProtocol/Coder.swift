@@ -2,24 +2,21 @@ import Foundation // For log()
 
 public class XCBEncoder {
     let input: XCBInputStream
+    let msgId: UInt64
 
-    public init(input: XCBInputStream) {
+    public init(input: XCBInputStream, msgId: UInt64 = 0) {
         self.input = input
+        self.msgId = msgId
     }
 
     /// This is state of protocol messages, and perhaps it would be encapsulated in a
     /// better way. Xcode uses this internally
     func getMsgId() throws -> UInt64 {
-        var v = self.input
-        guard let next = v.next(),
-            case let .uint(id) = next else {
-            // This happens when there is unexpected input. There is an
-            // unimplemented where this does happen, triggered by
-            // BazelBuildService.
-            log("missing id for msg: " + String(describing: self.input))
+        guard self.msgId > 0 else {
+            log("[ERROR] Missing id for msg: " + String(describing: self.input))
             throw XCBProtocolError.unexpectedInput(for: self.input)
         }
-        return id + 1
+        return self.msgId + 1
     }
 }
 

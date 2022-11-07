@@ -40,7 +40,7 @@ import XCBProtocol
 ///
 /// @param context is used to pass state around
 
-public typealias XCBMessageHandler = (XCBInputStream, Data, Any?) -> Void
+public typealias XCBMessageHandler = (XCBInputStream, Data, UInt64, Any?) -> Void
 
 private let serializerToken = 4096
 
@@ -70,7 +70,7 @@ public class BKBuildService {
     // Once a buffer is ready to write to stdout and respond to Xcode invoke this
     func handleRequest(messageHandler: @escaping XCBMessageHandler, context: Any?) {
         let result = Unpacker.unpackAll(self.buffer)
-        let input = XCBInputStream(result: result, data: self.buffer)
+        let input = XCBInputStream(result: result)
         let decoder = XCBDecoder(input: input)
         let msg = decoder.decodeMessage()
 
@@ -83,24 +83,18 @@ public class BKBuildService {
         ogData.append(self.bufferContentSize)
         ogData.append(self.buffer)
 
+        // Indexing msgs require a PING on the msgId before passing the payload
+        // doing this here so build service writers don't have to worry about this impl detail
         if msg is IndexingInfoRequested  {
-            // Indexing msgs require a PING on the msgId before passing the payload
-            // doing this here so proxy writers don't have to worry about this impl detail
             write([
                 XCBRawValue.string("PING"),
                 XCBRawValue.nil,
             ], msgId: self.msgId)
-            messageHandler(input, ogData, context)
-        } else {
-            // `CreateSessionRequest` is being special cased until we start writing the correct response to it in one of the examples
-            // for now if this is detected change the input to be the one from the buffer instead of from the original stream
-            //
-            // Important: Note that `ogData` still needs to be passed below so the original build service can parse `CREATE_SESSION` and
-            // write the correct response to stdout for us for now
-            let inputData = msg is CreateSessionRequest ? self.buffer : ogData
-            let ogResult = Unpacker.unpackAll(ogData)
-            messageHandler(XCBInputStream(result: ogResult, data: inputData), ogData, context)
         }
+
+        // This propagates the message to the build service
+        // In there messages should be either handled or proxied
+        messageHandler(input, ogData, self.msgId, context)
 
         // Reset all the things
         self.buffer = Data()
