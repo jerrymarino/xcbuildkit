@@ -74,7 +74,7 @@ func unpackArray(_ data: Subdata, count: Int, compatibility: Bool) throws -> (va
     var newValue: MessagePackValue
 
     for _ in 0 ..< count {
-        guard !remainder.isEmpty else { continue }
+        guard !remainder.isEmpty else { break }
 
         (newValue, remainder) = try unpack(remainder, compatibility: compatibility)
         values.append(newValue)
