@@ -69,6 +69,7 @@ enum BasicMessageHandler {
                 workspaceInfo.workingDir = createBuildRequest.workingDir
                 workspaceInfo.derivedDataPath = createBuildRequest.derivedDataPath
                 workspaceInfo.indexDataStoreFolderPath = createBuildRequest.indexDataStoreFolderPath
+                workspaceInfo.targetConfiguration = createBuildRequest.configuration
 
                 // Attempt to initialize in-memory mapping if empty
                 // It's possible that indexing data is not ready yet in `CreateSessionRequest` above
@@ -83,7 +84,8 @@ enum BasicMessageHandler {
                       let workspaceInfo = indexingService.infos[indexingInfoRequest.workspaceKey] {
                 // Compose the indexing response payload and emit the response message
                 // Note that information is combined from different places (workspace info, incoming indexing request, indexing service helper methods)
-                let clangXMLData = BazelBuildServiceStub.getASTArgs(
+                let compilerInvocationData = BazelBuildServiceStub.getASTArgs(
+                    isSwift: indexingInfoRequest.filePath.hasSuffix(".swift"),
                     targetID: indexingInfoRequest.targetID,
                     sourceFilePath: indexingInfoRequest.filePath,
                     outputFilePath: outputFilePath,
@@ -92,13 +94,15 @@ enum BasicMessageHandler {
                     workspaceName: workspaceInfo.workspaceName,
                     sdkPath: ctx.indexingService.sdkPath(msg: indexingInfoRequest),
                     sdkName: indexingInfoRequest.sdk,
-                    workingDir: workspaceInfo.config.bazelWorkingDir ?? workspaceInfo.workingDir)
+                    workingDir: workspaceInfo.config.bazelWorkingDir ?? workspaceInfo.workingDir,
+                    configuration: workspaceInfo.targetConfiguration,
+                    platform: indexingInfoRequest.platform)
 
                 let message = IndexingInfoReceivedResponse(
                     targetID: indexingInfoRequest.targetID,
                     data: indexingInfoRequest.outputPathOnly ? BazelBuildServiceStub.outputPathOnlyData(outputFilePath: outputFilePath, sourceFilePath: indexingInfoRequest.filePath) : nil,
                     responseChannel: UInt64(indexingInfoRequest.responseChannel),
-                    clangXMLData: indexingInfoRequest.outputPathOnly ? nil : clangXMLData)
+                    compilerInvocationData: indexingInfoRequest.outputPathOnly ? nil : compilerInvocationData)
 
                 if let encoded: XCBResponse = try? message.encode(encoder) {
                     bkservice.write(encoded, msgId:message.responseChannel)

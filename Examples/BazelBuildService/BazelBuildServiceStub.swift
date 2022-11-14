@@ -45,7 +45,7 @@ let clangXMLT: String = """
                 <key>LanguageDialect</key>
                 <string>objective-c</string>
                 <key>clangASTBuiltProductsDir</key>
-                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORSPACE_HASH__/Index/Build/Products/Debug-iphonesimulator</string>
+                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/__CONFIGURATION__-__PLATFORM__</string>
                 <key>clangASTCommandArguments</key>
                 <array>
                         <string>-x</string>
@@ -154,8 +154,75 @@ let clangXMLT: String = """
 </plist>
 """
 
+let swiftXMLT: String = """
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<array>
+		<dict>
+			<key>LanguageDialect</key>
+			<string>swift</string>
+			<key>outputFilePath</key>
+			<string>__OUTPUT_FILE_PATH__</string>
+			<key>sourceFilePath</key>
+			<string>__SOURCE_FILE__</string>
+			<key>swiftASTBuiltProductsDir</key>
+			<string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/__CONFIGURATION__-__PLATFORM__</string>
+			<key>swiftASTCommandArguments</key>
+			<array>
+                                <string>-module-name</string>
+				<string>__MODULE_NAME__</string>
+				<string>-Onone</string>
+				<string>-enforce-exclusivity=checked</string>
+				<string>-sdk</string>
+				<string>__SDK_PATH__</string>
+				<string>-target</string>
+				<string>x86_64-apple-ios11.0-simulator</string>
+				<string>-g</string>
+				<string>-module-cache-path</string>
+				<string>__DERIVED_DATA_PATH__/ModuleCache.noindex</string>
+				<string>-Xfrontend</string>
+				<string>-serialize-debugging-options</string>
+				<string>-enable-testing</string>
+				<string>-swift-version</string>
+				<string>5</string>
+				<string>-parse-as-library</string>
+				<string>-Xfrontend</string>
+				<string>-experimental-allow-module-with-compiler-errors</string>
+				<string>-Xcc</string>
+				<string>-Xclang</string>
+				<string>-Xcc</string>
+				<string>-fallow-pcm-with-compiler-errors</string>
+				<string>-Xcc</string>
+				<string>-Xclang</string>
+				<string>-Xcc</string>
+				<string>-fmodule-format=raw</string>
+				<string>-Xcc</string>
+				<string>-Xclang</string>
+				<string>-Xcc</string>
+				<string>-detailed-preprocessing-record</string>
+				<string>-num-threads</string>
+				<string>10</string>
+                                <string>-DXCBTEST</string>
+				<string>-Xcc</string>
+				<string>-DDEBUG=1</string>
+				<string>-working-directory</string>
+				<string>__WORKING_DIR__</string>
+				<string>__SOURCE_FILE__</string>
+			</array>
+			<key>swiftASTModuleName</key>
+			<string>__MODULE_NAME__</string>
+			<key>toolchains</key>
+			<array>
+				<string>com.apple.dt.toolchain.XcodeDefault</string>
+			</array>
+		</dict>
+	</array>
+</plist>
+"""
+
 public enum BazelBuildServiceStub {
-        public static func getASTArgs(targetID: String,
+        public static func getASTArgs(isSwift: Bool,
+                                      targetID: String,
                                       sourceFilePath: String,
                                       outputFilePath: String,
                                       derivedDataPath: String,
@@ -163,18 +230,25 @@ public enum BazelBuildServiceStub {
                                       workspaceName: String,
                                       sdkPath: String,
                                       sdkName: String,
-                                      workingDir: String) -> Data {
-                let clangXML = clangXMLT.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
+                                      workingDir: String,
+                                      configuration: String,
+                                      platform: String) -> Data {
+                var stub = isSwift ? swiftXMLT : clangXMLT
+                stub = stub.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
                 .replacingOccurrences(of:"__OUTPUT_FILE_PATH__", with: outputFilePath)
                 .replacingOccurrences(of:"__INDEX_STORE_PATH__", with: "\(derivedDataPath)/\(workspaceName)-\(workspaceHash)/Index/DataStore")
                 .replacingOccurrences(of:"__WORKSPACE_NAME__", with: workspaceName)
                 .replacingOccurrences(of:"__DERIVED_DATA_PATH__", with: derivedDataPath)
-                .replacingOccurrences(of:"__WORSPACE_HASH__", with: workspaceHash)
+                .replacingOccurrences(of:"__WORKSPACE_HASH__", with: workspaceHash)
                 .replacingOccurrences(of:"__SDK_PATH__", with: sdkPath)
+                .replacingOccurrences(of:"__BAZEL_XCODE_SDKROOT__", with: sdkPath)
                 .replacingOccurrences(of:"__SDK_NAME__", with: sdkName)
                 .replacingOccurrences(of:"__WORKING_DIR__", with: workingDir)
+                .replacingOccurrences(of:"__CONFIGURATION__", with: configuration)
+                .replacingOccurrences(of:"__PLATFORM__", with: platform)
+                .replacingOccurrences(of:"__MODULE_NAME__", with: "Chartography_DemoApp")
 
-                return BPlistConverter(xml: clangXML)?.convertToBinary() ?? Data()
+                return BPlistConverter(xml: stub)?.convertToBinary() ?? Data()
         }
 
         // Required if `outputPathOnly` is `true` in the indexing request

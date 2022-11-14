@@ -157,6 +157,7 @@ public struct CreateBuildRequest: XCBProtocolMessage {
     public let workingDir: String
     public let derivedDataPath: String
     public let indexDataStoreFolderPath: String
+    public let configuration: String
 
     public init(input: XCBInputStream) throws {
         var minput = input
@@ -168,6 +169,8 @@ public struct CreateBuildRequest: XCBProtocolMessage {
             throw XCBProtocolError.unexpectedInput(for: input)
         }
         let requestJSON = json["request"] as? [String: Any] ?? [:]
+        log("info: CREATE_BUILD decoded: \(requestJSON)")
+
         // Remove last word of `$PWD/iOSApp/iOSApp.xcodeproj` to get `workingDir`
         self.containerPath = requestJSON["containerPath"] as? String ?? ""
         self.workingDir = Array(containerPath.components(separatedBy: "/").dropLast()).joined(separator: "/")
@@ -175,10 +178,12 @@ public struct CreateBuildRequest: XCBProtocolMessage {
 
         let parameters = requestJSON["parameters"] as? [String: Any] ?? [:]
         let arenaInfo = parameters["arenaInfo"] as? [String: Any] ?? [:]
+        self.configuration = parameters["configuration"] as? String ?? "Debug"
         self.derivedDataPath = arenaInfo["derivedDataPath"] as? String ?? ""
         self.indexDataStoreFolderPath = arenaInfo["indexDataStoreFolderPath"] as? String ?? ""
         log("info: got derivedDataPath \(self.derivedDataPath)")
         log("info: got indexDataStoreFolderPath \(self.indexDataStoreFolderPath)")
+        log("info: got configuration \(self.configuration)")
 
         if let indexDataStoreFolderPath = arenaInfo["indexDataStoreFolderPath"] as? String {
             (self.workspaceName, self.workspaceHash) = workspaceInfoFromPath(path: indexDataStoreFolderPath)
@@ -578,14 +583,14 @@ public struct IndexingInfoReceivedResponse: XCBProtocolMessage {
     let targetID: String
     let data: Data?
     public let responseChannel: UInt64
-    let clangXMLData: Data?
+    let compilerInvocationData: Data?
 
-    public init(targetID: String = "", data: Data? = nil, responseChannel: UInt64, clangXMLData: Data? = Data()) {
+    public init(targetID: String = "", data: Data? = nil, responseChannel: UInt64, compilerInvocationData: Data? = Data()) {
         self.targetID = targetID
         self.data = data
         //self.responseChannel = 40
         self.responseChannel = responseChannel
-        self.clangXMLData = clangXMLData
+        self.compilerInvocationData = compilerInvocationData
     }
 
     public func encode(_: XCBEncoder) throws -> XCBResponse {
@@ -594,8 +599,8 @@ public struct IndexingInfoReceivedResponse: XCBProtocolMessage {
             inputs += [XCBRawValue.binary(data)]
         }
 
-        if let clangXMLData =  self.clangXMLData {
-            inputs +=  [XCBRawValue.binary(clangXMLData)]
+        if let compilerInvocationData =  self.compilerInvocationData {
+            inputs +=  [XCBRawValue.binary(compilerInvocationData)]
         }
         return [
              XCBRawValue.string("INDEXING_INFO_RECEIVED"),

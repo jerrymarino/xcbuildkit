@@ -45,6 +45,7 @@ private let outputFileForSource: [String: [String: String]] = [
     "iOSApp-frhmkkebaragakhdzyysbrsvbgtc": [
         "/CLI/main.m": "/tmp/xcbuild-out/CLI/main.o",
         "/iOSApp/main.m": "/tmp/xcbuild-out/iOSApp/main.o",
+        "/iOSApp/Test.swift": "/tmp/xcbuild-out/iOSApp/Test.o",
     ],
 
     // TODO: Should come from an aspect in Bazel
@@ -68,6 +69,8 @@ private var workspaceName = ""
 // TODO: parsed in `IndexingInfoRequested`, there's probably a less hacky way to get this.
 // Effectively `$PWD/iOSApp`
 private var workingDir = ""
+// Target config, e.g. 'Debug'/'Release'
+private var targetConfiguration = ""
 // Path to derived data for the current workspace
 private var derivedDataPath = ""
 // TODO: parsed in `IndexingInfoRequested` and it's lowercased there, might not be stable in different OSes
@@ -128,6 +131,8 @@ enum BasicMessageHandler {
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
         let encoder = XCBEncoder(input: input, msgId: msgId)
+        let identifier = input.identifier ?? ""
+
         if let msg = decoder.decodeMessage() {
             if let createSessionRequest = msg as? CreateSessionRequest {
                 gXcode = createSessionRequest.xcode
@@ -139,6 +144,7 @@ enum BasicMessageHandler {
                 // Necessary for indexing and potentially for other things in the future. This is effectively $SRCROOT.
                 workingDir = createBuildRequest.workingDir
                 derivedDataPath = createBuildRequest.derivedDataPath
+                targetConfiguration = createBuildRequest.configuration
             } else if !XCBBuildServiceProcess.MessageDebuggingEnabled() && indexingEnabled && msg is IndexingInfoRequested {
                 // Example of a custom indexing service
                 let reqMsg = msg as! IndexingInfoRequested
@@ -148,12 +154,12 @@ enum BasicMessageHandler {
                 let workspaceKey = "\(workspaceName)-\(workspaceHash)"
                 let sourceKey = reqMsg.filePath.replacingOccurrences(of: workingDir, with: "")
                 guard let outputFilePath = outputFileForSource[workspaceKey]?[sourceKey] else {
-                    fatalError("Failed to find output file for source: \(reqMsg.filePath)")
-                    return
+                    fatalError("[ERROR] Failed to find output file for source: \(reqMsg.filePath)")
                 }
-                log("Found output file \(outputFilePath) for source \(reqMsg.filePath)")
+                log("[INFO] Found output file \(outputFilePath) for source \(reqMsg.filePath)")
 
-                let clangXMLData = XCBBuildServiceProxyStub.getASTArgs(
+                let compilerInvocationData = XCBBuildServiceProxyStub.getASTArgs(
+                    isSwift: reqMsg.filePath.hasSuffix(".swift"),
                     targetID: reqMsg.targetID,
                     sourceFilePath: reqMsg.filePath,
                     outputFilePath: outputFilePath,
@@ -162,14 +168,17 @@ enum BasicMessageHandler {
                     workspaceName: workspaceName,
                     sdkPath: sdkPath,
                     sdkName: sdk,
-                    workingDir: workingDir)
+                    workingDir: workingDir,
+                    configuration: targetConfiguration,
+                    platform: platform)
 
                 let message = IndexingInfoReceivedResponse(
                     targetID: reqMsg.targetID,
                     data: reqMsg.outputPathOnly ? outputPathOnlyData(outputFilePath: outputFilePath, sourceFilePath: reqMsg.filePath) : nil,
                     responseChannel: UInt64(reqMsg.responseChannel),
-                    clangXMLData: reqMsg.outputPathOnly ? nil : clangXMLData)
+                    compilerInvocationData: reqMsg.outputPathOnly ? nil : compilerInvocationData)
                 if let encoded: XCBResponse = try? message.encode(encoder) {
+                    log("[INFO] Handling \(identifier) for source \(reqMsg.filePath) and output file \(outputFilePath)")
                     bkservice.write(encoded, msgId:message.responseChannel)
                     return
                 }
@@ -185,6 +194,7 @@ enum BasicMessageHandler {
                 try? data.write(to: URL(fileURLWithPath: "/tmp/in-stubs/xcbuild.og.stdin.\(gChunkNumber).bin"))
             }
         }
+        log("[INFO] Proxying request with type: \(identifier)")
         // writes input data to original service
         xcbbuildService.write(data)
     }

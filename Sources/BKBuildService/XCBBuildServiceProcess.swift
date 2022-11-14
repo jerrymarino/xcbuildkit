@@ -95,7 +95,6 @@ public class XCBBuildServiceProcess {
         }
     }
 
-
     public func start(path: String) {
         log("Starting build service:" + path)
         self.stdout.fileHandleForReading.readabilityHandler = {

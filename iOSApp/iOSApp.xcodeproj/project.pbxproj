@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AF77992028C2AF92009E5F7B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C45F55C01FD2199000A6C9F8 /* main.m */; };
+		AFC5E93629252F2100B1F21C /* Test.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC5E93529252F2100B1F21C /* Test.swift */; };
 		C56EA31B23107E6F00A9FB8F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C56EA31A23107E6E00A9FB8F /* main.m */; };
 /* End PBXBuildFile section */
 
@@ -24,6 +25,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AFC5E93429252F2100B1F21C /* iOSApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "iOSApp-Bridging-Header.h"; sourceTree = "<group>"; };
+		AFC5E93529252F2100B1F21C /* Test.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Test.swift; sourceTree = "<group>"; };
 		C45F55AE1FD2199000A6C9F8 /* iOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C45F55BF1FD2199000A6C9F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C45F55C01FD2199000A6C9F8 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -67,6 +70,8 @@
 			children = (
 				C45F55BF1FD2199000A6C9F8 /* Info.plist */,
 				C45F55C01FD2199000A6C9F8 /* main.m */,
+				AFC5E93529252F2100B1F21C /* Test.swift */,
+				AFC5E93429252F2100B1F21C /* iOSApp-Bridging-Header.h */,
 			);
 			path = iOSApp;
 			sourceTree = "<group>";
@@ -125,6 +130,7 @@
 				TargetAttributes = {
 					C45F55AD1FD2199000A6C9F8 = {
 						CreatedOnToolsVersion = 9.0;
+						LastSwiftMigration = 1330;
 						ProvisioningStyle = Manual;
 					};
 					C56EA31723107E6E00A9FB8F = {
@@ -158,6 +164,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF77992028C2AF92009E5F7B /* main.m in Sources */,
+				AFC5E93629252F2100B1F21C /* Test.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -206,6 +213,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEFINES_MODULE = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -225,6 +233,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_MODULE_NAME = "";
 				SDKROOT = iphoneos;
 			};
 			name = Debug;
@@ -263,6 +272,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEFINES_MODULE = NO;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -275,6 +285,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_MODULE_NAME = "";
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -284,11 +295,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = NO;
 				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COLOR_DIAGNOSTICS = NO;
+				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = iOSApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -297,8 +310,12 @@
 					"-fno-color-diagnostics",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = jerry.iOSApp;
+				PRODUCT_MODULE_NAME = iOSApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOSApp/iOSApp-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = "";
@@ -309,11 +326,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = NO;
 				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
 				COLOR_DIAGNOSTICS = NO;
+				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = iOSApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -322,8 +341,11 @@
 					"-fno-color-diagnostics",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = jerry.iOSApp;
+				PRODUCT_MODULE_NAME = iOSApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOSApp/iOSApp-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = "";

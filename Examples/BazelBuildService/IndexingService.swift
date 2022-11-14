@@ -8,10 +8,13 @@ class IndexingService {
     // Finds output file (i.e. path to `.o` under `bazel-out`) in in-memory mapping
     func findOutputFileForSource(msg: WorkspaceInfoKeyable, filePath: String, workingDir: String) -> String? {
         guard let info = self.infos[msg.workspaceKey] else { return nil }
+        guard let sourceOutputFileMapSuffix = info.config.sourceOutputFileMapSuffix else { return nil }
         // Create key
         let sourceKey = filePath.replacingOccurrences(of: workingDir, with: "").replacingOccurrences(of: (info.config.bazelWorkingDir ?? ""), with: "")
         // Loops until found
-        for (_, json) in info.outputFileForSource {
+        for (key, json) in info.outputFileForSource {
+            guard key.hasSuffix(sourceOutputFileMapSuffix) else { continue }
+
             if let objFilePath = json[sourceKey] {
                 return objFilePath
             }
@@ -49,7 +52,7 @@ class IndexingService {
             return nil
         }
         // TODO: handle Swift
-        guard msg.filePath.count > 0 && msg.filePath != "<garbage>" && !msg.filePath.hasSuffix(".swift") else {
+        guard msg.filePath.count > 0 && msg.filePath != "<garbage>" else {
             log("[WARNING] Unsupported filePath for indexing: \(msg.filePath)")
             return nil
         }

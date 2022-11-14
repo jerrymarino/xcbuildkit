@@ -18,6 +18,7 @@ class WorkspaceInfo {
   var derivedDataPath: String = ""
   var indexDataStoreFolderPath: String = ""
   var bepStream: BEPStream?
+  var targetConfiguration: String = "Debug"
 
   // Dictionary that holds mapping from source file to respective `.o` file under `bazel-out`. Used to respond to indexing requests.
   //

@@ -45,13 +45,13 @@ let clangXMLT: String = """
                 <key>LanguageDialect</key>
                 <string>objective-c</string>
                 <key>clangASTBuiltProductsDir</key>
-                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/Debug-iphonesimulator</string>
+                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/__CONFIGURATION__-__PLATFORM__</string>
                 <key>clangASTCommandArguments</key>
                 <array>
                         <string>-x</string>
                         <string>objective-c</string>
                         <string>-target</string>
-                        <string>x86_64-apple-macos10.14</string>
+                        <string>x86_64-apple-ios11.0-simulator</string>
                         <string>-fmessage-length=0</string>
                         <string>-fdiagnostics-show-note-include-stack</string>
                         <string>-fmacro-backtrace-limit=0</string>
@@ -140,6 +140,7 @@ let clangXMLT: String = """
                         <string>-Xclang</string>
                         <string>-detailed-preprocessing-record</string>
                         <string>-DZZ=1</string>
+                        <string>-I/tmp/xcbuild-out/iOSApp</string>
                 </array>
                 <key>outputFilePath</key>
                 <string>__OUTPUT_FILE_PATH__</string>
@@ -154,8 +155,75 @@ let clangXMLT: String = """
 </plist>
 """
 
+let swiftXMLT: String = """
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<array>
+		<dict>
+			<key>LanguageDialect</key>
+			<string>swift</string>
+			<key>outputFilePath</key>
+			<string>__OUTPUT_FILE_PATH__</string>
+			<key>sourceFilePath</key>
+			<string>__SOURCE_FILE__</string>
+			<key>swiftASTBuiltProductsDir</key>
+			<string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/__CONFIGURATION__-__PLATFORM__</string>
+			<key>swiftASTCommandArguments</key>
+			<array>
+				<string>-module-name</string>
+				<string>iOSApp</string>
+				<string>-Onone</string>
+				<string>-enforce-exclusivity=checked</string>
+				<string>-sdk</string>
+				<string>__SDK_PATH__</string>
+				<string>-target</string>
+				<string>x86_64-apple-ios11.0-simulator</string>
+				<string>-g</string>
+				<string>-module-cache-path</string>
+				<string>__DERIVED_DATA_PATH__/ModuleCache.noindex</string>
+				<string>-Xfrontend</string>
+				<string>-serialize-debugging-options</string>
+				<string>-enable-testing</string>
+				<string>-swift-version</string>
+				<string>5</string>
+				<string>-parse-as-library</string>
+				<string>-Xfrontend</string>
+				<string>-experimental-allow-module-with-compiler-errors</string>
+				<string>-Xcc</string>
+				<string>-Xclang</string>
+				<string>-Xcc</string>
+				<string>-fallow-pcm-with-compiler-errors</string>
+				<string>-Xcc</string>
+				<string>-Xclang</string>
+				<string>-Xcc</string>
+				<string>-fmodule-format=raw</string>
+				<string>-Xcc</string>
+				<string>-Xclang</string>
+				<string>-Xcc</string>
+				<string>-detailed-preprocessing-record</string>
+				<string>-num-threads</string>
+				<string>10</string>
+                                <string>-DXCBTEST</string>
+				<string>-Xcc</string>
+				<string>-DDEBUG=1</string>
+				<string>-working-directory</string>
+				<string>__WORKING_DIR__</string>
+				<string>__SOURCE_FILE__</string>
+			</array>
+			<key>swiftASTModuleName</key>
+			<string>iOSApp</string>
+			<key>toolchains</key>
+			<array>
+				<string>com.apple.dt.toolchain.XcodeDefault</string>
+			</array>
+		</dict>
+	</array>
+</plist>
+"""
+
 public enum XCBBuildServiceProxyStub {
-        public static func getASTArgs(targetID: String,
+        public static func getASTArgs(isSwift: Bool,
+                                      targetID: String,
                                       sourceFilePath: String,
                                       outputFilePath: String,
                                       derivedDataPath: String,
@@ -163,8 +231,11 @@ public enum XCBBuildServiceProxyStub {
                                       workspaceName: String,
                                       sdkPath: String,
                                       sdkName: String,
-                                      workingDir: String) -> Data {
-                let clangXML = clangXMLT.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
+                                      workingDir: String,
+                                      configuration: String,
+                                      platform: String) -> Data {
+                var stub = isSwift ? swiftXMLT : clangXMLT
+                stub = stub.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
                 .replacingOccurrences(of:"__OUTPUT_FILE_PATH__", with: outputFilePath)
                 .replacingOccurrences(of:"__INDEX_STORE_PATH__", with: "\(derivedDataPath)/\(workspaceName)-\(workspaceHash)/Index/DataStore")
                 .replacingOccurrences(of:"__WORKSPACE_NAME__", with: workspaceName)
@@ -173,8 +244,10 @@ public enum XCBBuildServiceProxyStub {
                 .replacingOccurrences(of:"__SDK_PATH__", with: sdkPath)
                 .replacingOccurrences(of:"__SDK_NAME__", with: sdkName)
                 .replacingOccurrences(of:"__WORKING_DIR__", with: workingDir)
+                .replacingOccurrences(of:"__CONFIGURATION__", with: configuration)
+                .replacingOccurrences(of:"__PLATFORM__", with: platform)
 
-                return BPlistConverter(xml: clangXML)?.convertToBinary() ?? Data()
+                return BPlistConverter(xml: stub)?.convertToBinary() ?? Data()
         }
 }
 

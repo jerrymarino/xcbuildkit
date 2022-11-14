@@ -34,7 +34,7 @@ XCB=$(XCODE)/Contents/Developer/usr/bin/xcodebuild
 XCBBUILDSERVICE_PATH=$(PWD)/bazel-bin/BuildServiceShim/BuildServiceShim
 
 # Build service to use when running `test` and `debug_*` actions below
-BUILD_SERVICE=BazelBuildService
+BUILD_SERVICE=XCBBuildServiceProxy
 
 # See below comment - Bazel is not making a symlink.
 # This is of course just riddled with problems
@@ -152,8 +152,10 @@ debug_output_python: build
 
 # For more details about the usage of these see TODOs in `Examples/XCBBuildServiceProxy/main.swift`
 #
-MACOS_SDK=$(shell xcrun --sdk macosx --show-sdk-path) # /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk
+MACOS_SDK=$(shell xcrun --sdk macosx --show-sdk-path 2>&1) # /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk
+IPHONE_SIM_SDK=$(shell xcrun --sdk iphonesimulator --show-sdk-path 2>&1) # /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator15.4.sdk
 CLANG=$(shell xcrun --find clang) # /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang
+SWIFTC=$(shell xcrun --find swiftc) # /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc
 WORKSPACE_HASH=frhmkkebaragakhdzyysbrsvbgtc
 TMP_DD=/tmp/xcbuild-dd
 TMP_INDEX_STORE=${TMP_DD}/iOSApp-${WORKSPACE_HASH}/Index/DataStore
@@ -163,13 +165,30 @@ make generate_custom_index_store:
 	mkdir -p ${TMP_DD} && \
 	mkdir -p ${TMP_OUT}/CLI && \
 	mkdir -p ${TMP_OUT}/iOSApp && \
+	rm -fr ${TMP_INDEX_STORE}/v5 || true && \
 	${CLANG} \
 	-isysroot ${MACOS_SDK} \
 	-c ${PWD}/iOSApp/CLI/main.m \
 	-o ${TMP_OUT}/CLI/main.o \
 	-index-store-path ${TMP_INDEX_STORE} && \
+	${SWIFTC} \
+	-sdk ${IPHONE_SIM_SDK} \
+	-module-name iOSApp \
+	-target x86_64-apple-ios11.0-simulator \
+	-emit-dependencies \
+	-emit-module \
+	-emit-module-path ${TMP_OUT}/iOSApp/iOSApp.swiftmodule \
+	-emit-object \
+	-emit-objc-header \
+	-emit-objc-header-path ${TMP_OUT}/iOSApp/iOSApp-Swift.h \
+	-index-store-path ${TMP_INDEX_STORE} \
+	-o ${TMP_OUT}/iOSApp/Test.o \
+	-working-directory ${PWD}/iOSApp \
+	${PWD}/iOSApp/iOSApp/Test.swift && \
 	${CLANG} \
-	-isysroot ${MACOS_SDK} \
+	-isysroot ${IPHONE_SIM_SDK} \
+	-target x86_64-apple-ios11.0-simulator \
 	-c ${PWD}/iOSApp/iOSApp/main.m \
 	-o ${TMP_OUT}/iOSApp/main.o \
+	-I${TMP_OUT}/iOSApp \
 	-index-store-path ${TMP_INDEX_STORE}
