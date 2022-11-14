@@ -45,101 +45,14 @@ let clangXMLT: String = """
                 <key>LanguageDialect</key>
                 <string>objective-c</string>
                 <key>clangASTBuiltProductsDir</key>
-                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORSPACE_HASH__/Index/Build/Products/Debug-iphonesimulator</string>
+                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/__CONFIGURATION__-__PLATFORM__</string>
                 <key>clangASTCommandArguments</key>
                 <array>
-                        <string>-x</string>
-                        <string>objective-c</string>
-                        <string>-target</string>
-                        <string>x86_64-apple-macos10.14</string>
-                        <string>-fmessage-length=0</string>
-                        <string>-fdiagnostics-show-note-include-stack</string>
-                        <string>-fmacro-backtrace-limit=0</string>
-                        <string>-std=gnu11</string>
-                        <string>-fobjc-arc</string>
-                        <string>-fobjc-weak</string>
-                        <string>-fmodules</string>
-                        <string>-fmodules-cache-path=__DERIVED_DATA_PATH__/ModuleCache.noindex</string>
-                        <string>-fmodules-prune-interval=86400</string>
-                        <string>-fmodules-prune-after=345600</string>
-                        <string>-Wnon-modular-include-in-framework-module</string>
-                        <string>-Werror=non-modular-include-in-framework-module</string>
-                        <string>-Wno-trigraphs</string>
-                        <string>-fpascal-strings</string>
-                        <string>-O0</string>
-                        <string>-fno-common</string>
-                        <string>-Wno-missing-field-initializers</string>
-                        <string>-Wno-missing-prototypes</string>
-                        <string>-Werror=return-type</string>
-                        <string>-Wdocumentation</string>
-                        <string>-Wunreachable-code</string>
-                        <string>-Wno-implicit-atomic-properties</string>
-                        <string>-Werror=deprecated-objc-isa-usage</string>
-                        <string>-Wno-objc-interface-ivars</string>
-                        <string>-Werror=objc-root-class</string>
-                        <string>-Wno-arc-repeated-use-of-weak</string>
-                        <string>-Wimplicit-retain-self</string>
-                        <string>-Wduplicate-method-match</string>
-                        <string>-Wno-missing-braces</string>
-                        <string>-Wparentheses</string>
-                        <string>-Wswitch</string>
-                        <string>-Wunused-function</string>
-                        <string>-Wno-unused-label</string>
-                        <string>-Wno-unused-parameter</string>
-                        <string>-Wunused-variable</string>
-                        <string>-Wunused-value</string>
-                        <string>-Wempty-body</string>
-                        <string>-Wuninitialized</string>
-                        <string>-Wconditional-uninitialized</string>
-                        <string>-Wno-unknown-pragmas</string>
-                        <string>-Wno-shadow</string>
-                        <string>-Wno-four-char-constants</string>
-                        <string>-Wno-conversion</string>
-                        <string>-Wconstant-conversion</string>
-                        <string>-Wint-conversion</string>
-                        <string>-Wbool-conversion</string>
-                        <string>-Wenum-conversion</string>
-                        <string>-Wno-float-conversion</string>
-                        <string>-Wnon-literal-null-conversion</string>
-                        <string>-Wobjc-literal-conversion</string>
-                        <string>-Wshorten-64-to-32</string>
-                        <string>-Wpointer-sign</string>
-                        <string>-Wno-newline-eof</string>
-                        <string>-Wno-selector</string>
-                        <string>-Wno-strict-selector-match</string>
-                        <string>-Wundeclared-selector</string>
-                        <string>-Wdeprecated-implementations</string>
-                        <string>-DDEBUG=1</string>
-                        <string>-DXCBTEST=1</string>
-                        <string>-DOBJC_OLD_DISPATCH_PROTOTYPES=0</string>
-                        <string>-isysroot</string>
-                        <string>__SDK_PATH__</string>
-                        <string>-fasm-blocks</string>
-                        <string>-fstrict-aliasing</string>
-                        <string>-Wprotocol</string>
-                        <string>-Wdeprecated-declarations</string>
-                        <string>-g</string>
-                        <string>-Wno-sign-conversion</string>
-                        <string>-Winfinite-recursion</string>
-                        <string>-Wcomma</string>
-                        <string>-Wblock-capture-autoreleasing</string>
-                        <string>-Wstrict-prototypes</string>
-                        <string>-Wno-semicolon-before-method-body</string>
-                        <string>-Wunguarded-availability</string>
-                        <string>-index-store-path</string>
-                        <string>__INDEX_STORE_PATH__</string>
+                        __CMD_LINE_ARGS__
+                        <string>-working-directory</string>
+                        <string>__WORKING_DIR__</string>
                         <string>-fsyntax-only</string>
                         <string>__SOURCE_FILE__</string>
-                        <string>-o</string>
-                        <string>__OUTPUT_FILE_PATH__</string>
-                        <string>-Xclang</string>
-                        <string>-fallow-pcm-with-compiler-errors</string>
-                        <string>-fretain-comments-from-system-headers</string>
-                        <string>-ferror-limit=10</string>
-                        <string>-working-directory=__WORKING_DIR__</string>
-                        <string>-Xclang</string>
-                        <string>-detailed-preprocessing-record</string>
-                        <string>-DZZ=1</string>
                 </array>
                 <key>outputFilePath</key>
                 <string>__OUTPUT_FILE_PATH__</string>
@@ -155,7 +68,14 @@ let clangXMLT: String = """
 """
 
 public enum BazelBuildServiceStub {
+        static func xmlFromCmdLineArgs(args: [String]) -> String {
+                return args
+                .map { String("<string>\($0)</string>") }
+                .joined(separator: "\n")
+        }
+
         public static func getASTArgs(targetID: String,
+                                      xcode: String,
                                       sourceFilePath: String,
                                       outputFilePath: String,
                                       derivedDataPath: String,
@@ -163,23 +83,47 @@ public enum BazelBuildServiceStub {
                                       workspaceName: String,
                                       sdkPath: String,
                                       sdkName: String,
-                                      workingDir: String) -> Data {
-                let clangXML = clangXMLT.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
+                                      defaultWorkingDir: String,
+                                      bazelWorkingDir: String?,
+                                      configuration: String,
+                                      platform: String,
+                                      cmdLineArgs: [String]) -> Data {
+                var stub = clangXMLT
+                let workingDir = bazelWorkingDir ?? defaultWorkingDir
+                let cmdLineArgsXML = BazelBuildServiceStub.xmlFromCmdLineArgs(args: cmdLineArgs)
+
+                stub = stub.replacingOccurrences(of:"__CMD_LINE_ARGS__", with: cmdLineArgsXML)
+                .replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
                 .replacingOccurrences(of:"__OUTPUT_FILE_PATH__", with: outputFilePath)
-                .replacingOccurrences(of:"__INDEX_STORE_PATH__", with: "\(derivedDataPath)/\(workspaceName)-\(workspaceHash)/Index/DataStore")
                 .replacingOccurrences(of:"__WORKSPACE_NAME__", with: workspaceName)
                 .replacingOccurrences(of:"__DERIVED_DATA_PATH__", with: derivedDataPath)
-                .replacingOccurrences(of:"__WORSPACE_HASH__", with: workspaceHash)
-                .replacingOccurrences(of:"__SDK_PATH__", with: sdkPath)
-                .replacingOccurrences(of:"__SDK_NAME__", with: sdkName)
+                .replacingOccurrences(of:"__WORKSPACE_HASH__", with: workspaceHash)
+                .replacingOccurrences(of:"__BAZEL_XCODE_SDKROOT__", with: sdkPath)
                 .replacingOccurrences(of:"__WORKING_DIR__", with: workingDir)
+                .replacingOccurrences(of:"__CONFIGURATION__", with: configuration)
+                .replacingOccurrences(of:"__PLATFORM__", with: platform)
+                .replacingOccurrences(of:"__BAZEL_XCODE_DEVELOPER_DIR__", with: "\(xcode)/Contents/Developer")
 
-                return BPlistConverter(xml: clangXML)?.convertToBinary() ?? Data()
+                // When indexing is setting up the data store it fails if compiler flags contain relative paths
+                // Fixes that by pre-pending the working directory, we might want to revisit this and fix it
+                // earlier in the build (i.e. when generating the compiler flags via an aspect)
+                //
+                // Example of what this does:
+                //
+                // -ivfsoverlaybazel-out/path/to/foo.yaml => -ivfsoverlay/private/var/path/to/execution_root/<workspace>/bazel-out/path/to/foo.yaml
+                stub = stub.replacingOccurrences(of:"bazel-out/", with: "\(workingDir)/bazel-out/")
+                // For indexing to work the path to the output file has to be relative to the `-working-directory` flag
+                // so undo what the line above did only for this artifact
+                stub = stub.replacingOccurrences(of: "\(workingDir)/\(outputFilePath)", with: outputFilePath)
+
+                return BPlistConverter(xml: stub)?.convertToBinary() ?? Data()
         }
 
         // Required if `outputPathOnly` is `true` in the indexing request
         public static func outputPathOnlyData(outputFilePath: String,
-                                              sourceFilePath: String) -> Data {
+                                              sourceFilePath: String,
+                                              workingDir: String,
+                                              bazelWorkingDir: String?) -> Data {
                 let xml = """
                 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
                 <plist version="1.0">
@@ -194,10 +138,10 @@ public enum BazelBuildServiceStub {
                 </plist>
                 """
                 guard let converter = BPlistConverter(xml: xml) else {
-                fatalError("Failed to allocate converter")
+                        fatalError("Failed to allocate converter")
                 }
                 guard let bplistData = converter.convertToBinary() else {
-                fatalError("Failed to convert XML to binary plist data")
+                        fatalError("Failed to convert XML to binary plist data")
                 }
 
                 return bplistData

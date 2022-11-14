@@ -5,16 +5,34 @@ class IndexingService {
     // Holds list of `WorkspaceInfo` for each opened workspace
     var infos: [String: WorkspaceInfo] = [:]
 
+    struct IndexingSourceMapInfo {
+        let outputFilePath: String
+        let cmdLineArgs: [String]
+    }
+
     // Finds output file (i.e. path to `.o` under `bazel-out`) in in-memory mapping
-    func findOutputFileForSource(msg: WorkspaceInfoKeyable, filePath: String, workingDir: String) -> String? {
+    func findSourceMapInfo(msg: WorkspaceInfoKeyable, filePath: String, workingDir: String) -> IndexingSourceMapInfo? {
         guard let info = self.infos[msg.workspaceKey] else { return nil }
+        guard let sourceOutputFileMapSuffix = info.config.sourceOutputFileMapSuffix else { return nil }
         // Create key
         let sourceKey = filePath.replacingOccurrences(of: workingDir, with: "").replacingOccurrences(of: (info.config.bazelWorkingDir ?? ""), with: "")
         // Loops until found
-        for (_, json) in info.outputFileForSource {
-            if let objFilePath = json[sourceKey] {
-                return objFilePath
+        for (key, json) in info.outputFileForSource {
+            guard key.hasSuffix(sourceOutputFileMapSuffix) else { continue }
+            guard let srcInfo = json[sourceKey] as? [String: Any] else { continue }
+            guard let outputFilePath = srcInfo["output_file"] as? String else {
+                log("[ERROR] Failed to find output file for source: \(filePath)")
+                continue
             }
+            guard let cmdLineArgs = srcInfo["command_line_args"] as? [String], cmdLineArgs.count > 0 else {
+                log("[ERROR] Failed to find command line flags for for source: \(filePath)")
+                continue
+            }
+
+            return IndexingSourceMapInfo(
+                outputFilePath: outputFilePath,
+                cmdLineArgs: cmdLineArgs
+            )
         }
         return nil
     }
@@ -38,7 +56,7 @@ class IndexingService {
 
     // Check many conditions that need to be met in order to handle indexing and returns the respect output file,
     // the call site should abort and proxy the indexing request if this returns `nil`
-    func indexingOutputFilePath(msg: IndexingInfoRequested) -> String? {
+    func indexingSourceMapInfo(msg: IndexingInfoRequested) -> IndexingSourceMapInfo? {
         // Load workspace info
         guard let info = self.infos[msg.workspaceKey] else {
             log("[WARNING] Workspace info not found for key \(msg.workspaceKey).")
@@ -60,12 +78,12 @@ class IndexingService {
             return nil
         }
         // Find .o file under `bazel-out` for source `msg.filePath`
-        guard let outputFilePath = self.findOutputFileForSource(msg: msg, filePath: msg.filePath, workingDir: info.workingDir) else {
-            log("[WARNING] Failed to find output file for source: \(msg.filePath). Indexing requests will be proxied to default build service.")
+        guard let sourceMapInfo = self.findSourceMapInfo(msg: msg, filePath: msg.filePath, workingDir: info.workingDir) else {
+            log("[WARNING] Failed to find mapping information for for source: \(msg.filePath). Indexing requests will be proxied to default build service.")
             return nil
         }
 
-        return outputFilePath
+        return sourceMapInfo
     }
 
     // Loads information into memory and optionally update the cache under xcbuildkitDataDir
@@ -73,14 +91,13 @@ class IndexingService {
         guard let info = self.infos[msg.workspaceKey] else { return }
         // Ensure workspace info is ready and .json can be decoded
         guard let xcbuildkitDataDir = info.config.xcbuildkitDataDir else { return }
-        guard let jsonValues = try? JSONSerialization.jsonObject(with: jsonData, options: [.allowFragments]) as? [String: String] else { return }
+        guard let jsonValues = try? JSONSerialization.jsonObject(with: jsonData, options: [.allowFragments]) as? [String: Any] else { return }
 
         // Load .json contents into memory
         if info.outputFileForSource[jsonFilename] == nil {
             info.outputFileForSource[jsonFilename] = [:]
         }
         info.outputFileForSource[jsonFilename] = jsonValues
-        log("[INFO] Loaded mapping information into memory for file: \(jsonFilename)")
 
         // Update .json files cached under xcbuildkitDataDir for
         // fast load next time we launch Xcode
@@ -101,6 +118,20 @@ class IndexingService {
         }
     }
 
+    private func getPlatformFamily(_ platformName: String) -> String {
+        let platformNamePrefix = platformName.replacingOccurrences(of: "simulator", with: "")
+
+        switch platformNamePrefix {
+            case "macosx":      return "MacOSX"
+            case "iphone":      return "iPhone"
+            case "appletv":     return "AppleTV"
+            case "watch":       return "Watch"
+            case "driverkit":   return "DriverKit"
+            default:
+                fatalError("[ERROR] Unsupported platform \(platformNamePrefix)")
+        }
+    }
+
     // Helper method to compose sdk path for given sdk and platform
     // This is not an instance variable because if might change for different targets under the same workspace
     func sdkPath(msg: IndexingInfoRequested) -> String {
@@ -114,7 +145,12 @@ class IndexingService {
             fatalError("[ERROR] Failed to build SDK path, platform is empty.")
         }
 
-        return "\(info.xcode)/Contents/Developer/Platforms/\(msg.platform).platform/Developer/SDKs/\(msg.sdk).sdk"
+        // Capitalize words to pick up exact name on disk and prevent compiler warnings
+        let sim = msg.platform.contains("simulator")
+        let simStr = "\(sim ? "Simulator": "")"
+        let platformName = self.getPlatformFamily(msg.platform) + simStr
+        let sdkName = msg.sdk.replacingOccurrences(of: msg.platform, with: platformName).replacingOccurrences(of: "simulator", with: simStr)
+        return "\(info.xcode)/Contents/Developer/Platforms/\(platformName).platform/Developer/SDKs/\(sdkName).sdk"
     }
 
     // Xcode will try to find the data store under DerivedData so we need to symlink it to `BazelBuildServiceConfig.indexStorePath`

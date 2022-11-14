@@ -45,13 +45,13 @@ let clangXMLT: String = """
                 <key>LanguageDialect</key>
                 <string>objective-c</string>
                 <key>clangASTBuiltProductsDir</key>
-                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/Debug-iphonesimulator</string>
+                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/__CONFIGURATION__-__PLATFORM__</string>
                 <key>clangASTCommandArguments</key>
                 <array>
                         <string>-x</string>
                         <string>objective-c</string>
                         <string>-target</string>
-                        <string>x86_64-apple-macos10.14</string>
+                        <string>x86_64-apple-ios11.0-simulator</string>
                         <string>-fmessage-length=0</string>
                         <string>-fdiagnostics-show-note-include-stack</string>
                         <string>-fmacro-backtrace-limit=0</string>
@@ -140,6 +140,7 @@ let clangXMLT: String = """
                         <string>-Xclang</string>
                         <string>-detailed-preprocessing-record</string>
                         <string>-DZZ=1</string>
+                        <string>-I/tmp/xcbuild-out/iOSApp</string>
                 </array>
                 <key>outputFilePath</key>
                 <string>__OUTPUT_FILE_PATH__</string>
@@ -163,8 +164,11 @@ public enum XCBBuildServiceProxyStub {
                                       workspaceName: String,
                                       sdkPath: String,
                                       sdkName: String,
-                                      workingDir: String) -> Data {
-                let clangXML = clangXMLT.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
+                                      workingDir: String,
+                                      configuration: String,
+                                      platform: String) -> Data {
+                var stub = clangXMLT
+                stub = stub.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
                 .replacingOccurrences(of:"__OUTPUT_FILE_PATH__", with: outputFilePath)
                 .replacingOccurrences(of:"__INDEX_STORE_PATH__", with: "\(derivedDataPath)/\(workspaceName)-\(workspaceHash)/Index/DataStore")
                 .replacingOccurrences(of:"__WORKSPACE_NAME__", with: workspaceName)
@@ -173,8 +177,10 @@ public enum XCBBuildServiceProxyStub {
                 .replacingOccurrences(of:"__SDK_PATH__", with: sdkPath)
                 .replacingOccurrences(of:"__SDK_NAME__", with: sdkName)
                 .replacingOccurrences(of:"__WORKING_DIR__", with: workingDir)
+                .replacingOccurrences(of:"__CONFIGURATION__", with: configuration)
+                .replacingOccurrences(of:"__PLATFORM__", with: platform)
 
-                return BPlistConverter(xml: clangXML)?.convertToBinary() ?? Data()
+                return BPlistConverter(xml: stub)?.convertToBinary() ?? Data()
         }
 }
 

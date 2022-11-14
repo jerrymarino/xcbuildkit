@@ -69,6 +69,7 @@ enum BasicMessageHandler {
                 workspaceInfo.workingDir = createBuildRequest.workingDir
                 workspaceInfo.derivedDataPath = createBuildRequest.derivedDataPath
                 workspaceInfo.indexDataStoreFolderPath = createBuildRequest.indexDataStoreFolderPath
+                workspaceInfo.targetConfiguration = createBuildRequest.configuration
 
                 // Attempt to initialize in-memory mapping if empty
                 // It's possible that indexing data is not ready yet in `CreateSessionRequest` above
@@ -79,30 +80,35 @@ enum BasicMessageHandler {
                 // Setup DataStore for indexing with Bazel
                 indexingService.setupDataStore(msg: createBuildRequest)
             } else if let indexingInfoRequest = msg as? IndexingInfoRequested,
-                      let outputFilePath = indexingService.indexingOutputFilePath(msg: indexingInfoRequest),
+                      let sourceMapInfo = indexingService.indexingSourceMapInfo(msg: indexingInfoRequest),
                       let workspaceInfo = indexingService.infos[indexingInfoRequest.workspaceKey] {
                 // Compose the indexing response payload and emit the response message
                 // Note that information is combined from different places (workspace info, incoming indexing request, indexing service helper methods)
-                let clangXMLData = BazelBuildServiceStub.getASTArgs(
+                let compilerInvocationData = BazelBuildServiceStub.getASTArgs(
                     targetID: indexingInfoRequest.targetID,
+                    xcode: workspaceInfo.xcode,
                     sourceFilePath: indexingInfoRequest.filePath,
-                    outputFilePath: outputFilePath,
+                    outputFilePath: sourceMapInfo.outputFilePath,
                     derivedDataPath: workspaceInfo.derivedDataPath,
                     workspaceHash: workspaceInfo.workspaceHash,
                     workspaceName: workspaceInfo.workspaceName,
                     sdkPath: ctx.indexingService.sdkPath(msg: indexingInfoRequest),
                     sdkName: indexingInfoRequest.sdk,
-                    workingDir: workspaceInfo.config.bazelWorkingDir ?? workspaceInfo.workingDir)
+                    defaultWorkingDir: workspaceInfo.workingDir,
+                    bazelWorkingDir: workspaceInfo.config.bazelWorkingDir,
+                    configuration: workspaceInfo.targetConfiguration,
+                    platform: indexingInfoRequest.platform,
+                    cmdLineArgs: sourceMapInfo.cmdLineArgs)
 
                 let message = IndexingInfoReceivedResponse(
                     targetID: indexingInfoRequest.targetID,
-                    data: indexingInfoRequest.outputPathOnly ? BazelBuildServiceStub.outputPathOnlyData(outputFilePath: outputFilePath, sourceFilePath: indexingInfoRequest.filePath) : nil,
+                    data: indexingInfoRequest.outputPathOnly ? BazelBuildServiceStub.outputPathOnlyData(outputFilePath: sourceMapInfo.outputFilePath, sourceFilePath: indexingInfoRequest.filePath, workingDir: workspaceInfo.workingDir, bazelWorkingDir: workspaceInfo.config.bazelWorkingDir) : nil,
                     responseChannel: UInt64(indexingInfoRequest.responseChannel),
-                    clangXMLData: indexingInfoRequest.outputPathOnly ? nil : clangXMLData)
+                    compilerInvocationData: indexingInfoRequest.outputPathOnly ? nil : compilerInvocationData)
 
                 if let encoded: XCBResponse = try? message.encode(encoder) {
                     bkservice.write(encoded, msgId:message.responseChannel)
-                    log("[INFO] Handling \(identifier) for source \(indexingInfoRequest.filePath) and output file \(outputFilePath)")
+                    log("[INFO] Handling \(identifier) [outputPathOnly=\(indexingInfoRequest.outputPathOnly)] for source \(indexingInfoRequest.filePath) and output file \(sourceMapInfo.outputFilePath)")
                     return
                 }
             }
