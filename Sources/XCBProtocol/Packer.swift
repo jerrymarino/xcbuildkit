@@ -114,7 +114,6 @@ public protocol XCBValue {
 public typealias XCBRawValue = MessagePackValue
 
 public struct XCBInputStream  {
-    public let data: Data
     public var stream: IndexingIterator<[MessagePackValue]>
     public let first: MessagePackValue
     // Used for debugging only, assumes the first .string found is the identifier for this msg
@@ -132,9 +131,8 @@ public struct XCBInputStream  {
     }
 
     // This thing reads in a result - maybe it will not do this.
-    public init (result: [MessagePackValue], data: Data) {
+    public init (result: [MessagePackValue]) {
         self.stream = result.makeIterator()
-        self.data = data
         self.first = result.first ?? .uint(0)
     }
 

@@ -11,11 +11,11 @@ struct BasicMessageContext {
 /// XCBBuildService. All messages from Xcode are handled internally and XCBuild
 /// is not used
 enum BasicMessageHandler {
-    static func respond(input: XCBInputStream, data _: Data, context: Any?) {
+    static func respond(input: XCBInputStream, data _: Data, msgId: UInt64, context: Any?) {
         let basicCtx = context as! BasicMessageContext
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
-        let encoder = XCBEncoder(input: input)
+        let encoder = XCBEncoder(input: input, msgId: msgId)
         if let msg = decoder.decodeMessage() {
             if msg is CreateSessionRequest {
                 bkservice.write(try! CreateSessionResponse().encode(encoder))

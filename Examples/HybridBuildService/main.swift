@@ -40,12 +40,12 @@ struct BasicMessageContext {
 // This is an example build service that implements the build portion
 // all other messages and operations are handled by XCBuild
 enum BasicMessageHandler {
-    static func respond(input: XCBInputStream, data: Data, context: Any?) {
+    static func respond(input: XCBInputStream, data: Data, msgId: UInt64, context: Any?) {
         let basicCtx = context as! BasicMessageContext
         let xcbbuildService = basicCtx.xcbbuildService
         let bkservice = basicCtx.bkservice
         let decoder = XCBDecoder(input: input)
-        let encoder = XCBEncoder(input: input)
+        let encoder = XCBEncoder(input: input, msgId: msgId)
         if let msg = decoder.decodeMessage() {
             if let createSessionRequest = msg as? CreateSessionRequest {
                 xcbbuildService.startIfNecessary(xcode: createSessionRequest.xcode)

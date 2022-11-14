@@ -9,7 +9,7 @@
 //
 // TODO: Codable?
 // TODO: Not load from disk all the time but still detect changes in the file and refresh in-memory values?
-struct BazelBuildServiceConfig {
+struct BazelBuildServiceConfig: CustomDebugStringConvertible {
   private enum ConfigKeys: String {
     case indexingEnabled = "BUILD_SERVICE_INDEXING_ENABLED"
     case indexStorePath = "BUILD_SERVICE_INDEX_STORE_PATH"
@@ -32,6 +32,10 @@ struct BazelBuildServiceConfig {
 
   init(configPath: String) {
     self.configPath = configPath
+  }
+
+  var debugDescription: String {
+    return "\(self.loadConfigFile ?? [:])"
   }
 
   private var loadConfigFile: [String: Any]? {
