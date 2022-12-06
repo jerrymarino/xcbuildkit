@@ -18,6 +18,7 @@ class WorkspaceInfo {
   var derivedDataPath: String = ""
   var indexDataStoreFolderPath: String = ""
   var bepStream: BEPStream?
+  var targetConfiguration: String = "Debug"
 
   // Dictionary that holds mapping from source file to respective `.o` file under `bazel-out`. Used to respond to indexing requests.
   //
@@ -29,7 +30,7 @@ class WorkspaceInfo {
   //         "/tests/ios/app/App/Foo.m": "bazel-out/ios-x86_64-min10.0-applebin_ios-ios_x86_64-dbg-ST-0f1b0425081f/bin/tests/ios/app/_objs/App_objc/arc/Foo.o",
   //     ],
   // ],
-  var outputFileForSource: [String: [String: String]] = [:]
+  var outputFileForSource: [String: [String: Any]] = [:]
 
 
   init(xcode: String, workspaceName: String, workspaceHash: String, xcodeprojPath: String) {
