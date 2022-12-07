@@ -67,14 +67,66 @@ let clangXMLT: String = """
 </plist>
 """
 
+let swiftXMLT: String = """
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<array>
+		<dict>
+                        <key>LanguageDialect</key>
+                        <string>swift</string>
+                        <key>outputFilePath</key>
+                        <string>__OUTPUT_FILE_PATH__</string>
+                        <key>sourceFilePath</key>
+                        <string>__SOURCE_FILE__</string>
+                        <key>swiftASTBuiltProductsDir</key>
+                        <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/__CONFIGURATION__-__PLATFORM__</string>
+                        <key>swiftASTCommandArguments</key>
+                        <array>
+                                __CMD_LINE_ARGS__
+                                <string>-working-directory</string>
+                                <string>__WORKING_DIR__</string>
+                        </array>
+                        <key>swiftASTModuleName</key>
+                        <string>__MODULE_NAME__</string>
+                        <key>toolchains</key>
+                        <array>
+                                <string>com.apple.dt.toolchain.XcodeDefault</string>
+                        </array>
+		</dict>
+	</array>
+</plist>
+"""
+
 public enum BazelBuildServiceStub {
-        static func xmlFromCmdLineArgs(args: [String]) -> String {
+        static private func xmlFromCmdLineArgs(args: [String], defaultWorkingDir: String) -> String {
                 return args
-                .map { String("<string>\($0)</string>") }
+                .map {
+                        if $0.hasSuffix(".swift") {
+                                return String("<string>\(defaultWorkingDir)/\($0)</string>")
+                        }
+
+                        return String("<string>\($0)</string>")
+                }
                 .joined(separator: "\n")
         }
 
-        public static func getASTArgs(targetID: String,
+        static private func collectValueForCompilerFlag(name: String, cmdLineArgs: [String]) -> String? {
+                guard cmdLineArgs.count > 0 else { return nil }
+
+                var collectNext: Bool = false
+                for arg in cmdLineArgs {
+                        if arg == name {
+                                collectNext = true
+                                continue
+                        } else if collectNext {
+                                return arg
+                        }
+                }
+                return nil
+        }
+
+        public static func getASTArgs(isSwift: Bool,
+                                      targetID: String,
                                       xcode: String,
                                       sourceFilePath: String,
                                       outputFilePath: String,
@@ -88,9 +140,9 @@ public enum BazelBuildServiceStub {
                                       configuration: String,
                                       platform: String,
                                       cmdLineArgs: [String]) -> Data {
-                var stub = clangXMLT
+                var stub = isSwift ? swiftXMLT : clangXMLT
                 let workingDir = bazelWorkingDir ?? defaultWorkingDir
-                let cmdLineArgsXML = BazelBuildServiceStub.xmlFromCmdLineArgs(args: cmdLineArgs)
+                let cmdLineArgsXML = BazelBuildServiceStub.xmlFromCmdLineArgs(args: cmdLineArgs, defaultWorkingDir: defaultWorkingDir)
 
                 stub = stub.replacingOccurrences(of:"__CMD_LINE_ARGS__", with: cmdLineArgsXML)
                 .replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
@@ -103,6 +155,11 @@ public enum BazelBuildServiceStub {
                 .replacingOccurrences(of:"__CONFIGURATION__", with: configuration)
                 .replacingOccurrences(of:"__PLATFORM__", with: platform)
                 .replacingOccurrences(of:"__BAZEL_XCODE_DEVELOPER_DIR__", with: "\(xcode)/Contents/Developer")
+
+                // Extracts value of `-module-name` from `swiftc` flags to set in the plist
+                if let moduleName = BazelBuildServiceStub.collectValueForCompilerFlag(name: "-module-name", cmdLineArgs: cmdLineArgs), isSwift {
+                        stub = stub.replacingOccurrences(of:"__MODULE_NAME__", with: moduleName)
+                }
 
                 // When indexing is setting up the data store it fails if compiler flags contain relative paths
                 // Fixes that by pre-pending the working directory, we might want to revisit this and fix it

@@ -66,8 +66,8 @@ class IndexingService {
         guard info.config.indexingEnabled else {
             return nil
         }
-        // TODO: handle Swift
-        guard msg.filePath.count > 0 && msg.filePath != "<garbage>" && !msg.filePath.hasSuffix(".swift") else {
+        // Skip unsupported/invalid `filePath` values
+        guard msg.filePath.count > 0 && msg.filePath != "<garbage>" else {
             log("[WARNING] Unsupported filePath for indexing: \(msg.filePath)")
             return nil
         }
@@ -98,6 +98,7 @@ class IndexingService {
             info.outputFileForSource[jsonFilename] = [:]
         }
         info.outputFileForSource[jsonFilename] = jsonValues
+        log("[INFO] Loaded \(jsonFilename) into in-memory cache")
 
         // Update .json files cached under xcbuildkitDataDir for
         // fast load next time we launch Xcode
