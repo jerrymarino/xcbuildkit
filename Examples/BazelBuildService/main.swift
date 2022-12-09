@@ -85,6 +85,7 @@ enum BasicMessageHandler {
                 // Compose the indexing response payload and emit the response message
                 // Note that information is combined from different places (workspace info, incoming indexing request, indexing service helper methods)
                 let compilerInvocationData = BazelBuildServiceStub.getASTArgs(
+                    isSwift: indexingInfoRequest.filePath.hasSuffix(".swift"),
                     targetID: indexingInfoRequest.targetID,
                     xcode: workspaceInfo.xcode,
                     sourceFilePath: indexingInfoRequest.filePath,
