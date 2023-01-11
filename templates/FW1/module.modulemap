@@ -1,0 +1,6 @@
+framework module FW1 {
+  umbrella header "FW1.h"
+
+  export *
+  module * { export * }
+}

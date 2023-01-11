@@ -141,6 +141,7 @@ let clangXMLT: String = """
                         <string>-detailed-preprocessing-record</string>
                         <string>-DZZ=1</string>
                         <string>-I/tmp/xcbuild-out/iOSApp</string>
+                        <string>-F/tmp/xcbuild-out</string>
                 </array>
                 <key>outputFilePath</key>
                 <string>__OUTPUT_FILE_PATH__</string>
