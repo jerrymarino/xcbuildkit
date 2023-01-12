@@ -45,6 +45,7 @@ private let outputFileForSource: [String: [String: String]] = [
     "iOSApp-frhmkkebaragakhdzyysbrsvbgtc": [
         "/CLI/main.m": "/tmp/xcbuild-out/CLI/main.o",
         "/iOSApp/main.m": "/tmp/xcbuild-out/iOSApp/main.o",
+        "/FW1/FW1.m": "/tmp/xcbuild-out/FW1/FW1.o",
     ],
 
     // TODO: Should come from an aspect in Bazel

@@ -33,7 +33,11 @@ XCB=$(XCODE)/Contents/Developer/usr/bin/xcodebuild
 # The shim isn't used in production
 XCBBUILDSERVICE_PATH=$(PWD)/bazel-bin/BuildServiceShim/BuildServiceShim
 
-# Build service to use when running `test` and `debug_*` actions below
+# Build service to use when running `test` and `debug_*` actions below, also this is the service that will
+# proxy messages once `open_xcode` commands are invoked from `xcbuildkit`
+#
+# Using `BazelBuildService` by default since this is where most of the implementation is happening atm,
+# but to use the `iOSApp` test case from `xcbuildkit` is recommended to flip this to `XCBBuildServiceProxy` instead.
 BUILD_SERVICE=BazelBuildService
 
 # See below comment - Bazel is not making a symlink.
@@ -164,6 +168,14 @@ generate_custom_index_store:
 	mkdir -p ${TMP_DD} && \
 	mkdir -p ${TMP_OUT}/CLI && \
 	mkdir -p ${TMP_OUT}/iOSApp && \
+	mkdir -p ${TMP_OUT}/FW1 && \
+	mkdir -p ${TMP_OUT}/FW1.framework && \
+	mkdir -p ${TMP_OUT}/FW1.framework/Headers && \
+	mkdir -p ${TMP_OUT}/FW1.framework/Modules && \
+	cp ${PWD}/templates/FW1/FW1 ${TMP_OUT}/FW1.framework/FW1 && \
+	cp ${PWD}/templates/FW1/Info.plist ${TMP_OUT}/FW1.framework/Info.plist && \
+	cp ${PWD}/templates/FW1/module.modulemap ${TMP_OUT}/FW1.framework/Modules/. && \
+	cp ${PWD}/iOSApp/FW1/FW1.h ${TMP_OUT}/FW1.framework/Headers/. && \
 	rm -fr ${TMP_INDEX_STORE}/v5 || true && \
 	${CLANG} \
 	-isysroot ${MACOS_SDK} \
@@ -171,8 +183,15 @@ generate_custom_index_store:
 	-o ${TMP_OUT}/CLI/main.o \
 	-index-store-path ${TMP_INDEX_STORE} && \
 	${CLANG} \
+	-isysroot ${MACOS_SDK} \
+	-I${PWD}/iOSApp \
+	-c ${PWD}/iOSApp/FW1/FW1.m \
+	-o ${TMP_OUT}/FW1/FW1.o \
+	-index-store-path ${TMP_INDEX_STORE} && \
+	${CLANG} \
 	-isysroot ${IPHONE_SIM_SDK} \
 	-target x86_64-apple-ios11.0-simulator \
+	-F ${TMP_OUT} \
 	-c ${PWD}/iOSApp/iOSApp/main.m \
 	-o ${TMP_OUT}/iOSApp/main.o \
 	-I${TMP_OUT}/iOSApp \

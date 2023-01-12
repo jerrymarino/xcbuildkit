@@ -1,7 +1,16 @@
-#import <Foundation/Foundation.h>
+//
+//  FW.m
+//  FW1
+//
+//  Created by Thiago on 2023-01-11.
+//  Copyright © 2023 jerry. All rights reserved.
+//
+
 #import <FW1/FW1.h>
 
-int main(int argc, char * argv[]) {
+@implementation FW1
+
+- (void)foo {
     /* Used to test Fix-its
      Expected message:
 
@@ -14,9 +23,6 @@ int main(int argc, char * argv[]) {
      and a "FIX" action on the right side
     */
     NSLog(@"%s", 1);
-
-    // Used to make sure FW1 type is available and imported correctly
-    [[[FW1 alloc] init] foo];
-
-    exit(0);
 }
+
+@end
