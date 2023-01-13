@@ -159,6 +159,7 @@ debug_output_python: build
 MACOS_SDK=$(shell xcrun --sdk macosx --show-sdk-path 2>&1) # /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk
 IPHONE_SIM_SDK=$(shell xcrun --sdk iphonesimulator --show-sdk-path 2>&1) # /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator15.4.sdk
 CLANG=$(shell xcrun --find clang) # /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang
+SWIFTC=$(shell xcrun --find swiftc) # /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang
 WORKSPACE_HASH=frhmkkebaragakhdzyysbrsvbgtc
 TMP_DD=/tmp/xcbuild-dd
 TMP_INDEX_STORE=${TMP_DD}/iOSApp-${WORKSPACE_HASH}/Index/DataStore
@@ -172,6 +173,7 @@ generate_custom_index_store:
 	mkdir -p ${TMP_OUT}/FW1.framework && \
 	mkdir -p ${TMP_OUT}/FW1.framework/Headers && \
 	mkdir -p ${TMP_OUT}/FW1.framework/Modules && \
+	mkdir -p ${TMP_OUT}/FW1.framework/Modules/FW1.swiftmodule && \
 	cp ${PWD}/templates/FW1/FW1 ${TMP_OUT}/FW1.framework/FW1 && \
 	cp ${PWD}/templates/FW1/Info.plist ${TMP_OUT}/FW1.framework/Info.plist && \
 	cp ${PWD}/templates/FW1/module.modulemap ${TMP_OUT}/FW1.framework/Modules/. && \
@@ -188,6 +190,18 @@ generate_custom_index_store:
 	-c ${PWD}/iOSApp/FW1/FW1.m \
 	-o ${TMP_OUT}/FW1/FW1.o \
 	-index-store-path ${TMP_INDEX_STORE} && \
+	${SWIFTC} \
+	-sdk ${IPHONE_SIM_SDK} \
+	-target x86_64-apple-ios11.0-simulator \
+	-index-store-path ${TMP_INDEX_STORE} \
+	-module-name=FW1 \
+	-emit-module \
+	-emit-module-path=${TMP_OUT}/FW1.framework/Modules/FW1.swiftmodule \
+	-emit-objc-header \
+	-emit-objc-header-path ${TMP_OUT}/FW1.framework/Headers/FW1-Swift.h \
+	-o ${TMP_OUT}/FW1/FW1.swift.o \
+	${PWD}/iOSApp/FW1/FW1.swift && \
+	mv ${TMP_OUT}/FW1.framework/Modules/FW1.swiftmodule/FW1.swiftmodule ${TMP_OUT}/FW1.framework/Modules/FW1.swiftmodule/x86_64-apple-ios-simulator.swiftmodule && \
 	${CLANG} \
 	-isysroot ${IPHONE_SIM_SDK} \
 	-target x86_64-apple-ios11.0-simulator \
@@ -195,4 +209,12 @@ generate_custom_index_store:
 	-c ${PWD}/iOSApp/iOSApp/main.m \
 	-o ${TMP_OUT}/iOSApp/main.o \
 	-I${TMP_OUT}/iOSApp \
-	-index-store-path ${TMP_INDEX_STORE}
+	-index-store-path ${TMP_INDEX_STORE} && \
+	${SWIFTC} \
+	-module-name iOSApp \
+	-sdk ${IPHONE_SIM_SDK} \
+	-target x86_64-apple-ios11.0-simulator \
+	-index-store-path ${TMP_INDEX_STORE} \
+	-F ${TMP_OUT} \
+	-o ${TMP_OUT}/iOSApp/Test.swift.o \
+	${PWD}/iOSApp/iOSApp/Test.swift

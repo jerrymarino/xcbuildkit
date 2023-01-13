@@ -156,8 +156,47 @@ let clangXMLT: String = """
 </plist>
 """
 
+let swiftXMLT: String = """
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<array>
+		<dict>
+                        <key>LanguageDialect</key>
+                        <string>swift</string>
+                        <key>outputFilePath</key>
+                        <string>__OUTPUT_FILE_PATH__</string>
+                        <key>sourceFilePath</key>
+                        <string>__SOURCE_FILE__</string>
+                        <key>swiftASTBuiltProductsDir</key>
+                        <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/__CONFIGURATION__-__PLATFORM__</string>
+                        <key>swiftASTCommandArguments</key>
+                        <array>
+                                <string>-sdk</string>
+                                <string>__SDK_PATH__</string>
+                                <string>-target</string>
+                                <string>x86_64-apple-ios11.0-simulator</string>
+                                <string>-index-store-path</string>
+                                <string>__INDEX_STORE_PATH__</string>
+                                <string>-F</string>
+                                <string>/tmp/xcbuild-out</string>
+                                <string>-o</string>
+                                <string>__OUTPUT_FILE_PATH__</string>
+                                <string>-working-directory</string>
+                                <string>__WORKING_DIR__</string>
+                                <string>__SOURCE_FILE__</string>
+                        </array>
+                        <key>toolchains</key>
+                        <array>
+                                <string>com.apple.dt.toolchain.XcodeDefault</string>
+                        </array>
+		</dict>
+	</array>
+</plist>
+"""
+
 public enum XCBBuildServiceProxyStub {
-        public static func getASTArgs(targetID: String,
+        public static func getASTArgs(isSwift: Bool,
+                                      targetID: String,
                                       sourceFilePath: String,
                                       outputFilePath: String,
                                       derivedDataPath: String,
@@ -168,7 +207,7 @@ public enum XCBBuildServiceProxyStub {
                                       workingDir: String,
                                       configuration: String,
                                       platform: String) -> Data {
-                var stub = clangXMLT
+                var stub = isSwift ? swiftXMLT : clangXMLT
                 stub = stub.replacingOccurrences(of:"__SOURCE_FILE__", with: sourceFilePath)
                 .replacingOccurrences(of:"__OUTPUT_FILE_PATH__", with: outputFilePath)
                 .replacingOccurrences(of:"__INDEX_STORE_PATH__", with: "\(derivedDataPath)/\(workspaceName)-\(workspaceHash)/Index/DataStore")

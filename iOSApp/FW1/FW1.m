@@ -20,7 +20,7 @@
 
      "Replace '%s' with '%d'"
 
-     and a "FIX" action on the right side
+     and a "Fix" action on the right side
     */
     NSLog(@"%s", 1);
 }
