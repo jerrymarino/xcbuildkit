@@ -12,6 +12,8 @@
 		AF340792296F15DD0094E739 /* FW1.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AF34078B296F15DD0094E739 /* FW1.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		AF340799296F19740094E739 /* FW1.m in Sources */ = {isa = PBXBuildFile; fileRef = AF340798296F19740094E739 /* FW1.m */; };
 		AF77992028C2AF92009E5F7B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C45F55C01FD2199000A6C9F8 /* main.m */; };
+		AF7C835329708ACC00FA2865 /* Test.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF7C835229708ACC00FA2865 /* Test.swift */; };
+		AF7C83552970937B00FA2865 /* FW1.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF7C83542970937B00FA2865 /* FW1.swift */; };
 		C56EA31B23107E6F00A9FB8F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C56EA31A23107E6E00A9FB8F /* main.m */; };
 /* End PBXBuildFile section */
 
@@ -52,6 +54,9 @@
 		AF34078B296F15DD0094E739 /* FW1.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FW1.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF34078D296F15DD0094E739 /* FW1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FW1.h; sourceTree = "<group>"; };
 		AF340798296F19740094E739 /* FW1.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FW1.m; sourceTree = "<group>"; };
+		AF7C835129708ACC00FA2865 /* iOSApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "iOSApp-Bridging-Header.h"; sourceTree = "<group>"; };
+		AF7C835229708ACC00FA2865 /* Test.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Test.swift; sourceTree = "<group>"; };
+		AF7C83542970937B00FA2865 /* FW1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FW1.swift; sourceTree = "<group>"; };
 		C45F55AE1FD2199000A6C9F8 /* iOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C45F55BF1FD2199000A6C9F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C45F55C01FD2199000A6C9F8 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -91,6 +96,7 @@
 			children = (
 				AF34078D296F15DD0094E739 /* FW1.h */,
 				AF340798296F19740094E739 /* FW1.m */,
+				AF7C83542970937B00FA2865 /* FW1.swift */,
 			);
 			path = FW1;
 			sourceTree = "<group>";
@@ -121,6 +127,8 @@
 			children = (
 				C45F55BF1FD2199000A6C9F8 /* Info.plist */,
 				C45F55C01FD2199000A6C9F8 /* main.m */,
+				AF7C835229708ACC00FA2865 /* Test.swift */,
+				AF7C835129708ACC00FA2865 /* iOSApp-Bridging-Header.h */,
 			);
 			path = iOSApp;
 			sourceTree = "<group>";
@@ -211,10 +219,12 @@
 				TargetAttributes = {
 					AF34078A296F15DD0094E739 = {
 						CreatedOnToolsVersion = 13.3.1;
+						LastSwiftMigration = 1330;
 						ProvisioningStyle = Automatic;
 					};
 					C45F55AD1FD2199000A6C9F8 = {
 						CreatedOnToolsVersion = 9.0;
+						LastSwiftMigration = 1330;
 						ProvisioningStyle = Manual;
 					};
 					C56EA31723107E6E00A9FB8F = {
@@ -258,6 +268,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AF7C83552970937B00FA2865 /* FW1.swift in Sources */,
 				AF340799296F19740094E739 /* FW1.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -267,6 +278,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF77992028C2AF92009E5F7B /* main.m in Sources */,
+				AF7C835329708ACC00FA2865 /* Test.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -293,6 +305,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -306,7 +319,7 @@
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/FW1";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2023 jerry. All rights reserved.";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -315,6 +328,8 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
@@ -325,6 +340,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -338,7 +354,7 @@
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/FW1";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2023 jerry. All rights reserved.";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
@@ -346,6 +362,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
@@ -463,7 +480,9 @@
 		C45F55C51FD2199000A6C9F8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = NO;
 				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
@@ -480,6 +499,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = jerry.iOSApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOSApp/iOSApp-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = "";
@@ -489,7 +511,9 @@
 		C45F55C61FD2199000A6C9F8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = NO;
 				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
@@ -506,6 +530,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = jerry.iOSApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "iOSApp/iOSApp-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = "";

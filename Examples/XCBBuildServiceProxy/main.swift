@@ -45,7 +45,9 @@ private let outputFileForSource: [String: [String: String]] = [
     "iOSApp-frhmkkebaragakhdzyysbrsvbgtc": [
         "/CLI/main.m": "/tmp/xcbuild-out/CLI/main.o",
         "/iOSApp/main.m": "/tmp/xcbuild-out/iOSApp/main.o",
+        "/iOSApp/Test.swift": "/tmp/xcbuild-out/iOSApp/Test.swift.o",
         "/FW1/FW1.m": "/tmp/xcbuild-out/FW1/FW1.o",
+        "/FW1/FW1.swift": "/tmp/xcbuild-out/FW1/FW1.swift.o",
     ],
 
     // TODO: Should come from an aspect in Bazel
@@ -159,6 +161,7 @@ enum BasicMessageHandler {
                 log("[INFO] Found output file \(outputFilePath) for source \(reqMsg.filePath)")
 
                 let compilerInvocationData = XCBBuildServiceProxyStub.getASTArgs(
+                    isSwift: reqMsg.filePath.hasSuffix(".swift"),
                     targetID: reqMsg.targetID,
                     sourceFilePath: reqMsg.filePath,
                     outputFilePath: outputFilePath,

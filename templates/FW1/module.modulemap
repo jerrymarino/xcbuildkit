@@ -4,3 +4,8 @@ framework module FW1 {
   export *
   module * { export * }
 }
+
+module FW1.Swift {
+    header "FW1-Swift.h"
+    requires objc
+}
