@@ -14,44 +14,40 @@ class IndexingService {
     func findSourceMapInfo(msg: WorkspaceInfoKeyable, filePath: String, workingDir: String) -> IndexingSourceMapInfo? {
         guard let info = self.infos[msg.workspaceKey] else { return nil }
         guard let sourceOutputFileMapSuffix = info.config.sourceOutputFileMapSuffix else { return nil }
-        // Create key
-        let sourceKey = filePath.replacingOccurrences(of: workingDir, with: "").replacingOccurrences(of: (info.config.bazelWorkingDir ?? ""), with: "")
-        // Loops until found
-        for (key, json) in info.outputFileForSource {
-            guard key.hasSuffix(sourceOutputFileMapSuffix) else { continue }
-            guard let srcInfo = json[sourceKey] as? [String: Any] else { continue }
-            guard let outputFilePath = srcInfo["output_file"] as? String else {
-                log("[ERROR] Failed to find output file for source: \(filePath)")
-                continue
-            }
-            guard let cmdLineArgs = srcInfo["command_line_args"] as? [String], cmdLineArgs.count > 0 else {
-                log("[ERROR] Failed to find command line flags for for source: \(filePath)")
-                continue
-            }
-
-            return IndexingSourceMapInfo(
-                outputFilePath: outputFilePath,
-                cmdLineArgs: cmdLineArgs
-            )
-        }
-        return nil
-    }
-
-    // Initialize in memory mappings from xcbuildkitDataDir if .json mappings files exist
-    func initializeOutputFileMappingFromCache(msg: WorkspaceInfoKeyable) {
-        guard let info = self.infos[msg.workspaceKey] else { return }
-        guard let xcbuildkitDataDir = info.config.xcbuildkitDataDir else { return }
+        guard let xcbuildkitDataDir = info.config.xcbuildkitDataDir else { return nil }
         let fm = FileManager.default
-        do {
-            let jsons = try fm.contentsOfDirectory(atPath: xcbuildkitDataDir)
+        var isDirectory = ObjCBool(true)
+        guard fm.fileExists(atPath: xcbuildkitDataDir, isDirectory: &isDirectory) else { return nil }
+        // Create key
+        let relativeFilePath = filePath.replacingOccurrences(of: workingDir, with: "").replacingOccurrences(of: (info.config.bazelWorkingDir ?? ""), with: "")
+        let sourceKey = "\(relativeFilePath.replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: ".", with: "_"))_\(sourceOutputFileMapSuffix)"
 
-            for jsonFilename in jsons {
-                let jsonData = try Data(contentsOf: URL(fileURLWithPath: "\(xcbuildkitDataDir)/\(jsonFilename)"))
-                self.loadSourceOutputFileMappingInfo(msg: msg, jsonFilename: jsonFilename, jsonData: jsonData)
+        if !info.outputFileForSource.keys.contains(sourceKey) {
+            let jsonFilePath = "\(xcbuildkitDataDir)/\(sourceKey)"
+            if fm.fileExists(atPath: jsonFilePath) {
+                if let jsonData = try? Data(contentsOf: URL(fileURLWithPath: jsonFilePath)) {
+                    self.loadSourceOutputFileMappingInfo(msg: msg, jsonFilename: sourceKey, jsonData: jsonData)
+                }
             }
-        } catch {
-            log("[ERROR] Failed to initialize from cache under \(xcbuildkitDataDir) with err: \(error.localizedDescription)")
         }
+
+        guard let srcInfoJson = info.outputFileForSource[sourceKey] as? [String: Any] else {
+            return nil
+        }
+
+        guard let outputFilePath = srcInfoJson["output_file"] as? String else {
+            log("[ERROR] Failed to find output file for source: \(filePath)")
+            return nil
+        }
+        guard let cmdLineArgs = srcInfoJson["command_line_args"] as? [String], cmdLineArgs.count > 0 else {
+            log("[ERROR] Failed to find command line flags for for source: \(filePath)")
+            return nil
+        }
+
+        return IndexingSourceMapInfo(
+            outputFilePath: outputFilePath,
+            cmdLineArgs: cmdLineArgs
+        )
     }
 
     // Check many conditions that need to be met in order to handle indexing and returns the respect output file,
@@ -89,34 +85,32 @@ class IndexingService {
     // Loads information into memory and optionally update the cache under xcbuildkitDataDir
     func loadSourceOutputFileMappingInfo(msg: WorkspaceInfoKeyable, jsonFilename: String, jsonData: Data, updateCache: Bool = false) {
         guard let info = self.infos[msg.workspaceKey] else { return }
-        // Ensure workspace info is ready and .json can be decoded
         guard let xcbuildkitDataDir = info.config.xcbuildkitDataDir else { return }
-        guard let jsonValues = try? JSONSerialization.jsonObject(with: jsonData, options: [.allowFragments]) as? [String: Any] else { return }
+        let fm = FileManager.default
+        var isDirectory = ObjCBool(true)
+        guard fm.fileExists(atPath: xcbuildkitDataDir, isDirectory: &isDirectory) else { return }
 
+        // Update .json files cached under xcbuildkitDataDir for
+        // fast load next time we launch Xcode and exit early since there's nothing else to do
+        if updateCache {
+            guard let jsonBasename = jsonFilename.components(separatedBy: "/").last else { return }
+            let jsonFilePath = "\(xcbuildkitDataDir)/\(jsonBasename)"
+            let json = URL(fileURLWithPath: jsonFilePath)
+            let fm = FileManager.default
+            if !fm.fileExists(atPath: jsonFilePath) {
+                try? jsonData.write(to: json)
+                log("[INFO] Updated cache for file \(jsonFilePath)")
+            }
+            return
+        }
+        // Ensure workspace info is ready and .json can be decoded
+        guard let jsonValues = try? JSONSerialization.jsonObject(with: jsonData, options: [.allowFragments]) as? [String: Any] else { return }
         // Load .json contents into memory
         if info.outputFileForSource[jsonFilename] == nil {
             info.outputFileForSource[jsonFilename] = [:]
         }
         info.outputFileForSource[jsonFilename] = jsonValues
         log("[INFO] Loaded \(jsonFilename) into in-memory cache")
-
-        // Update .json files cached under xcbuildkitDataDir for
-        // fast load next time we launch Xcode
-        if updateCache {
-            do {
-                guard let jsonBasename = jsonFilename.components(separatedBy: "/").last else { return }
-                let jsonFilePath = "\(xcbuildkitDataDir)/\(jsonBasename)"
-                let json = URL(fileURLWithPath: jsonFilePath)
-                let fm = FileManager.default
-                if fm.fileExists(atPath: jsonFilePath) {
-                    try fm.removeItem(atPath: jsonFilePath)
-                }
-                try jsonData.write(to: json)
-                log("[INFO] Updated cache for file \(jsonFilePath)")
-            } catch {
-                log("[ERROR] Failed to update cache under \(xcbuildkitDataDir) for file \(jsonFilename) with err: \(error.localizedDescription)")
-            }
-        }
     }
 
     private func getPlatformFamily(_ platformName: String) -> String {

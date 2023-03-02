@@ -45,7 +45,7 @@ let clangXMLT: String = """
                 <key>LanguageDialect</key>
                 <string>objective-c</string>
                 <key>clangASTBuiltProductsDir</key>
-                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/__CONFIGURATION__-__PLATFORM__</string>
+                <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index.noindex/Build/Products/__CONFIGURATION__-__PLATFORM__</string>
                 <key>clangASTCommandArguments</key>
                 <array>
                         __CMD_LINE_ARGS__
@@ -55,7 +55,7 @@ let clangXMLT: String = """
                         <string>__SOURCE_FILE__</string>
                 </array>
                 <key>outputFilePath</key>
-                <string>__OUTPUT_FILE_PATH__</string>
+                <string>__WORKING_DIR__/__OUTPUT_FILE_PATH__</string>
                 <key>sourceFilePath</key>
                 <string>__SOURCE_FILE__</string>
                 <key>toolchains</key>
@@ -79,7 +79,7 @@ let swiftXMLT: String = """
                         <key>sourceFilePath</key>
                         <string>__SOURCE_FILE__</string>
                         <key>swiftASTBuiltProductsDir</key>
-                        <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index/Build/Products/__CONFIGURATION__-__PLATFORM__</string>
+                        <string>__DERIVED_DATA_PATH__/__WORKSPACE_NAME__-__WORKSPACE_HASH__/Index.noindex/Build/Products/__CONFIGURATION__-__PLATFORM__</string>
                         <key>swiftASTCommandArguments</key>
                         <array>
                                 __CMD_LINE_ARGS__

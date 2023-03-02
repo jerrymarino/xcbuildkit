@@ -42,9 +42,6 @@ enum BasicMessageHandler {
 
                 // Initialize build service
                 xcbbuildService.startIfNecessary(xcode: workspaceInfo.xcode)
-
-                // Initialize indexing information
-                indexingService.initializeOutputFileMappingFromCache(msg: createSessionRequest)
             } else if msg is BuildStartRequest {
                 let message = BuildProgressUpdatedResponse()
                 if let responseData = try? message.encode(encoder) {
@@ -70,12 +67,6 @@ enum BasicMessageHandler {
                 workspaceInfo.derivedDataPath = createBuildRequest.derivedDataPath
                 workspaceInfo.indexDataStoreFolderPath = createBuildRequest.indexDataStoreFolderPath
                 workspaceInfo.targetConfiguration = createBuildRequest.configuration
-
-                // Attempt to initialize in-memory mapping if empty
-                // It's possible that indexing data is not ready yet in `CreateSessionRequest` above
-                if workspaceInfo.outputFileForSource.count == 0 {
-                    indexingService.initializeOutputFileMappingFromCache(msg: createBuildRequest)
-                }
 
                 // Setup DataStore for indexing with Bazel
                 indexingService.setupDataStore(msg: createBuildRequest)
